@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($pgPaths = @\\(\"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\", \"C:\\\\Program Files\\\\PostgreSQL\\\\16\\\\bin\", \"C:\\\\Program Files\\\\PostgreSQL\\\\15\\\\bin\"\\); foreach \\($p in $pgPaths\\) { if \\(Test-Path $p\\) { Write-Host \"Found: $p\" } })",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\"; pg_ctl status -D \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\data\" 2>&1)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\"; pg_ctl start -D \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\data\" -l \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\data\\\\logfile.log\" 2>&1)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\"; psql -U postgres -c \"\\\\l\" 2>&1)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\"; $env:PGPASSWORD = \"\"; psql -U postgres -c \"\\\\l\" 2>&1)",
+      "Read(//c/Program Files/PostgreSQL/17/data/**)",
+      "PowerShell(Get-ChildItem \"C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\data\\\\log\\\\\" | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | ForEach-Object { Get-Content $_.FullName -Tail 30 })",
+      "PowerShell(Get-Service | Where-Object { $_.Name -match \"\\(?i\\)post|sql\" } | Select-Object Name, DisplayName, Status, StartType)",
+      "PowerShell(sc.exe query \"postgresql-x64-17\")",
+      "PowerShell(net start \"postgresql-x64-17\" 2>&1)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\"; $env:PGPASSWORD = \"\"; psql -U postgres -c \"CREATE DATABASE sekai_talk;\" 2>&1)",
+      "PowerShell($env:Path += \";C:\\\\Program Files\\\\PostgreSQL\\\\17\\\\bin\"; psql -U postgres -c \"ALTER USER postgres PASSWORD 'postgres';\" 2>&1)",
+      "PowerShell(node -e \"const c = require\\('crypto'\\); console.log\\(c.randomBytes\\(32\\).toString\\('base64'\\)\\)\")"
+    ],
+    "additionalDirectories": [
+      "C:\\Program Files\\PostgreSQL\\17\\data"
+    ]
+  }
+}
