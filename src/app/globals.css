@@ -7,13 +7,6 @@
   --foreground: #171717;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   color: var(--foreground);
   background: var(--background);
@@ -24,4 +17,127 @@ body {
   .text-balance {
     text-wrap: balance;
   }
+}
+
+/* ── Leaflet base overrides ─────────────────────────────────── */
+.leaflet-container {
+  background: #e8e8e8 !important;
+  cursor: grab !important;
+  font-family: inherit !important;
+}
+.leaflet-container:active {
+  cursor: grabbing !important;
+}
+.leaflet-control-zoom,
+.leaflet-control-attribution {
+  display: none !important;
+}
+
+/* ── Game Popup ─────────────────────────────────────────────── */
+.leaflet-popup-content-wrapper {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1.5px solid rgba(124, 58, 237, 0.25) !important;
+  border-radius: 14px !important;
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.12), 0 8px 24px rgba(0,0,0,0.1) !important;
+  backdrop-filter: blur(12px);
+  padding: 0 !important;
+}
+.leaflet-popup-content {
+  margin: 12px 16px !important;
+}
+.leaflet-popup-tip-container {
+  display: none;
+}
+.leaflet-popup-close-button {
+  color: #9ca3af !important;
+  font-size: 18px !important;
+  top: 6px !important;
+  right: 10px !important;
+}
+.leaflet-popup-close-button:hover {
+  color: #374151 !important;
+}
+
+/* ── Game POI Markers ───────────────────────────────────────── */
+.game-poi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+.game-poi:hover {
+  transform: scale(1.15);
+}
+.poi-marker-wrap {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.poi-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  animation: poi-pulse 2.8s ease-in-out infinite;
+}
+.poi-dot {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.9);
+  z-index: 1;
+  transition: transform 0.2s ease;
+}
+.game-poi:hover .poi-dot {
+  transform: scale(1.3);
+}
+.poi-label {
+  background: rgba(255, 255, 255, 0.92);
+  color: #1f2937;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.4px;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+}
+.game-poi:hover .poi-label {
+  background: #7c3aed;
+  border-color: #7c3aed;
+  box-shadow: 0 0 12px rgba(124, 58, 237, 0.35);
+  color: white;
+}
+
+/* Type colors */
+.type-station  .poi-dot { background: #38bdf8; box-shadow: 0 0 10px #38bdf8, 0 0 20px rgba(56,189,248,0.4); }
+.type-station  .poi-pulse { background: radial-gradient(circle, rgba(56,189,248,0.35) 0%, transparent 70%); }
+
+.type-konbini  .poi-dot { background: #4ade80; box-shadow: 0 0 10px #4ade80, 0 0 20px rgba(74,222,128,0.4); }
+.type-konbini  .poi-pulse { background: radial-gradient(circle, rgba(74,222,128,0.35) 0%, transparent 70%); }
+
+.type-izakaya  .poi-dot { background: #fb923c; box-shadow: 0 0 10px #fb923c, 0 0 20px rgba(251,146,60,0.4); }
+.type-izakaya  .poi-pulse { background: radial-gradient(circle, rgba(251,146,60,0.35) 0%, transparent 70%); }
+
+.type-temple   .poi-dot { background: #c084fc; box-shadow: 0 0 10px #c084fc, 0 0 20px rgba(192,132,252,0.4); }
+.type-temple   .poi-pulse { background: radial-gradient(circle, rgba(192,132,252,0.35) 0%, transparent 70%); }
+
+.type-market   .poi-dot { background: #fbbf24; box-shadow: 0 0 10px #fbbf24, 0 0 20px rgba(251,191,36,0.4); }
+.type-market   .poi-pulse { background: radial-gradient(circle, rgba(251,191,36,0.35) 0%, transparent 70%); }
+
+.type-landmark .poi-dot { background: #f87171; box-shadow: 0 0 10px #f87171, 0 0 20px rgba(248,113,113,0.4); }
+.type-landmark .poi-pulse { background: radial-gradient(circle, rgba(248,113,113,0.35) 0%, transparent 70%); }
+
+@keyframes poi-pulse {
+  0%, 100% { transform: scale(1);   opacity: 0.7; }
+  50%       { transform: scale(2.8); opacity: 0;   }
 }

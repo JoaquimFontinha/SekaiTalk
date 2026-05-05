@@ -1,0 +1,278 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps";
+import { Bell, Settings, User, Flame, Menu, Star } from "lucide-react";
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const worldAtlas = require("world-atlas/countries-50m.json");
+
+const CITIES: { name: string; coordinates: [number, number] }[] = [
+  { name: "Tokyo", coordinates: [139.6917, 35.6895] },
+  { name: "Osaka", coordinates: [135.5023, 34.6937] },
+  { name: "Kyoto", coordinates: [135.7681, 35.0116] },
+];
+
+const SIDEBAR_ITEMS = ["Placeholder 1", "Placeholder 2", "Placeholder 3"];
+
+function CompassRose() {
+  return (
+    <svg width="64" height="64" viewBox="0 0 64 64">
+      <polygon points="32,4 28,24 36,24" fill="#f0ece2" />
+      <polygon points="32,60 28,40 36,40" fill="rgba(240,236,226,0.4)" />
+      <polygon points="60,32 40,28 40,36" fill="rgba(240,236,226,0.4)" />
+      <polygon points="4,32 24,28 24,36" fill="rgba(240,236,226,0.4)" />
+      <line x1="32" y1="4" x2="32" y2="60" stroke="rgba(240,236,226,0.2)" strokeWidth="0.8" />
+      <line x1="4" y1="32" x2="60" y2="32" stroke="rgba(240,236,226,0.2)" strokeWidth="0.8" />
+      <line x1="12" y1="12" x2="52" y2="52" stroke="rgba(240,236,226,0.12)" strokeWidth="0.6" />
+      <line x1="52" y1="12" x2="12" y2="52" stroke="rgba(240,236,226,0.12)" strokeWidth="0.6" />
+      <circle cx="32" cy="32" r="9" fill="none" stroke="rgba(240,236,226,0.35)" strokeWidth="1.5" />
+      <circle cx="32" cy="32" r="3.5" fill="#f0ece2" opacity="0.7" />
+      <text x="32" y="14" textAnchor="middle" fontSize="7" fontWeight="700" fill="#f0ece2" fontFamily="serif" letterSpacing="1" opacity="0.9">N</text>
+    </svg>
+  );
+}
+
+export default function HomeClient() {
+  const router = useRouter();
+  const [hoveredCity, setHoveredCity] = useState<string | null>(null);
+
+  return (
+    <div className="flex h-screen flex-col overflow-hidden bg-white">
+
+      {/* Navbar */}
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-100 px-6">
+        <span className="text-xl font-bold tracking-tight text-gray-900">SekaiTalk</span>
+        <div className="flex items-center gap-5 text-gray-400">
+          <button className="flex items-center gap-1.5 transition-colors hover:text-orange-400">
+            <Flame className="h-5 w-5 text-orange-300" />
+            <span className="text-sm font-semibold text-gray-600">0</span>
+          </button>
+          <button className="transition-colors hover:text-gray-900"><Bell className="h-5 w-5" /></button>
+          <button className="transition-colors hover:text-gray-900"><Settings className="h-5 w-5" /></button>
+          <button className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-200 transition-colors hover:border-gray-400 hover:text-gray-900">
+            <User className="h-4 w-4" />
+          </button>
+        </div>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* Sidebar */}
+        <aside className="flex w-[72px] shrink-0 flex-col items-center gap-7 border-r border-gray-100 py-5">
+          <button className="text-gray-400 transition-colors hover:text-gray-700">
+            <Menu className="h-5 w-5" />
+          </button>
+          {SIDEBAR_ITEMS.map((label, i) => (
+            <button key={i} className="group flex flex-col items-center gap-1">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-gray-200 text-gray-400 transition-all group-hover:border-violet-400 group-hover:bg-violet-50 group-hover:text-violet-500">
+                <Star className="h-4 w-4" />
+              </div>
+              <span className="text-[9px] font-medium text-gray-400 transition-colors group-hover:text-violet-500">
+                {label}
+              </span>
+            </button>
+          ))}
+        </aside>
+
+        {/* Map */}
+        <main
+          className="relative flex-1 overflow-hidden"
+          style={{
+            background: `
+              radial-gradient(ellipse at 65% 35%, #9ec5d8 0%, #7aaec5 45%, #5f97b0 100%)
+            `,
+          }}
+        >
+          {/* Dot grid ocean texture */}
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.18) 1px, transparent 1px)",
+              backgroundSize: "30px 30px",
+            }}
+          />
+
+          {/* Vignette */}
+          <div
+            className="pointer-events-none absolute inset-0 z-10"
+            style={{ boxShadow: "inset 0 0 120px rgba(0,30,60,0.22), inset 0 0 40px rgba(0,30,60,0.1)" }}
+          />
+
+          {/* Sea of Japan label */}
+          <div
+            className="pointer-events-none absolute z-10 select-none uppercase"
+            style={{
+              left: "13%", top: "41%",
+              fontSize: "10px",
+              letterSpacing: "0.3em",
+              color: "rgba(255,255,255,0.35)",
+              fontWeight: 500,
+              transform: "rotate(-6deg)",
+            }}
+          >
+            Sea of Japan
+          </div>
+
+          {/* Pacific Ocean label */}
+          <div
+            className="pointer-events-none absolute z-10 select-none text-center uppercase"
+            style={{
+              right: "7%", top: "50%",
+              fontSize: "10px",
+              letterSpacing: "0.3em",
+              color: "rgba(255,255,255,0.3)",
+              fontWeight: 500,
+              lineHeight: "1.8",
+            }}
+          >
+            Pacific<br />Ocean
+          </div>
+
+          {/* Compass rose */}
+          <div className="absolute bottom-8 right-8 z-10">
+            <CompassRose />
+          </div>
+
+          {/* Map label bottom-left */}
+          <div className="pointer-events-none absolute bottom-8 left-8 z-10 select-none">
+            <span
+              style={{
+                fontSize: "9px",
+                letterSpacing: "0.25em",
+                color: "rgba(255,255,255,0.4)",
+                fontWeight: 600,
+                textTransform: "uppercase",
+              }}
+            >
+              Japan
+            </span>
+            <div style={{ height: 1, width: 40, background: "rgba(255,255,255,0.2)", marginTop: 4 }} />
+          </div>
+
+          <ComposableMap
+            projection="geoMercator"
+            projectionConfig={{ center: [137, 37], scale: 1350 }}
+            style={{ width: "100%", height: "100%", position: "relative", zIndex: 5 }}
+          >
+            <defs>
+              <filter id="landShadow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="6" stdDeviation="10" floodColor="rgba(0,20,50,0.35)" />
+              </filter>
+              <linearGradient id="landGrad" x1="0%" y1="0%" x2="30%" y2="100%">
+                <stop offset="0%" stopColor="#f5f1e4" />
+                <stop offset="100%" stopColor="#e8e2cf" />
+              </linearGradient>
+            </defs>
+
+            <Geographies geography={worldAtlas}>
+              {({ geographies }: { geographies: any[] }) =>
+                geographies
+                  .filter((geo: any) => geo.id === "392")
+                  .map((geo: any) => (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      fill="url(#landGrad)"
+                      stroke="#d6cfba"
+                      strokeWidth={0.6}
+                      style={{
+                        default: { outline: "none", filter: "url(#landShadow)" },
+                        hover:   { outline: "none", filter: "url(#landShadow)" },
+                        pressed: { outline: "none", filter: "url(#landShadow)" },
+                      }}
+                    />
+                  ))
+              }
+            </Geographies>
+
+            {CITIES.map((city) => {
+              const isHovered = hoveredCity === city.name;
+              return (
+                <Marker
+                  key={city.name}
+                  coordinates={city.coordinates}
+                  onMouseEnter={() => setHoveredCity(city.name)}
+                  onMouseLeave={() => setHoveredCity(null)}
+                  onClick={() => router.push(`/home/${city.name.toLowerCase()}`)}
+                >
+                  {/* Animated ping on hover */}
+                  {isHovered && (
+                    <circle
+                      r={26}
+                      fill="none"
+                      stroke="#7c3aed"
+                      strokeWidth={1.5}
+                      opacity={0.45}
+                      className="animate-ping"
+                      style={{ transformBox: "fill-box", transformOrigin: "center" }}
+                    />
+                  )}
+
+                  {/* Halo */}
+                  <circle
+                    r={isHovered ? 19 : 16}
+                    fill={isHovered ? "rgba(124,58,237,0.1)" : "rgba(255,255,255,0.15)"}
+                    stroke={isHovered ? "rgba(124,58,237,0.3)" : "rgba(255,255,255,0.3)"}
+                    strokeWidth={1}
+                    style={{ transition: "all 0.25s ease" }}
+                  />
+
+                  {/* Main marker */}
+                  <circle
+                    r={11}
+                    fill={isHovered ? "white" : "rgba(255,255,255,0.92)"}
+                    stroke={isHovered ? "#7c3aed" : "#2d3748"}
+                    strokeWidth={2}
+                    style={{
+                      cursor: "pointer",
+                      transition: "all 0.25s ease",
+                      filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.25))",
+                    }}
+                  />
+
+                  {/* Center dot */}
+                  <circle
+                    r={isHovered ? 5 : 3.5}
+                    fill={isHovered ? "#7c3aed" : "#1a202c"}
+                    style={{ cursor: "pointer", transition: "all 0.25s ease" }}
+                  />
+
+                  {/* Label pill */}
+                  <rect
+                    x={-32} y={-44}
+                    width={64} height={18}
+                    fill={isHovered ? "rgba(124,58,237,0.9)" : "rgba(29,36,50,0.75)"}
+                    rx={9}
+                    style={{
+                      transition: "all 0.25s ease",
+                      filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.3))",
+                    }}
+                  />
+
+                  {/* City name inside pill */}
+                  <text
+                    textAnchor="middle"
+                    y={-31}
+                    style={{
+                      fontSize: "9.5px",
+                      fontWeight: "600",
+                      fill: "white",
+                      pointerEvents: "none",
+                      userSelect: "none",
+                      fontFamily: "inherit",
+                      letterSpacing: "0.6px",
+                    }}
+                  >
+                    {city.name.toUpperCase()}
+                  </text>
+                </Marker>
+              );
+            })}
+          </ComposableMap>
+        </main>
+      </div>
+    </div>
+  );
+}

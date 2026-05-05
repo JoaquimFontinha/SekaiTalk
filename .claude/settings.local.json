@@ -16,7 +16,8 @@
       "PowerShell(node -e \"const c = require\\('crypto'\\); console.log\\(c.randomBytes\\(32\\).toString\\('base64'\\)\\)\")"
     ],
     "additionalDirectories": [
-      "C:\\Program Files\\PostgreSQL\\17\\data"
+      "C:\\Program Files\\PostgreSQL\\17\\data",
+      "C:\\Users\\user\\Documents\\GitHub\\SekaiTalk\\src\\app\\home"
     ]
   }
 }
