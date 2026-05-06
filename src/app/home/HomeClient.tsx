@@ -1,18 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps";
-import { Bell, Settings, User, Flame, Menu, Star } from "lucide-react";
+import { Bell, Settings, User, Flame, Menu, Star, Lock } from "lucide-react";
+import cities from "@/lib/cities";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const worldAtlas = require("world-atlas/countries-50m.json");
 
-const CITIES: { name: string; coordinates: [number, number] }[] = [
-  { name: "Tokyo", coordinates: [139.6917, 35.6895] },
-  { name: "Osaka", coordinates: [135.5023, 34.6937] },
-  { name: "Kyoto", coordinates: [135.7681, 35.0116] },
-];
+type UserStats = {
+  xp: number; yens: number; level: number;
+  xpInLevel: number; xpNeeded: number | null; percent: number;
+};
+
+const CITY_LIST = Object.entries(cities).map(([slug, data]) => ({
+  slug,
+  name: data.name,
+  coordinates: [data.center[1], data.center[0]] as [number, number], // [lng, lat] for react-simple-maps
+  levelRequired: data.levelRequired,
+}));
 
 const SIDEBAR_ITEMS = ["Placeholder 1", "Placeholder 2", "Placeholder 3"];
 
@@ -37,6 +44,14 @@ function CompassRose() {
 export default function HomeClient() {
   const router = useRouter();
   const [hoveredCity, setHoveredCity] = useState<string | null>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
+
+  useEffect(() => {
+    fetch("/api/user/stats")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setUserStats(data); })
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">
@@ -45,6 +60,32 @@ export default function HomeClient() {
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-100 px-6">
         <span className="text-xl font-bold tracking-tight text-gray-900">SekaiTalk</span>
         <div className="flex items-center gap-5 text-gray-400">
+
+          {/* Level + XP bar */}
+          {userStats && (
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-bold text-violet-700">
+                Nv.{userStats.level}
+              </span>
+              <div className="flex flex-col gap-0.5">
+                <div className="h-1.5 w-20 rounded-full bg-gray-100 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-violet-500 transition-all duration-700"
+                    style={{ width: `${userStats.percent}%` }}
+                  />
+                </div>
+                <span className="text-[9px] text-gray-400 text-right leading-none">
+                  {userStats.xpInLevel}/{userStats.xpNeeded ?? "MAX"} XP
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Yens */}
+          {userStats !== null && (
+            <span className="text-sm font-semibold text-yellow-600">¥{userStats.yens}</span>
+          )}
+
           <button className="flex items-center gap-1.5 transition-colors hover:text-orange-400">
             <Flame className="h-5 w-5 text-orange-300" />
             <span className="text-sm font-semibold text-gray-600">0</span>
@@ -187,18 +228,20 @@ export default function HomeClient() {
               }
             </Geographies>
 
-            {CITIES.map((city) => {
+            {CITY_LIST.map((city) => {
               const isHovered = hoveredCity === city.name;
+              const isLocked  = userStats !== null && city.levelRequired > userStats.level;
+
               return (
                 <Marker
                   key={city.name}
                   coordinates={city.coordinates}
                   onMouseEnter={() => setHoveredCity(city.name)}
                   onMouseLeave={() => setHoveredCity(null)}
-                  onClick={() => router.push(`/home/${city.name.toLowerCase()}`)}
+                  onClick={() => { if (!isLocked) router.push(`/home/${city.slug}`); }}
                 >
-                  {/* Animated ping on hover */}
-                  {isHovered && (
+                  {/* Animated ping on hover (unlocked only) */}
+                  {isHovered && !isLocked && (
                     <circle
                       r={26}
                       fill="none"
@@ -213,8 +256,20 @@ export default function HomeClient() {
                   {/* Halo */}
                   <circle
                     r={isHovered ? 19 : 16}
-                    fill={isHovered ? "rgba(124,58,237,0.1)" : "rgba(255,255,255,0.15)"}
-                    stroke={isHovered ? "rgba(124,58,237,0.3)" : "rgba(255,255,255,0.3)"}
+                    fill={
+                      isLocked
+                        ? "rgba(100,100,120,0.15)"
+                        : isHovered
+                        ? "rgba(124,58,237,0.1)"
+                        : "rgba(255,255,255,0.15)"
+                    }
+                    stroke={
+                      isLocked
+                        ? "rgba(150,150,170,0.25)"
+                        : isHovered
+                        ? "rgba(124,58,237,0.3)"
+                        : "rgba(255,255,255,0.3)"
+                    }
                     strokeWidth={1}
                     style={{ transition: "all 0.25s ease" }}
                   />
@@ -222,28 +277,44 @@ export default function HomeClient() {
                   {/* Main marker */}
                   <circle
                     r={11}
-                    fill={isHovered ? "white" : "rgba(255,255,255,0.92)"}
-                    stroke={isHovered ? "#7c3aed" : "#2d3748"}
+                    fill={isLocked ? "rgba(80,80,100,0.7)" : isHovered ? "white" : "rgba(255,255,255,0.92)"}
+                    stroke={isLocked ? "#666" : isHovered ? "#7c3aed" : "#2d3748"}
                     strokeWidth={2}
                     style={{
-                      cursor: "pointer",
+                      cursor: isLocked ? "default" : "pointer",
                       transition: "all 0.25s ease",
                       filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.25))",
                     }}
                   />
 
-                  {/* Center dot */}
-                  <circle
-                    r={isHovered ? 5 : 3.5}
-                    fill={isHovered ? "#7c3aed" : "#1a202c"}
-                    style={{ cursor: "pointer", transition: "all 0.25s ease" }}
-                  />
+                  {/* Lock icon (locked) or center dot (unlocked) */}
+                  {isLocked ? (
+                    <text
+                      textAnchor="middle"
+                      dy="4"
+                      style={{ fontSize: "10px", userSelect: "none", pointerEvents: "none" }}
+                    >
+                      🔒
+                    </text>
+                  ) : (
+                    <circle
+                      r={isHovered ? 5 : 3.5}
+                      fill={isHovered ? "#7c3aed" : "#1a202c"}
+                      style={{ cursor: "pointer", transition: "all 0.25s ease" }}
+                    />
+                  )}
 
                   {/* Label pill */}
                   <rect
                     x={-32} y={-44}
                     width={64} height={18}
-                    fill={isHovered ? "rgba(124,58,237,0.9)" : "rgba(29,36,50,0.75)"}
+                    fill={
+                      isLocked
+                        ? "rgba(60,60,80,0.8)"
+                        : isHovered
+                        ? "rgba(124,58,237,0.9)"
+                        : "rgba(29,36,50,0.75)"
+                    }
                     rx={9}
                     style={{
                       transition: "all 0.25s ease",
@@ -251,14 +322,14 @@ export default function HomeClient() {
                     }}
                   />
 
-                  {/* City name inside pill */}
+                  {/* City name */}
                   <text
                     textAnchor="middle"
                     y={-31}
                     style={{
                       fontSize: "9.5px",
                       fontWeight: "600",
-                      fill: "white",
+                      fill: isLocked ? "rgba(180,180,200,0.7)" : "white",
                       pointerEvents: "none",
                       userSelect: "none",
                       fontFamily: "inherit",
@@ -267,6 +338,28 @@ export default function HomeClient() {
                   >
                     {city.name.toUpperCase()}
                   </text>
+
+                  {/* "Niveau X requis" tooltip on hover for locked cities */}
+                  {isHovered && isLocked && (
+                    <>
+                      <rect x={-44} y={14} width={88} height={18} fill="rgba(30,10,60,0.92)" rx={9} />
+                      <text
+                        textAnchor="middle"
+                        y={27}
+                        style={{
+                          fontSize: "8.5px",
+                          fontWeight: "600",
+                          fill: "#c084fc",
+                          pointerEvents: "none",
+                          userSelect: "none",
+                          fontFamily: "inherit",
+                          letterSpacing: "0.3px",
+                        }}
+                      >
+                        Niveau {city.levelRequired} requis
+                      </text>
+                    </>
+                  )}
                 </Marker>
               );
             })}

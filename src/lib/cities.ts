@@ -13,8 +13,8 @@ export type CityData = {
   center: [number, number];
   zoom: number;
   pois: POI[];
-  mapImage?: string; // chemin vers une carte illustrée (remplace Leaflet si défini)
-  // bornes géo de l'image illustrée pour le mapping lat/lng → %
+  levelRequired: number; // niveau minimum pour accéder à la ville
+  mapImage?: string;
   mapBounds?: { latMax: number; latMin: number; lngMin: number; lngMax: number };
 };
 
@@ -23,6 +23,7 @@ const cities: Record<string, CityData> = {
     name: "Tokyo",
     center: [35.6762, 139.6903],
     zoom: 14,
+    levelRequired: 1,
     mapImage: "/maps/tokyo.png",
     mapBounds: { latMax: 35.754, latMin: 35.600, lngMin: 139.679, lngMax: 139.830 },
     pois: [
@@ -46,6 +47,7 @@ const cities: Record<string, CityData> = {
     name: "Osaka",
     center: [34.6937, 135.5023],
     zoom: 14,
+    levelRequired: 2,
     pois: [
       { id: "namba-station",    name: "Gare de Namba",       type: "station",  lat: 34.6623, lng: 135.5019 },
       { id: "umeda-station",    name: "Gare d'Umeda",        type: "station",  lat: 34.7028, lng: 135.4958 },
@@ -62,6 +64,7 @@ const cities: Record<string, CityData> = {
     name: "Kyoto",
     center: [35.0116, 135.7681],
     zoom: 14,
+    levelRequired: 3,
     pois: [
       { id: "kyoto-station",    name: "Gare de Kyoto",        type: "station",  lat: 34.9859, lng: 135.7588 },
       { id: "fushimi-inari",    name: "Fushimi Inari",        type: "temple",   lat: 34.9671, lng: 135.7727 },

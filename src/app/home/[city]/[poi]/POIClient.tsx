@@ -2,30 +2,45 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Mic, MicOff, Loader2, Pause, Menu, Star } from "lucide-react";
+import { Mic, MicOff, Loader2, ArrowLeft } from "lucide-react";
 import cities from "@/lib/cities";
 
-type Message   = { role: "user" | "assistant"; content: string };
-type Word      = { furigana: string; jp: string; romaji: string; fr: string };
-type AIReply   = { reply: string; translation: string; romaji: string; words: Word[]; suggestions: string[] };
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type Message  = { role: "user" | "assistant"; content: string };
+type Word     = { furigana: string; jp: string; romaji: string; fr: string };
+type AIReply  = { reply: string; translation: string; words: Word[]; suggestions: string[] };
+
 type Character = {
   id: string; poiId: string; name: string; nameJp: string; role: string;
   image: string; backgroundImage: string; systemPrompt: string;
   greetingMessage: string; isFriendable: boolean;
 };
 
-const MEMORY_GOAL = 10;
+type TaskChoice = { id: string; text: string; isCorrect: boolean; order: number };
+type QuestTask  = { id: string; order: number; instruction: string; aiContext: string | null; choices: TaskChoice[] };
+type QuestData  = {
+  id: string; title: string; description: string | null;
+  tasks: QuestTask[];
+  userProgress: { id: string; status: string; taskProgress: { taskId: string; status: string }[] }[];
+};
+
+type ActiveQuest = {
+  questId: string;
+  questProgressId: string | null;
+  questTitle: string;
+  tasks: QuestTask[];
+  currentTaskIndex: number;
+};
+
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const WORD_COLORS = [
-  "text-pink-400",
-  "text-cyan-400",
-  "text-violet-400",
-  "text-yellow-400",
-  "text-emerald-400",
-  "text-orange-400",
-  "text-blue-400",
-  "text-rose-400",
+  "text-pink-400", "text-cyan-400", "text-violet-400", "text-yellow-400",
+  "text-emerald-400", "text-orange-400", "text-blue-400", "text-rose-400",
 ];
+
+// ── WordRow ───────────────────────────────────────────────────────────────────
 
 function WordRow({ words }: { words: Word[] }) {
   return (
@@ -34,22 +49,10 @@ function WordRow({ words }: { words: Word[] }) {
         const color = WORD_COLORS[i % WORD_COLORS.length];
         return (
           <div key={i} className="flex flex-col items-center gap-[3px]">
-            {/* Furigana */}
-            <span className={`text-[11px] font-medium min-h-[16px] ${color} opacity-80`}>
-              {w.furigana}
-            </span>
-            {/* Kanji */}
-            <span className="text-[24px] font-bold leading-none text-white tracking-wide">
-              {w.jp}
-            </span>
-            {/* Romaji */}
-            <span className={`text-[11px] font-semibold underline underline-offset-2 decoration-dotted ${color}`}>
-              {w.romaji}
-            </span>
-            {/* Traduction */}
-            <span className="text-[10px] text-white/45 mt-0.5">
-              {w.fr}
-            </span>
+            <span className={`text-[11px] font-medium min-h-[16px] ${color} opacity-80`}>{w.furigana}</span>
+            <span className="text-[24px] font-bold leading-none text-white tracking-wide">{w.jp}</span>
+            <span className={`text-[11px] font-semibold underline underline-offset-2 decoration-dotted ${color}`}>{w.romaji}</span>
+            <span className="text-[10px] text-white/45 mt-0.5">{w.fr}</span>
           </div>
         );
       })}
@@ -57,45 +60,59 @@ function WordRow({ words }: { words: Word[] }) {
   );
 }
 
-export default function POIClient({ citySlug, poiId }: { citySlug: string; poiId: string }) {
+// ── Main ──────────────────────────────────────────────────────────────────────
+
+export default function POIClient({
+  citySlug, poiId, questId,
+}: {
+  citySlug: string; poiId: string; questId?: string;
+}) {
   const router = useRouter();
   const city   = cities[citySlug];
-  const poi    = city?.pois.find(p => p.id === poiId);
 
-  const [character, setCharacter]       = useState<Character | null>(null);
-  const [notFound, setNotFound]         = useState(false);
+  // ── State ──
+  const [character, setCharacter]     = useState<Character | null>(null);
+  const [notFound, setNotFound]       = useState(false);
+  const [activeQuest, setActiveQuest] = useState<ActiveQuest | null>(null);
+  const [showQuiz, setShowQuiz]       = useState(false);
+  const [choiceResult, setChoiceResult] = useState<{ id: string; correct: boolean } | null>(null);
+  const [questReward, setQuestReward] = useState<{ xpGained: number; yensGained: number; leveledUp: boolean; newLevel: number; isReplay: boolean } | null>(null);
+
   const [messages, setMessages]         = useState<Message[]>([]);
   const [currentReply, setCurrentReply] = useState<AIReply | null>(null);
   const [lastUserMsg, setLastUserMsg]   = useState("");
-  const [memories, setMemories]         = useState(0);
-  const [isRecording, setIsRecording]   = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
   const [isLoading, setIsLoading]       = useState(false);
   const [isSpeaking, setIsSpeaking]     = useState(false);
-  const [micError, setMicError]         = useState<string | null>(null);
-  const [devices, setDevices]           = useState<MediaDeviceInfo[]>([]);
-  const [selectedDevice, setSelectedDevice] = useState<string>("");
   const [showTip, setShowTip]           = useState(true);
 
-  const messagesRef = useRef<Message[]>([]);
-  const systemRef   = useRef("");
-  const recorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef   = useRef<Blob[]>([]);
-  const streamRef   = useRef<MediaStream | null>(null);
+  const [isRecording, setIsRecording]       = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [micError, setMicError]             = useState<string | null>(null);
+  const [devices, setDevices]               = useState<MediaDeviceInfo[]>([]);
+  const [selectedDevice, setSelectedDevice] = useState<string>("");
+
+  // ── Refs ──
+  const messagesRef    = useRef<Message[]>([]);
+  const systemRef      = useRef("");
+  const activeQuestRef = useRef<ActiveQuest | null>(null);
+  const recorderRef    = useRef<MediaRecorder | null>(null);
+  const chunksRef      = useRef<Blob[]>([]);
+  const streamRef      = useRef<MediaStream | null>(null);
 
   useEffect(() => { messagesRef.current = messages; }, [messages]);
+  useEffect(() => { activeQuestRef.current = activeQuest; }, [activeQuest]);
 
+  // ── Load character + quests ──
   useEffect(() => {
-    fetch(`/api/characters/${poiId}`)
-      .then(r => r.ok ? r.json() : Promise.reject())
-      .then((c: Character) => {
+    Promise.all([
+      fetch(`/api/characters/${poiId}`).then(r => r.ok ? r.json() : Promise.reject()),
+      fetch(`/api/quests/poi/${poiId}`).then(r => r.ok ? r.json() : []),
+    ])
+      .then(([c, q]: [Character, QuestData[]]) => {
         setCharacter(c);
         systemRef.current = c.systemPrompt;
-        setCurrentReply({
-          reply: c.greetingMessage, translation: "", romaji: "", words: [],
-          suggestions: ["Bonjour !", "Comment ça va ?", "Qu'est-ce que vous recommandez ?"],
-        });
-        speak(c.greetingMessage);
+
+        // Mic setup
         navigator.mediaDevices.getUserMedia({ audio: true })
           .then(s => { s.getTracks().forEach(t => t.stop()); return navigator.mediaDevices.enumerateDevices(); })
           .then(devs => {
@@ -103,12 +120,69 @@ export default function POIClient({ citySlug, poiId }: { citySlug: string; poiId
             setDevices(mics);
             if (mics.length) setSelectedDevice(mics[0].deviceId);
           }).catch(() => {});
+
+        // Init quest if questId provided
+        let initQuest: ActiveQuest | null = null;
+        if (questId) {
+          const quest = q.find((qd: QuestData) => qd.id === questId);
+          if (quest) {
+            const existing = quest.userProgress?.[0];
+            const isCompleted  = existing?.status === "COMPLETED";
+            const isInProgress = existing?.status === "IN_PROGRESS";
+
+            // Replay and new quests start at task 0; only resume picks up mid-way
+            const currentTaskIndex = isInProgress
+              ? (existing?.taskProgress?.filter((tp: { status: string }) => tp.status === "COMPLETED").length ?? 0)
+              : 0;
+
+            initQuest = {
+              questId: quest.id,
+              questProgressId: existing?.id ?? null,
+              questTitle: quest.title,
+              tasks: quest.tasks,
+              currentTaskIndex,
+            };
+
+            // Create DB record for new quests, reset it for replays
+            if (!existing || isCompleted) {
+              fetch(`/api/quests/${quest.id}/start`, { method: "POST" })
+                .then(r => r.ok ? r.json() : null)
+                .then(progress => {
+                  if (progress) {
+                    setActiveQuest(prev => prev ? { ...prev, questProgressId: progress.id } : null);
+                    activeQuestRef.current = activeQuestRef.current
+                      ? { ...activeQuestRef.current, questProgressId: progress.id }
+                      : null;
+                  }
+                })
+                .catch(() => {});
+            }
+          }
+        }
+
+        setActiveQuest(initQuest);
+        activeQuestRef.current = initQuest;
+
+        // Show greeting
+        setCurrentReply({
+          reply: c.greetingMessage,
+          translation: "", words: [],
+          suggestions: initQuest
+            ? ["Bonjour !", "Excusez-moi…", "Pouvez-vous m'aider ?"]
+            : ["Bonjour !", "Comment ça va ?", "Qu'est-ce que vous recommandez ?"],
+        });
+        speak(c.greetingMessage);
       })
       .catch(() => setNotFound(true));
-    return () => { window.speechSynthesis.cancel(); streamRef.current?.getTracks().forEach(t => t.stop()); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [poiId]);
 
+    return () => {
+      window.speechSynthesis.cancel();
+      streamRef.current?.getTracks().forEach(t => t.stop());
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [poiId, questId]);
+
+  // ── TTS ──
   const speak = useCallback((text: string) => {
     window.speechSynthesis.cancel();
     const utter = new SpeechSynthesisUtterance(text);
@@ -124,6 +198,7 @@ export default function POIClient({ citySlug, poiId }: { citySlug: string; poiId
       : window.speechSynthesis.addEventListener("voiceschanged", go, { once: true });
   }, []);
 
+  // ── Send message ──
   const sendMessage = useCallback(async (text: string) => {
     const t = text.trim(); if (!t) return;
     setLastUserMsg(t);
@@ -131,21 +206,73 @@ export default function POIClient({ citySlug, poiId }: { citySlug: string; poiId
     setMessages(next);
     setIsLoading(true);
     setCurrentReply(null);
+
+    // Inject quest context into system prompt
+    const aq = activeQuestRef.current;
+    let sysPrompt = systemRef.current;
+    if (aq) {
+      const task = aq.tasks[aq.currentTaskIndex];
+      if (task?.aiContext) {
+        sysPrompt += `\n\n[TÂCHE EN COURS ${aq.currentTaskIndex + 1}/${aq.tasks.length}]\n${task.aiContext}`;
+      }
+    }
+
     try {
       const r = await fetch("/api/chat", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next, systemPrompt: systemRef.current }),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: next, systemPrompt: sysPrompt }),
       });
       const d: AIReply = await r.json();
       setMessages(p => [...p, { role: "assistant", content: d.reply }]);
       setCurrentReply(d);
-      setMemories(m => Math.min(m + 1, MEMORY_GOAL));
       speak(d.reply);
     } catch {
-      setCurrentReply({ reply: "Erreur…", translation: "", romaji: "", words: [], suggestions: [] });
+      setCurrentReply({ reply: "Erreur…", translation: "", words: [], suggestions: [] });
     } finally { setIsLoading(false); }
   }, [speak]);
 
+  // ── Complete task ──
+  const handleCompleteTask = useCallback(async () => {
+    const aq = activeQuestRef.current;
+    if (!aq) return;
+
+    const task   = aq.tasks[aq.currentTaskIndex];
+    const isLast = aq.currentTaskIndex + 1 >= aq.tasks.length;
+
+    if (aq.questProgressId) {
+      try {
+        const r = await fetch(`/api/quests/tasks/${task.id}/complete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ questProgressId: aq.questProgressId }),
+        });
+        if (isLast && r.ok) {
+          const data = await r.json();
+          if (data.questCompleted) {
+            setActiveQuest(null);
+            activeQuestRef.current = null;
+            setQuestReward({ xpGained: data.xpGained, yensGained: data.yensGained, leveledUp: data.leveledUp, newLevel: data.newLevel, isReplay: data.isReplay });
+            setTimeout(() => setQuestReward(null), 5000);
+            return;
+          }
+        }
+      } catch { /* silent */ }
+    }
+
+    if (isLast) {
+      setActiveQuest(null);
+      activeQuestRef.current = null;
+      setQuestReward({ xpGained: 0, yensGained: 0, leveledUp: false, newLevel: 1, isReplay: false });
+      setTimeout(() => setQuestReward(null), 5000);
+    } else {
+      const updated: ActiveQuest = { ...aq, currentTaskIndex: aq.currentTaskIndex + 1 };
+      setActiveQuest(updated);
+      activeQuestRef.current = updated;
+    }
+  }, []);
+
+  // ── Transcription ──
   const transcribe = useCallback(async (blob: Blob) => {
     setIsTranscribing(true);
     try {
@@ -158,6 +285,7 @@ export default function POIClient({ citySlug, poiId }: { citySlug: string; poiId
     finally { setIsTranscribing(false); }
   }, [sendMessage]);
 
+  // ── Mic ──
   const toggleMic = useCallback(async () => {
     setMicError(null);
     if (isRecording) {
@@ -186,70 +314,107 @@ export default function POIClient({ citySlug, poiId }: { citySlug: string; poiId
 
   const isBusy = isLoading || isTranscribing;
 
+  // ── Guards ──
   if (notFound) return <div className="flex h-screen items-center justify-center text-gray-400">Personnage introuvable.</div>;
   if (!character) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-violet-400" /></div>;
 
+  // ════════════════════════════════════════════════════════════════════════════
+  // CONVERSATION
+  // ════════════════════════════════════════════════════════════════════════════
   return (
     <div className="relative h-screen w-screen overflow-hidden select-none">
 
-      {/* ── Fond ── */}
+      {/* Background */}
       <div className="absolute inset-0 bg-black">
         <div className="absolute inset-0"
           style={{ backgroundImage: `url(${character.backgroundImage})`, backgroundSize: "cover", backgroundPosition: "center" }} />
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
       </div>
 
-      {/* ── Personnage (droite, collé en bas) ── */}
-      <div className="absolute bottom-0 right-0 z-10 h-full flex items-end pointer-events-none"
-        style={{ width: "52%" }}>
+      {/* Character sprite */}
+      <div className="absolute bottom-0 right-0 z-10 h-full flex items-end pointer-events-none" style={{ width: "52%" }}>
         <img src={character.image} alt={character.name}
           className="h-[92%] w-auto object-contain object-bottom"
           style={{ filter: isSpeaking ? "drop-shadow(0 0 32px rgba(124,58,237,1))" : "drop-shadow(0 0 0px transparent)", transition: "filter .3s" }}
           draggable={false} />
       </div>
 
-      {/* ── Top bar ── */}
+      {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-start justify-between px-5 pt-4">
 
-        {/* Quête */}
-        <div className="flex items-start gap-2 rounded-xl bg-black/60 px-3 py-2.5 backdrop-blur-sm" style={{ maxWidth: 200 }}>
-          <Star className="mt-0.5 h-3.5 w-3.5 shrink-0 text-yellow-400" />
-          <div>
-            <p className="text-[9px] font-bold uppercase tracking-widest text-white/40">Objectif</p>
-            <p className="text-[11px] font-medium text-white/80 leading-snug mt-0.5">
-              Débloque {MEMORY_GOAL} souvenirs avec ce personnage
-            </p>
-            <p className="mt-1 text-[10px] font-bold text-yellow-400">{memories}/{MEMORY_GOAL}</p>
+        {/* Quest HUD or free indicator */}
+        {activeQuest ? (
+          <div className="flex items-start gap-2 rounded-xl bg-black/65 px-3 py-2.5 backdrop-blur-sm border border-yellow-400/20" style={{ maxWidth: 260 }}>
+            <span className="mt-0.5 shrink-0">🎯</span>
+            <div>
+              <p className="text-[9px] font-bold uppercase tracking-widest text-yellow-400/60">
+                {activeQuest.questTitle} — {activeQuest.currentTaskIndex + 1}/{activeQuest.tasks.length}
+              </p>
+              <p className="text-[12px] font-semibold text-white/85 leading-snug mt-0.5">
+                {activeQuest.tasks[activeQuest.currentTaskIndex]?.instruction}
+              </p>
+              <div className="mt-1.5 flex gap-1">
+                {activeQuest.tasks.map((_, i) => (
+                  <div key={i} className={`h-1 rounded-full transition-all duration-500 ${
+                    i < activeQuest.currentTaskIndex ? "w-5 bg-emerald-400"
+                    : i === activeQuest.currentTaskIndex ? "w-5 bg-yellow-400"
+                    : "w-3 bg-white/20"
+                  }`} />
+                ))}
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="rounded-xl bg-black/60 px-3 py-2.5 backdrop-blur-sm">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-white/30">Conversation libre</p>
+            <p className="text-[11px] text-white/50 mt-0.5">{character.name}</p>
+          </div>
+        )}
 
-        {/* Pause */}
-        <button className="flex items-center gap-1.5 rounded-full bg-emerald-500 px-4 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-900/40">
-          <Pause className="h-3 w-3" /> Pause
-        </button>
-
-        {/* Menu */}
-        <button onClick={() => router.push(`/home/${citySlug}`)}
-          className="flex items-center gap-2 rounded-xl bg-black/60 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white/70 backdrop-blur-sm hover:text-white">
-          <Menu className="h-4 w-4" /> Menu
+        {/* Back to city map */}
+        <button
+          onClick={() => { window.speechSynthesis.cancel(); router.push(`/home/${citySlug}`); }}
+          className="flex items-center gap-2 rounded-xl bg-black/60 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white/70 backdrop-blur-sm hover:text-white transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" /> Carte
         </button>
       </div>
 
-      {/* ── Panneau dialogue (bas, centré) ── */}
-      <div className="absolute bottom-[72px] left-1/2 -translate-x-1/2 z-20 flex flex-col gap-2.5"
-        style={{ width: "54%" }}>
-
-        {/* Barre souvenirs */}
-        <div className="flex items-center gap-2">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-white/40">Souvenirs</span>
-          <div className="flex-1 h-1 rounded-full bg-white/15 overflow-hidden">
-            <div className="h-full rounded-full bg-emerald-400 transition-all duration-700"
-              style={{ width: `${(memories / MEMORY_GOAL) * 100}%` }} />
-          </div>
-          <span className="text-[9px] font-bold text-white/40">{memories}/{MEMORY_GOAL}</span>
+      {/* Quest complete reward toast */}
+      {questReward && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 rounded-2xl bg-gray-950/95 border border-white/10 px-6 py-4 shadow-2xl backdrop-blur-md"
+          style={{ minWidth: 260 }}>
+          <p className="text-base font-black text-white">
+            {questReward.isReplay ? "🔄 Quête refaite !" : "🎉 Quête terminée !"}
+          </p>
+          {!questReward.isReplay && (questReward.xpGained > 0 || questReward.yensGained > 0) && (
+            <div className="flex items-center gap-3 mt-0.5">
+              {questReward.xpGained > 0 && (
+                <span className="rounded-full bg-violet-500/25 border border-violet-500/50 px-3 py-0.5 text-xs font-bold text-violet-300">
+                  +{questReward.xpGained} XP
+                </span>
+              )}
+              {questReward.yensGained > 0 && (
+                <span className="rounded-full bg-yellow-500/20 border border-yellow-500/40 px-3 py-0.5 text-xs font-bold text-yellow-300">
+                  +¥{questReward.yensGained}
+                </span>
+              )}
+            </div>
+          )}
+          {questReward.leveledUp && (
+            <p className="text-xs font-bold text-violet-400 mt-0.5">
+              ✨ Niveau {questReward.newLevel} atteint !
+            </p>
+          )}
+          {questReward.isReplay && (
+            <p className="text-[11px] text-white/40 mt-0.5">Aucune récompense pour la reprise</p>
+          )}
         </div>
+      )}
 
-        {/* Tip */}
+      {/* Dialogue panel */}
+      <div className="absolute bottom-[72px] left-1/2 -translate-x-1/2 z-20 flex flex-col gap-2.5" style={{ width: "54%" }}>
+
         {showTip && (
           <div className="flex items-center justify-between rounded-lg bg-black/50 px-3 py-2 backdrop-blur-sm border border-white/8">
             <p className="text-[10px] text-white/60">
@@ -259,7 +424,6 @@ export default function POIClient({ citySlug, poiId }: { citySlug: string; poiId
           </div>
         )}
 
-        {/* Nom du personnage */}
         <div className="flex items-center gap-2">
           <div className="h-7 w-7 rounded-full bg-violet-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
             {character.name[0]}
@@ -268,12 +432,8 @@ export default function POIClient({ citySlug, poiId }: { citySlug: string; poiId
           <span className="text-[11px] text-white/35 font-medium">{character.nameJp}</span>
         </div>
 
-        {/* Message utilisateur */}
-        {lastUserMsg && (
-          <p className="text-xs text-white/40 italic pl-1">&gt; {lastUserMsg}</p>
-        )}
+        {lastUserMsg && <p className="text-xs text-white/40 italic pl-1">&gt; {lastUserMsg}</p>}
 
-        {/* Bulle de réponse */}
         <div className="rounded-2xl bg-black/65 p-5 backdrop-blur-md border border-white/8 shadow-2xl">
           {isBusy ? (
             <div className="flex items-center gap-3 text-white/40 py-2">
@@ -295,9 +455,7 @@ export default function POIClient({ citySlug, poiId }: { citySlug: string; poiId
                 <>
                   <p className="text-xl font-bold text-white leading-relaxed">{currentReply.reply}</p>
                   {currentReply.translation && (
-                    <p className="text-xs text-white/40 border-t border-white/10 pt-3 italic">
-                      {currentReply.translation}
-                    </p>
+                    <p className="text-xs text-white/40 border-t border-white/10 pt-3 italic">{currentReply.translation}</p>
                   )}
                 </>
               )}
@@ -305,13 +463,10 @@ export default function POIClient({ citySlug, poiId }: { citySlug: string; poiId
           ) : null}
         </div>
 
-        {/* Erreur mic */}
         {micError && <p className="text-[10px] text-red-400 pl-1">{micError}</p>}
 
-        {/* Sélecteur micro (si plusieurs) */}
         {devices.length > 1 && (
-          <select value={selectedDevice} onChange={e => setSelectedDevice(e.target.value)}
-            disabled={isRecording}
+          <select value={selectedDevice} onChange={e => setSelectedDevice(e.target.value)} disabled={isRecording}
             className="w-full rounded-lg bg-black/50 border border-white/10 px-3 py-1.5 text-[11px] text-white/50 outline-none backdrop-blur-sm">
             {devices.map(d => (
               <option key={d.deviceId} value={d.deviceId}>{d.label || `Micro ${d.deviceId.slice(0, 8)}`}</option>
@@ -320,8 +475,16 @@ export default function POIClient({ citySlug, poiId }: { citySlug: string; poiId
         )}
       </div>
 
-      {/* ── Suggestions (bas centre) ── */}
-      <div className="absolute bottom-5 left-0 right-0 z-30 flex justify-center gap-2 px-4">
+      {/* Suggestions + quest verify */}
+      <div className="absolute bottom-5 left-0 right-0 z-30 flex justify-center items-center gap-2 px-4">
+        {activeQuest && currentReply && !isBusy && (
+          <button
+            onClick={() => setShowQuiz(true)}
+            className="flex items-center gap-1.5 rounded-full border border-yellow-400/50 bg-yellow-400/10 px-4 py-2.5 text-xs font-bold text-yellow-400 backdrop-blur-md hover:bg-yellow-400/20 transition-all shrink-0"
+          >
+            🎯 Vérifier
+          </button>
+        )}
         {currentReply?.suggestions?.map((s, i) => (
           <button key={i} onClick={() => !isBusy && sendMessage(s)} disabled={isBusy}
             className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/60 px-4 py-2.5 text-xs font-medium text-white/80 backdrop-blur-md transition-all hover:border-violet-500/60 hover:bg-violet-900/50 hover:text-white active:scale-95 disabled:opacity-40">
@@ -331,7 +494,7 @@ export default function POIClient({ citySlug, poiId }: { citySlug: string; poiId
         ))}
       </div>
 
-      {/* ── Micro (bas droite) ── */}
+      {/* Mic */}
       <div className="absolute bottom-5 right-6 z-30 flex flex-col items-center gap-1.5">
         <button onClick={toggleMic} disabled={isBusy}
           className={`flex h-14 w-14 items-center justify-center rounded-full shadow-xl transition-all active:scale-95 disabled:opacity-40 ${
@@ -341,10 +504,66 @@ export default function POIClient({ citySlug, poiId }: { citySlug: string; poiId
           }`}>
           {isRecording ? <MicOff className="h-6 w-6 text-white" /> : <Mic className="h-6 w-6 text-white" />}
         </button>
-        <p className="text-[9px] font-medium text-white/35 text-center">
-          {isRecording ? "Stop" : "Micro"}
-        </p>
+        <p className="text-[9px] font-medium text-white/35">{isRecording ? "Stop" : "Micro"}</p>
       </div>
+
+      {/* ── Quiz modal ── */}
+      {showQuiz && activeQuest && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4"
+          onClick={e => { if (e.target === e.currentTarget) { setShowQuiz(false); setChoiceResult(null); } }}
+        >
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-gray-950/95 p-6 shadow-2xl">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-yellow-400/70 mb-1">
+              🎯 Tâche {activeQuest.currentTaskIndex + 1}/{activeQuest.tasks.length}
+            </p>
+            <h3 className="text-base font-bold text-white mb-1">
+              {activeQuest.tasks[activeQuest.currentTaskIndex]?.instruction}
+            </h3>
+            <p className="text-xs text-white/40 mb-5">Que t&apos;a dit {character.name} ?</p>
+
+            <div className="flex flex-col gap-2.5">
+              {activeQuest.tasks[activeQuest.currentTaskIndex]?.choices.map(choice => {
+                const isSelected  = choiceResult?.id === choice.id;
+                const showCorrect = !!choiceResult && choiceResult.correct && choice.isCorrect;
+
+                const style = !choiceResult
+                  ? "border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/25 cursor-pointer"
+                  : isSelected && choiceResult.correct
+                  ? "border-emerald-500 bg-emerald-500/20"
+                  : isSelected && !choiceResult.correct
+                  ? "border-red-500 bg-red-500/15"
+                  : showCorrect
+                  ? "border-emerald-500/50 bg-emerald-500/10"
+                  : "border-white/5 bg-white/3 opacity-40";
+
+                return (
+                  <button key={choice.id} disabled={!!choiceResult}
+                    onClick={() => {
+                      if (choiceResult) return;
+                      const correct = choice.isCorrect;
+                      setChoiceResult({ id: choice.id, correct });
+                      if (correct) {
+                        setTimeout(() => { setShowQuiz(false); setChoiceResult(null); handleCompleteTask(); }, 1400);
+                      } else {
+                        setTimeout(() => setChoiceResult(null), 1200);
+                      }
+                    }}
+                    className={`w-full rounded-xl border px-4 py-3 text-left text-sm font-medium text-white transition-all ${style}`}
+                  >
+                    <span className="flex items-center gap-2">
+                      {isSelected && choiceResult?.correct  && <span>✅</span>}
+                      {isSelected && !choiceResult?.correct && <span>❌</span>}
+                      {showCorrect && !isSelected           && <span>✅</span>}
+                      {choice.text}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

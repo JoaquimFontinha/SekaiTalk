@@ -21,8 +21,11 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts Account[]
-  sessions Session[]
+  xp            Int                 @default(0)
+  yens          Int                 @default(0)
+  accounts      Account[]
+  sessions      Session[]
+  questProgress UserQuestProgress[]
 }
 
 model Account {
@@ -75,4 +78,86 @@ model Character {
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+// ── Quest system ──────────────────────────────────────────────────────────────
+
+model Quest {
+  id           String              @id @default(cuid())
+  poiId        String
+  title        String
+  description  String?
+  order        Int                 @default(0)
+  isActive     Boolean             @default(true)
+  xpReward     Int                 @default(0)
+  yenReward    Int                 @default(0)
+  tasks        QuestTask[]
+  userProgress UserQuestProgress[]
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([poiId])
+}
+
+model QuestTask {
+  id           String             @id @default(cuid())
+  questId      String
+  quest        Quest              @relation(fields: [questId], references: [id], onDelete: Cascade)
+  order        Int
+  instruction  String
+  aiContext    String?            @db.Text
+  choices      TaskChoice[]
+  userProgress UserTaskProgress[]
+  createdAt    DateTime           @default(now())
+
+  @@index([questId])
+}
+
+model TaskChoice {
+  id        String    @id @default(cuid())
+  taskId    String
+  task      QuestTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  text      String
+  isCorrect Boolean   @default(false)
+  order     Int       @default(0)
+
+  @@index([taskId])
+}
+
+model UserQuestProgress {
+  id           String             @id @default(cuid())
+  userId       String
+  user         User               @relation(fields: [userId], references: [id])
+  questId      String
+  quest        Quest              @relation(fields: [questId], references: [id])
+  status           QuestStatus        @default(IN_PROGRESS)
+  startedAt        DateTime           @default(now())
+  completedAt      DateTime?
+  firstCompletedAt DateTime?
+  taskProgress     UserTaskProgress[]
+
+  @@unique([userId, questId])
+  @@index([userId])
+}
+
+model UserTaskProgress {
+  id                  String            @id @default(cuid())
+  userQuestProgressId String
+  userQuestProgress   UserQuestProgress @relation(fields: [userQuestProgressId], references: [id], onDelete: Cascade)
+  taskId              String
+  task                QuestTask         @relation(fields: [taskId], references: [id])
+  status              TaskStatus        @default(PENDING)
+  completedAt         DateTime?
+
+  @@unique([userQuestProgressId, taskId])
+}
+
+enum QuestStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TaskStatus {
+  PENDING
+  COMPLETED
 }

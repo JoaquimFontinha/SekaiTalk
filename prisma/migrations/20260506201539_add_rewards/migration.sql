@@ -1,0 +1,10 @@
+-- AlterTable
+ALTER TABLE "Quest" ADD COLUMN     "xpReward" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "yenReward" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "xp" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "yens" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "UserQuestProgress" ADD COLUMN     "firstCompletedAt" TIMESTAMP(3);
