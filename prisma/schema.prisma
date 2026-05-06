@@ -74,6 +74,7 @@ model Character {
   backgroundImage String
   systemPrompt    String   @db.Text
   greetingMessage String
+  voiceId         String?
   isFriendable    Boolean  @default(false)
   isActive        Boolean  @default(true)
   createdAt       DateTime @default(now())

@@ -3,9 +3,17 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
+  // ElevenLabs voice IDs (eleven_multilingual_v2)
+  // Tanaka Kenji  → "Liam"  — male, calm
+  // Yamamoto Hana → "Matilda" — female, warm
+  // Suzuki Taro   → "Daniel" — male, authoritative
+  const VOICE_KENJI   = "TX3LPaxmHKxFdv7VOQHJ"; // Liam
+  const VOICE_HANA    = "XrExE9yKIg1WjnnlVkGX"; // Matilda
+  const VOICE_TARO    = "onwK4e9ZLuTAKqWW03F9"; // Daniel
+
   await prisma.character.upsert({
     where: { poiId: "konbini-shinjuku" },
-    update: {},
+    update: { voiceId: VOICE_KENJI },
     create: {
       poiId: "konbini-shinjuku",
       name: "Tanaka Kenji",
@@ -13,6 +21,7 @@ async function main() {
       role: "Vendeur de konbini",
       image: "/characters/konbini_vendor.png",
       backgroundImage: "/backgrounds/konbini.jpg",
+      voiceId: VOICE_KENJI,
       systemPrompt: `あなたは新宿のコンビニで働く田中健二です。
 あなたは親切で少し内気な若い男性で、毎日同じお客さんたちと話すのを楽しんでいます。
 あなたは必ず日本語だけで話してください。相手が英語やフランス語で話しかけてきても、日本語で答えてください。
@@ -27,7 +36,7 @@ async function main() {
 
   await prisma.character.upsert({
     where: { poiId: "konbini-shibuya" },
-    update: {},
+    update: { voiceId: VOICE_HANA },
     create: {
       poiId: "konbini-shibuya",
       name: "Yamamoto Hana",
@@ -35,6 +44,7 @@ async function main() {
       role: "Caissière de konbini",
       image: "/characters/konbini_vendor.png",
       backgroundImage: "/backgrounds/konbini.jpg",
+      voiceId: VOICE_HANA,
       systemPrompt: `あなたは渋谷のコンビニで働く山本花です。
 あなたは明るくて元気な若い女性で、お客さんと話すのが大好きです。
 あなたは必ず日本語だけで話してください。相手が英語やフランス語で話しかけてきても、日本語で答えてください。
@@ -49,7 +59,7 @@ async function main() {
 
   await prisma.character.upsert({
     where: { poiId: "konbini-kyoto" },
-    update: {},
+    update: { voiceId: VOICE_TARO },
     create: {
       poiId: "konbini-kyoto",
       name: "Suzuki Taro",
@@ -57,6 +67,7 @@ async function main() {
       role: "Gérant de konbini",
       image: "/characters/konbini_vendor.png",
       backgroundImage: "/backgrounds/konbini.jpg",
+      voiceId: VOICE_TARO,
       systemPrompt: `あなたは京都のコンビニを経営している鈴木太郎です。
 あなたは落ち着いた中年の男性で、京都の文化や歴史についてよく知っています。
 あなたは必ず日本語だけで話してください。相手が英語やフランス語で話しかけてきても、日本語で答えてください。

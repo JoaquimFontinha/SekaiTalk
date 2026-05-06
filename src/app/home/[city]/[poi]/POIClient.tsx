@@ -14,7 +14,7 @@ type AIReply  = { reply: string; translation: string; words: Word[]; suggestions
 type Character = {
   id: string; poiId: string; name: string; nameJp: string; role: string;
   image: string; backgroundImage: string; systemPrompt: string;
-  greetingMessage: string; isFriendable: boolean;
+  greetingMessage: string; isFriendable: boolean; voiceId: string | null;
 };
 
 type TaskChoice = { id: string; text: string; isCorrect: boolean; order: number };
@@ -98,19 +98,25 @@ export default function POIClient({
   const recorderRef    = useRef<MediaRecorder | null>(null);
   const chunksRef      = useRef<Blob[]>([]);
   const streamRef      = useRef<MediaStream | null>(null);
+  const audioRef       = useRef<HTMLAudioElement | null>(null);
+  const voiceIdRef     = useRef<string | null>(null);
 
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { activeQuestRef.current = activeQuest; }, [activeQuest]);
 
   // ── Load character + quests ──
   useEffect(() => {
+    let cancelled = false;
+
     Promise.all([
       fetch(`/api/characters/${poiId}`).then(r => r.ok ? r.json() : Promise.reject()),
       fetch(`/api/quests/poi/${poiId}`).then(r => r.ok ? r.json() : []),
     ])
       .then(([c, q]: [Character, QuestData[]]) => {
+        if (cancelled) return;
         setCharacter(c);
         systemRef.current = c.systemPrompt;
+        voiceIdRef.current = c.voiceId ?? null;
 
         // Mic setup
         navigator.mediaDevices.getUserMedia({ audio: true })
@@ -176,6 +182,8 @@ export default function POIClient({
       .catch(() => setNotFound(true));
 
     return () => {
+      cancelled = true;
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
       window.speechSynthesis.cancel();
       streamRef.current?.getTracks().forEach(t => t.stop());
     };
@@ -183,19 +191,56 @@ export default function POIClient({
   }, [poiId, questId]);
 
   // ── TTS ──
-  const speak = useCallback((text: string) => {
+  const speak = useCallback(async (text: string) => {
+    // Stop whatever is currently playing
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(text);
-    utter.lang = "ja-JP"; utter.rate = 0.85;
-    const go = () => {
-      const jp = window.speechSynthesis.getVoices().find(v => v.lang.startsWith("ja"));
-      if (jp) utter.voice = jp;
-      utter.onstart = () => setIsSpeaking(true);
-      utter.onend = utter.onerror = () => setIsSpeaking(false);
-      window.speechSynthesis.speak(utter);
-    };
-    window.speechSynthesis.getVoices().length ? go()
-      : window.speechSynthesis.addEventListener("voiceschanged", go, { once: true });
+
+    const vId = voiceIdRef.current;
+
+    if (!vId) {
+      // Browser TTS fallback (no ElevenLabs key or no voiceId)
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = "ja-JP"; utter.rate = 0.85;
+      const go = () => {
+        const jp = window.speechSynthesis.getVoices().find(v => v.lang.startsWith("ja"));
+        if (jp) utter.voice = jp;
+        utter.onstart = () => setIsSpeaking(true);
+        utter.onend = utter.onerror = () => setIsSpeaking(false);
+        window.speechSynthesis.speak(utter);
+      };
+      window.speechSynthesis.getVoices().length ? go()
+        : window.speechSynthesis.addEventListener("voiceschanged", go, { once: true });
+      return;
+    }
+
+    // ElevenLabs TTS
+    setIsSpeaking(true);
+    try {
+      const r = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, voiceId: vId }),
+      });
+      if (!r.ok) throw new Error("TTS failed");
+      const blob = await r.blob();
+      const url  = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(url);
+        if (audioRef.current === audio) audioRef.current = null;
+      };
+      audio.onerror = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(url);
+        if (audioRef.current === audio) audioRef.current = null;
+      };
+      await audio.play();
+    } catch {
+      setIsSpeaking(false);
+    }
   }, []);
 
   // ── Send message ──
