@@ -17,7 +17,10 @@
     ],
     "additionalDirectories": [
       "C:\\Program Files\\PostgreSQL\\17\\data",
-      "C:\\Users\\user\\Documents\\GitHub\\SekaiTalk\\src\\app\\home"
+      "C:\\Users\\user\\Documents\\GitHub\\SekaiTalk\\src\\app\\home",
+      "c:\\Users\\user\\Documents\\GitHub\\SekaiTalk\\public",
+      "c:\\Users\\user\\Documents\\GitHub\\SekaiTalk\\src\\app\\api\\characters",
+      "c:\\Users\\user\\Documents\\GitHub\\SekaiTalk\\src\\app\\home\\[city]"
     ]
   }
 }

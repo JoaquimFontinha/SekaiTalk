@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Bell, Settings, User, Flame, Menu, Star, ArrowLeft } from "lucide-react";
@@ -35,9 +35,15 @@ function createMarkerIcon(name: string, type: POIType) {
   });
 }
 
+function MapClickBlocker() {
+  useMapEvents({});
+  return null;
+}
+
 export default function CityClient({ citySlug }: { citySlug: string }) {
   const router = useRouter();
   const [activeType, setActiveType] = useState<POIType | null>(null);
+  const [loadingPoiId, setLoadingPoiId] = useState<string | null>(null);
   const city = cities[citySlug];
 
   if (!city) {
@@ -48,6 +54,15 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
   const filteredPois = activeType
     ? city.pois.filter((p) => p.type === activeType)
     : city.pois;
+
+  const handlePoiClick = useCallback(async (poiId: string) => {
+    setLoadingPoiId(poiId);
+    const res = await fetch(`/api/characters/${poiId}`);
+    setLoadingPoiId(null);
+    if (res.ok) {
+      router.push(`/home/${citySlug}/${poiId}`);
+    }
+  }, [router, citySlug]);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-white">
@@ -100,7 +115,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
         {/* Map area */}
         <main className="relative flex-1 overflow-hidden">
 
-          {/* ── HUD top-left: titre ── */}
+          {/* HUD top-left: titre */}
           <div className="pointer-events-none absolute left-5 top-5 z-[999]">
             <h2 className="text-2xl font-black uppercase tracking-widest text-gray-900 drop-shadow-sm">
               {city.name}
@@ -113,7 +128,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
             </div>
           </div>
 
-          {/* ── HUD top-right: filtres ── */}
+          {/* HUD top-right: filtres */}
           <div className="pointer-events-auto absolute right-5 top-5 z-[999] flex flex-col gap-1.5">
             {(Object.keys(POI_META) as POIType[]).map((type) => {
               const meta = POI_META[type];
@@ -143,13 +158,13 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
             })}
           </div>
 
-          {/* ── Vignette légère ── */}
+          {/* Vignette */}
           <div
             className="pointer-events-none absolute inset-0 z-[998]"
             style={{ boxShadow: "inset 0 0 60px rgba(0,0,0,0.08)" }}
           />
 
-          {/* ── Leaflet Map ── */}
+          {/* Leaflet Map */}
           <MapContainer
             center={city.center}
             zoom={city.zoom}
@@ -158,6 +173,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
             minZoom={12}
             maxZoom={18}
           >
+            <MapClickBlocker />
             <TileLayer
               url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
               attribution="&copy; OpenStreetMap &copy; CARTO"
@@ -169,7 +185,11 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
               <Marker
                 key={poi.id}
                 position={[poi.lat, poi.lng]}
-                icon={createMarkerIcon(poi.name, poi.type)}
+                icon={createMarkerIcon(
+                  loadingPoiId === poi.id ? "…" : poi.name,
+                  poi.type
+                )}
+                eventHandlers={{ click: () => handlePoiClick(poi.id) }}
               >
                 <Popup>
                   <div className="flex flex-col gap-1">
@@ -182,6 +202,12 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                     <span className="text-sm font-bold text-gray-900">
                       {poi.name}
                     </span>
+                    <button
+                      onClick={() => handlePoiClick(poi.id)}
+                      className="mt-1 rounded-full bg-violet-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-violet-700"
+                    >
+                      {loadingPoiId === poi.id ? "Chargement…" : "Parler"}
+                    </button>
                   </div>
                 </Popup>
               </Marker>
@@ -189,6 +215,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
           </MapContainer>
         </main>
       </div>
+
     </div>
   );
 }
