@@ -30,6 +30,9 @@ net stop "postgresql-x64-17"
 - **Prisma v6** + **PostgreSQL 17** (local, port 5432)
 - **@anthropic-ai/sdk** — Claude Haiku (`claude-haiku-4-5-20251001`) pour les conversations IA
 - **Groq API** — Whisper `whisper-large-v3-turbo` pour la transcription vocale (micro)
+- **ElevenLabs API** — TTS par personnage (`eleven_multilingual_v2`), proxié via `/api/tts`
+- **MapLibre GL JS v5** + **react-map-gl v8** — carte 3D Tokyo (tuiles OpenFreeMap, gratuit sans clé)
+- **Three.js v0.184** + **GLTFLoader** — modèle GLB Tokyo Skytree rendu en custom layer MapLibre
 
 ## Variables d'environnement
 
@@ -40,6 +43,7 @@ Deux fichiers d'env :
   - `GROQ_API_KEY`
   - `NEXTAUTH_SECRET`, `NEXTAUTH_URL`
   - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+  - `ELEVENLABS_API_KEY` — clé ElevenLabs pour le TTS des personnages
 
 ## Architecture
 
@@ -56,7 +60,7 @@ Deux fichiers d'env :
 - `User` — profil central (email, pseudo unique, firstName, lastName, birthDate, image, password haché bcrypt)
 - `Account` — méthode de connexion liée à un User (géré par NextAuth)
 - `Session` — toujours vide (JWT strategy)
-- `Character` — personnage IA lié à un POI (`poiId` unique). Contient `systemPrompt`, `greetingMessage`, `image`, `backgroundImage`
+- `Character` — personnage IA lié à un POI (`poiId` unique). Contient `systemPrompt`, `greetingMessage`, `image`, `backgroundImage`, `voiceId` (ElevenLabs)
 - `Quest` — quête liée à un POI (`poiId`). Plusieurs quêtes possibles par POI, ordonnées par `order`
 - `QuestTask` — tâche ordonnée dans une quête. Contient `instruction` (affiché à l'utilisateur) et `aiContext` (injecté dans le system prompt pour guider l'IA)
 - `TaskChoice` — choix QCM d'une tâche (`isCorrect` pour la bonne réponse)
@@ -92,9 +96,23 @@ Deux fichiers d'env :
 | `/api/characters/[poiId]` | GET | Récupère le personnage d'un POI |
 | `/api/chat` | POST | Envoie un message à Claude Haiku, retourne `{reply, translation, words, suggestions}` |
 | `/api/transcribe` | POST | Transcrit un audio via Groq Whisper |
+| `/api/tts` | POST | TTS ElevenLabs server-side (`{text, voiceId}`), retourne `audio/mpeg` |
+| `/api/user/stats` | GET | Stats XP/Yens/niveau de l'utilisateur connecté |
 | `/api/quests/poi/[poiId]` | GET | Liste les quêtes d'un POI avec progression utilisateur |
 | `/api/quests/[questId]/start` | POST | Crée un `UserQuestProgress` (auth requise) |
 | `/api/quests/tasks/[taskId]/complete` | POST | Valide une tâche, débloque la suivante ou termine la quête |
+
+### Carte 3D Tokyo (`GameMap3D`)
+
+`src/app/home/[city]/GameMap3D.tsx` — carte 3D interactive pour les villes avec `use3DMap: true` dans `cities.ts`.
+- **Rendu** : MapLibre GL JS v5 + react-map-gl v8, tuiles gratuites OpenFreeMap (`bright`)
+- **Import SSR** : `dynamic(() => import("./GameMap3D"), { ssr: false })` dans `CityClient`
+- **Bâtiments 3D** : layer `fill-extrusion` sur source `openmaptiles`, palette couleur japonaise (crème→bleu→indigo selon hauteur), bâtiments Skytree exclus par filtre géographique `within`
+- **Modèle Skytree** : `public/models/tokyo_skytree.glb` rendu via custom Three.js layer. Transform : `projMatrix × T(mercator) × Scale(1,−1,1) × RotX(+π/2)`. Scale model : `mpu = meterInMercatorCoordinateUnits()`. API MapLibre v3+ : `args.defaultProjectionData.mainMatrix` (pas `matrix` directement)
+- **Animations canvas** : eau (`fill-pattern` "water-anim" 128×128) et herbe (`fill-pattern` "grass-anim" 32×32) via `map.addImage()` avec `render()` + `triggerRepaint()`
+- **Style routes** : routes sombres (`#1c1c2e`→`#505062`), chemins piétons terracotta (`#d4956a`), rails acier avec tirets traverses
+- **Contraintes caméra** : `minZoom=14`, `maxPitch=58`, `minPitch=35`, `maxBounds` Tokyo centre, bearing clampé ±25° autour de −20° via `map.on('rotate',...)`
+- **Fog + Sky** : `setFog({range:[0.3,5]})` + layer `sky` type `atmosphere` pour cacher les tuiles plates à l'horizon en vue inclinée
 
 ### Carte illustrée (`IllustratedMap`)
 
@@ -102,6 +120,21 @@ Deux fichiers d'env :
 - L'image est chargée à taille naturelle, le scale initial est calculé via `onLoad` pour tout faire tenir dans le viewport
 - Les marqueurs POI sont positionnés en `%` via `latLngToPercent(lat, lng, bounds)` et contre-scalés (`1/transform.scale`) pour rester à taille constante à l'écran
 - `mapImage` + `mapBounds` dans `src/lib/cities.ts` activent la carte illustrée (sinon fallback Leaflet)
+- `use3DMap: true` dans `cities.ts` active `GameMap3D` à la place
+
+### Système XP / Yens / Niveau
+
+- `User.xp` et `User.yens` en DB, incrémentés à la complétion de quête (`firstCompletedAt`)
+- `getLevelInfo(xp)` dans `src/lib/level.ts` — calcule `{level, xpInLevel, xpNeeded, percent}`
+- Les récompenses s'affichent dans la modale quête (`CityClient`) et en toast post-quête (`POIClient`)
+- Replay d'une quête : `isReplay = status === "IN_PROGRESS" && !!firstCompletedAt` → pas de récompense
+
+### TTS ElevenLabs
+
+- `Character.voiceId` stocke l'ID de voix ElevenLabs (ex: `TX3LPaxmHKxFdv7VOQHJ`)
+- `speak()` dans `POIClient` : ElevenLabs si `voiceId` présent, fallback `speechSynthesis` browser
+- React StrictMode double-invoke : flag `let cancelled = false` dans le `useEffect` de chargement
+- Voix seed : Kenji=Liam, Hana=Matilda, Taro=Daniel
 
 ### SessionProvider
 `src/app/providers.tsx` wrappe l'app avec le `SessionProvider` NextAuth, inclus dans `src/app/layout.tsx`.

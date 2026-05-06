@@ -2,12 +2,15 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Bell, Settings, User, Flame, Menu, Star, ArrowLeft, X, Loader2, CheckCircle } from "lucide-react";
 import cities, { POI, POIType } from "@/lib/cities";
 import IllustratedMap from "./IllustratedMap";
+
+const GameMap3D = dynamic(() => import("./GameMap3D"), { ssr: false });
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -173,7 +176,9 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
           </div>
 
           {/* Map */}
-          {city.mapImage && city.mapBounds ? (
+          {city.use3DMap ? (
+            <GameMap3D city={city} activeType={activeType} onPoiClick={handlePoiClick} />
+          ) : city.mapImage && city.mapBounds ? (
             <IllustratedMap city={city} activeType={activeType} loadingPoiId={null} onPoiClick={handlePoiClick} />
           ) : (
             <>

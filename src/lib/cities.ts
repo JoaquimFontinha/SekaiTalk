@@ -13,7 +13,8 @@ export type CityData = {
   center: [number, number];
   zoom: number;
   pois: POI[];
-  levelRequired: number; // niveau minimum pour accéder à la ville
+  levelRequired: number;
+  use3DMap?: boolean;
   mapImage?: string;
   mapBounds?: { latMax: number; latMin: number; lngMin: number; lngMax: number };
 };
@@ -24,8 +25,7 @@ const cities: Record<string, CityData> = {
     center: [35.6762, 139.6903],
     zoom: 14,
     levelRequired: 1,
-    mapImage: "/maps/tokyo.png",
-    mapBounds: { latMax: 35.754, latMin: 35.600, lngMin: 139.679, lngMax: 139.830 },
+    use3DMap: true,
     pois: [
       { id: "shinjuku-station", name: "Gare de Shinjuku",  type: "station",  lat: 35.6896, lng: 139.7006 },
       { id: "shibuya-station",  name: "Gare de Shibuya",   type: "station",  lat: 35.6580, lng: 139.7016 },
