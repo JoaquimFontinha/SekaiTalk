@@ -13,6 +13,9 @@ export type CityData = {
   center: [number, number];
   zoom: number;
   pois: POI[];
+  mapImage?: string; // chemin vers une carte illustrée (remplace Leaflet si défini)
+  // bornes géo de l'image illustrée pour le mapping lat/lng → %
+  mapBounds?: { latMax: number; latMin: number; lngMin: number; lngMax: number };
 };
 
 const cities: Record<string, CityData> = {
@@ -20,6 +23,8 @@ const cities: Record<string, CityData> = {
     name: "Tokyo",
     center: [35.6762, 139.6903],
     zoom: 14,
+    mapImage: "/maps/tokyo.png",
+    mapBounds: { latMax: 35.754, latMin: 35.600, lngMin: 139.679, lngMax: 139.830 },
     pois: [
       { id: "shinjuku-station", name: "Gare de Shinjuku",  type: "station",  lat: 35.6896, lng: 139.7006 },
       { id: "shibuya-station",  name: "Gare de Shibuya",   type: "station",  lat: 35.6580, lng: 139.7016 },

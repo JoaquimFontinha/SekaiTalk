@@ -7,6 +7,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Bell, Settings, User, Flame, Menu, Star, ArrowLeft } from "lucide-react";
 import cities, { POIType } from "@/lib/cities";
+import IllustratedMap from "./IllustratedMap";
 
 const SIDEBAR_ITEMS = ["Placeholder 1", "Placeholder 2", "Placeholder 3"];
 
@@ -59,9 +60,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
     setLoadingPoiId(poiId);
     const res = await fetch(`/api/characters/${poiId}`);
     setLoadingPoiId(null);
-    if (res.ok) {
-      router.push(`/home/${citySlug}/${poiId}`);
-    }
+    if (res.ok) router.push(`/home/${citySlug}/${poiId}`);
   }, [router, citySlug]);
 
   return (
@@ -70,10 +69,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
       {/* Navbar */}
       <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-100 bg-white px-6">
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.push("/home")}
-            className="text-gray-400 transition-colors hover:text-gray-700"
-          >
+          <button onClick={() => router.push("/home")} className="text-gray-400 transition-colors hover:text-gray-700">
             <ArrowLeft className="h-5 w-5" />
           </button>
           <span className="text-xl font-bold tracking-tight text-gray-900">SekaiTalk</span>
@@ -112,23 +108,23 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
           ))}
         </aside>
 
-        {/* Map area */}
+        {/* Zone carte */}
         <main className="relative flex-1 overflow-hidden">
 
-          {/* HUD top-left: titre */}
+          {/* HUD titre */}
           <div className="pointer-events-none absolute left-5 top-5 z-[999]">
-            <h2 className="text-2xl font-black uppercase tracking-widest text-gray-900 drop-shadow-sm">
+            <h2 className="text-2xl font-black uppercase tracking-widest text-white drop-shadow-lg">
               {city.name}
             </h2>
             <div className="mt-1 flex items-center gap-2">
               <div className="h-px w-8 bg-violet-400" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-violet-500">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-violet-300 drop-shadow">
                 {city.pois.length} lieux
               </span>
             </div>
           </div>
 
-          {/* HUD top-right: filtres */}
+          {/* HUD filtres */}
           <div className="pointer-events-auto absolute right-5 top-5 z-[999] flex flex-col gap-1.5">
             {(Object.keys(POI_META) as POIType[]).map((type) => {
               const meta = POI_META[type];
@@ -139,83 +135,52 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                   onClick={() => setActiveType(isActive ? null : type)}
                   className="flex items-center gap-2 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all"
                   style={{
-                    background: isActive ? `${meta.color}18` : "rgba(255,255,255,0.9)",
-                    border: `1.5px solid ${isActive ? meta.color : "rgba(0,0,0,0.08)"}`,
-                    color: isActive ? meta.color : "#6b7280",
-                    boxShadow: isActive
-                      ? `0 0 10px ${meta.color}30, 0 2px 8px rgba(0,0,0,0.08)`
-                      : "0 1px 4px rgba(0,0,0,0.06)",
+                    background: isActive ? `${meta.color}22` : "rgba(10,10,20,0.7)",
+                    border: `1.5px solid ${isActive ? meta.color : "rgba(255,255,255,0.15)"}`,
+                    color: isActive ? meta.color : "rgba(255,255,255,0.7)",
+                    boxShadow: isActive ? `0 0 10px ${meta.color}40` : "0 1px 4px rgba(0,0,0,0.3)",
                     backdropFilter: "blur(8px)",
                   }}
                 >
-                  <span
-                    className="h-2 w-2 rounded-full"
-                    style={{ background: meta.color, boxShadow: `0 0 5px ${meta.color}` }}
-                  />
+                  <span className="h-2 w-2 rounded-full" style={{ background: meta.color, boxShadow: `0 0 5px ${meta.color}` }} />
                   {meta.label}
                 </button>
               );
             })}
           </div>
 
-          {/* Vignette */}
-          <div
-            className="pointer-events-none absolute inset-0 z-[998]"
-            style={{ boxShadow: "inset 0 0 60px rgba(0,0,0,0.08)" }}
-          />
-
-          {/* Leaflet Map */}
-          <MapContainer
-            center={city.center}
-            zoom={city.zoom}
-            style={{ height: "100%", width: "100%" }}
-            zoomControl={false}
-            minZoom={12}
-            maxZoom={18}
-          >
-            <MapClickBlocker />
-            <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
-              attribution="&copy; OpenStreetMap &copy; CARTO"
-              subdomains="abcd"
-              maxZoom={19}
+          {/* Carte : illustrée ou Leaflet */}
+          {city.mapImage && city.mapBounds ? (
+            <IllustratedMap
+              city={city}
+              activeType={activeType}
+              loadingPoiId={loadingPoiId}
+              onPoiClick={handlePoiClick}
             />
-
-            {filteredPois.map((poi) => (
-              <Marker
-                key={poi.id}
-                position={[poi.lat, poi.lng]}
-                icon={createMarkerIcon(
-                  loadingPoiId === poi.id ? "…" : poi.name,
-                  poi.type
-                )}
-                eventHandlers={{ click: () => handlePoiClick(poi.id) }}
-              >
-                <Popup>
-                  <div className="flex flex-col gap-1">
-                    <span
-                      className="text-[10px] font-bold uppercase tracking-widest"
-                      style={{ color: POI_META[poi.type].color }}
-                    >
-                      {POI_META[poi.type].label}
-                    </span>
-                    <span className="text-sm font-bold text-gray-900">
-                      {poi.name}
-                    </span>
-                    <button
-                      onClick={() => handlePoiClick(poi.id)}
-                      className="mt-1 rounded-full bg-violet-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-violet-700"
-                    >
-                      {loadingPoiId === poi.id ? "Chargement…" : "Parler"}
-                    </button>
-                  </div>
-                </Popup>
-              </Marker>
-            ))}
-          </MapContainer>
+          ) : (
+            <>
+              <div className="pointer-events-none absolute inset-0 z-[998]" style={{ boxShadow: "inset 0 0 60px rgba(0,0,0,0.08)" }} />
+              <MapContainer center={city.center} zoom={city.zoom} style={{ height: "100%", width: "100%" }} zoomControl={false} minZoom={12} maxZoom={18}>
+                <MapClickBlocker />
+                <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap &copy; CARTO" subdomains="abcd" maxZoom={19} />
+                {filteredPois.map((poi) => (
+                  <Marker key={poi.id} position={[poi.lat, poi.lng]} icon={createMarkerIcon(loadingPoiId === poi.id ? "…" : poi.name, poi.type)} eventHandlers={{ click: () => handlePoiClick(poi.id) }}>
+                    <Popup>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: POI_META[poi.type].color }}>{POI_META[poi.type].label}</span>
+                        <span className="text-sm font-bold text-gray-900">{poi.name}</span>
+                        <button onClick={() => handlePoiClick(poi.id)} className="mt-1 rounded-full bg-violet-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-violet-700">
+                          {loadingPoiId === poi.id ? "Chargement…" : "Parler"}
+                        </button>
+                      </div>
+                    </Popup>
+                  </Marker>
+                ))}
+              </MapContainer>
+            </>
+          )}
         </main>
       </div>
-
     </div>
   );
 }
