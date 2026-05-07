@@ -17,7 +17,10 @@
       "PowerShell(New-Item -ItemType Directory -Force -Path \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\maps\")",
       "PowerShell(Copy-Item \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\tokyo_map.png\" \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\maps\\\\tokyo.png\" -Force)",
       "PowerShell(Copy-Item \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\tokyo_map \\(1\\).png\" \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\maps\\\\tokyo.png\" -Force)",
-      "Bash(npm uninstall *)"
+      "Bash(npm uninstall *)",
+      "Bash(copy \"C:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\tokyo_tower.glb\" \"C:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\models\\\\tokyo_tower.glb\")",
+      "PowerShell($f = Get-Item \"C:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\models\\\\tokyo_tower.glb\"; Write-Output \"Size: $\\($f.Length\\) bytes\")",
+      "PowerShell($sky = Get-Item \"C:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\models\\\\tokyo_skytree.glb\"; $tower = Get-Item \"C:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\models\\\\tokyo_tower.glb\"; Write-Output \"Skytree: $\\($sky.Length\\) bytes\"; Write-Output \"Tower:   $\\($tower.Length\\) bytes\")"
     ],
     "additionalDirectories": [
       "C:\\Program Files\\PostgreSQL\\17\\data",

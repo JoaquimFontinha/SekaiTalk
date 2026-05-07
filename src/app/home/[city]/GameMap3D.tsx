@@ -28,83 +28,120 @@ const POI_ICONS: Record<POIType, string> = {
   landmark: "📍",
 };
 
-// ── Tokyo Skytree — custom Three.js layer ─────────────────────────────────────
+// ── Landmarks — unified Three.js layer (Skytree + Tokyo Tower) ───────────────
+// One renderer, two independent scenes, each with its own Mercator origin.
 
-function createSkytreeLayer(map: ReturnType<MapRef["getMap"]>) {
-  // Real Skytree coordinates
-  const origin = maplibregl.MercatorCoordinate.fromLngLat(
-    { lng: 139.8107, lat: 35.7101 },
-    0
-  );
-  // 1 meter in Mercator units at this latitude
-  const mpu = origin.meterInMercatorCoordinateUnits();
+function addLights(scene: THREE.Scene) {
+  scene.add(new THREE.AmbientLight(0xffeedd, 1.2));
+  const sun = new THREE.DirectionalLight(0xfff3cc, 2.0);
+  sun.position.set(1, 2, 1.5);
+  scene.add(sun);
+  const fill = new THREE.DirectionalLight(0xaaccff, 0.6);
+  fill.position.set(-1, 0.5, -1);
+  scene.add(fill);
+}
 
+function createLandmarksLayer(map: ReturnType<MapRef["getMap"]>) {
   let renderer: THREE.WebGLRenderer;
-  let scene:    THREE.Scene;
   let camera:   THREE.Camera;
 
+  const skytreeOrigin = maplibregl.MercatorCoordinate.fromLngLat({ lng: 139.8107, lat: 35.7101 }, 0);
+  const towerOrigin   = maplibregl.MercatorCoordinate.fromLngLat({ lng: 139.7454, lat: 35.6586 }, 0);
+  const skytreeScene  = new THREE.Scene();
+  const towerScene    = new THREE.Scene();
+
   return {
-    id:            "skytree-model",
+    id:            "landmarks",
     type:          "custom"  as const,
     renderingMode: "3d"      as const,
 
     onAdd(_map: typeof map, gl: WebGL2RenderingContext) {
-      camera = new THREE.Camera();
-      scene  = new THREE.Scene();
-
-      // Lighting
-      const ambient = new THREE.AmbientLight(0xffeedd, 1.2);
-      scene.add(ambient);
-      const sun = new THREE.DirectionalLight(0xfff3cc, 2.0);
-      sun.position.set(1, 2, 1.5);
-      scene.add(sun);
-      const fill = new THREE.DirectionalLight(0xaaccff, 0.6);
-      fill.position.set(-1, 0.5, -1);
-      scene.add(fill);
-
-      // Load GLB
-      new GLTFLoader().load(
-        "/models/tokyo_skytree.glb",
-        (gltf) => {
-          // Scale from model units (meters) → Mercator units
-          gltf.scene.scale.setScalar(mpu);
-          // Center X/Z and place base at ground level
-          // Position must also be in Mercator units (mpu * model meters)
-          const box = new THREE.Box3().setFromObject(gltf.scene);
-          const c = box.getCenter(new THREE.Vector3());
-          gltf.scene.position.set(-c.x, -box.min.y, -c.z);
-          scene.add(gltf.scene);
-          map.triggerRepaint();
-        },
-        undefined,
-        (err) => console.error("[Skytree] GLB load error:", err)
-      );
-
+      camera   = new THREE.Camera();
       renderer = new THREE.WebGLRenderer({
         canvas:    map.getCanvas(),
         context:   gl,
         antialias: true,
       });
       renderer.autoClear = false;
+
+      addLights(skytreeScene);
+      addLights(towerScene);
+
+      const skytreeMpu = skytreeOrigin.meterInMercatorCoordinateUnits();
+      new GLTFLoader().load(
+        "/models/tokyo_skytree.glb",
+        (gltf) => {
+          gltf.scene.scale.setScalar(skytreeMpu);
+          const box = new THREE.Box3().setFromObject(gltf.scene);
+          const c   = box.getCenter(new THREE.Vector3());
+          gltf.scene.position.set(-c.x, -box.min.y, -c.z);
+          gltf.scene.traverse((obj: any) => {
+            if (obj.isMesh && obj.material) {
+              const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+              mats.forEach((m: any) => { m.side = THREE.DoubleSide; });
+            }
+          });
+          skytreeScene.add(gltf.scene);
+          map.triggerRepaint();
+        },
+        undefined,
+        (err) => console.error("[Skytree] load error:", err)
+      );
+
+      const towerMpu = towerOrigin.meterInMercatorCoordinateUnits();
+      const TOWER_TARGET_M = 333; // real Tokyo Tower height
+      new GLTFLoader().load(
+        "/models/tokyo_tower.glb",
+        (gltf) => {
+          // Initial scale to measure model height in meters
+          gltf.scene.scale.setScalar(towerMpu);
+          const box0     = new THREE.Box3().setFromObject(gltf.scene);
+          const modelH   = (box0.max.y - box0.min.y) / towerMpu; // model height in meters
+          // Rescale so the model stands at the real tower height
+          const finalScale = towerMpu * (modelH > 1 ? TOWER_TARGET_M / modelH : 1);
+          gltf.scene.scale.setScalar(finalScale);
+
+          const box = new THREE.Box3().setFromObject(gltf.scene);
+          const c   = box.getCenter(new THREE.Vector3());
+          gltf.scene.position.set(-c.x, -box.min.y, -c.z);
+
+          gltf.scene.traverse((obj: any) => {
+            obj.frustumCulled = false; // prevent Three.js culling with custom camera
+            if (obj.isMesh && obj.material) {
+              const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+              mats.forEach((m: any) => { m.side = THREE.DoubleSide; });
+            }
+          });
+          towerScene.add(gltf.scene);
+          console.log("[TokyoTower] added to scene, modelH=", Math.round(modelH), "m, scaled to", TOWER_TARGET_M, "m");
+          map.triggerRepaint();
+        },
+        undefined,
+        (err) => console.error("[TokyoTower] load error:", err)
+      );
     },
 
     render(_gl: WebGL2RenderingContext, args: any) {
-      // MapLibre v3+: matrix is inside args.defaultProjectionData.mainMatrix
       const projMatrix: number[] =
         args?.defaultProjectionData?.mainMatrix ?? args;
 
-      const transform = new THREE.Matrix4()
-        .fromArray(projMatrix)
-        .multiply(
-          new THREE.Matrix4()
-            .makeTranslation(origin.x, origin.y, origin.z ?? 0)
-            .scale(new THREE.Vector3(1, -1, 1))
-            .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2))
-        );
+      const makeTransform = (origin: maplibregl.MercatorCoordinate) =>
+        new THREE.Matrix4()
+          .fromArray(projMatrix)
+          .multiply(
+            new THREE.Matrix4()
+              .makeTranslation(origin.x, origin.y, origin.z ?? 0)
+              .scale(new THREE.Vector3(1, -1, 1))
+              .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2))
+          );
 
-      camera.projectionMatrix = transform;
       renderer.resetState();
-      renderer.render(scene, camera);
+      camera.projectionMatrix = makeTransform(skytreeOrigin);
+      renderer.render(skytreeScene, camera);
+
+      camera.projectionMatrix = makeTransform(towerOrigin);
+      renderer.render(towerScene, camera);
+
       map.triggerRepaint();
     },
   };
@@ -225,29 +262,18 @@ export default function GameMap3D({
             "all",
             ["has", "render_height"],
             [">", ["get", "render_height"], 0],
-            ["<", ["get", "render_height"], 300],
-            ["!", ["within", {
-              type: "Polygon",
-              coordinates: [[
-                [139.798, 35.703],
-                [139.823, 35.703],
-                [139.823, 35.718],
-                [139.798, 35.718],
-                [139.798, 35.703],
-              ]],
-            }]],
+            ["<", ["get", "render_height"], 60],   // cap at 60 m — Skytree (634m) and Tower (333m) excluded by height alone
           ],
           paint: {
             // crème → pêche → orange doux → bleu ciel → indigo
             "fill-extrusion-color": [
               "interpolate", ["linear"],
               ["coalesce", ["get", "render_height"], 3],
-              0,   "#fef3c7",   // crème pâle   — kiosques
-              6,   "#fcd9a0",   // pêche        — maisons
-              15,  "#f9a26c",   // orange doux  — immeubles bas
-              30,  "#7dd3fc",   // bleu ciel    — bureaux
-              60,  "#818cf8",   // indigo       — tours
-              100, "#c4b5fd",   // lavande      — gratte-ciels
+              0,  "#fef3c7",   // crème pâle — kiosques
+              6,  "#fcd9a0",   // pêche      — maisons
+              15, "#f9a26c",   // orange     — immeubles bas
+              30, "#7dd3fc",   // bleu ciel  — bureaux
+              60, "#38bdf8",   // bleu clair — max cap (pas de violet)
             ],
             "fill-extrusion-height": ["coalesce", ["get", "render_height"], 3],
             "fill-extrusion-base":    ["coalesce", ["get", "render_min_height"], 0],
@@ -258,9 +284,9 @@ export default function GameMap3D({
       );
     }
 
-    // ── Tokyo Skytree GLB model ───────────────────────────────
-    if (!map.getLayer("skytree-model")) {
-      map.addLayer(createSkytreeLayer(map) as any);
+    // ── Skytree + Tokyo Tower — single unified layer ──────────
+    if (!map.getLayer("landmarks")) {
+      map.addLayer(createLandmarksLayer(map) as any);
     }
 
     // ── Anime water — wave pattern ────────────────────────────
@@ -394,21 +420,9 @@ export default function GameMap3D({
       }
     });
 
-    // ── Sky + Fog — cache les tuiles plates à l'horizon ──────
+    // ── Fog — cache les tuiles plates à l'horizon ────────────
+    // (MapLibre v5 supprime le type "sky", on utilise setFog seul)
     try {
-      if (!map.getLayer("sky")) {
-        map.addLayer({
-          id:   "sky",
-          type: "sky",
-          paint: {
-            "sky-type":                       "atmosphere",
-            "sky-atmosphere-sun":             [0.0, 90.0],
-            "sky-atmosphere-sun-intensity":   5,
-            "sky-atmosphere-color":           "rgba(210, 228, 255, 1.0)",
-            "sky-atmosphere-halo-color":      "rgba(255, 245, 230, 0.8)",
-          },
-        } as any);
-      }
       (map as any).setFog({
         range:           [0.3, 5],
         color:           "#f0e8d8",
