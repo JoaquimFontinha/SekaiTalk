@@ -93,6 +93,9 @@ model Character {
   createdAt       DateTime              @default(now())
   updatedAt       DateTime              @updatedAt
 
+  greetingTranslation String? // traduction française du greetingMessage
+  greetingWords       Json    @default("[]") // Word[] pré-calculé
+
   appearances CharacterAppearance[]
   memories    CharacterMemory[]
 }

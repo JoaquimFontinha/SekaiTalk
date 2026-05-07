@@ -19,7 +19,8 @@ type Scene = {
 type Character = {
   id: string; name: string; nameJp: string; role: string;
   image: string; systemPrompt: string;
-  greetingMessage: string; isFriendable: boolean; voiceId: string | null;
+  greetingMessage: string; greetingTranslation: string | null; greetingWords: Word[];
+  isFriendable: boolean; voiceId: string | null;
   locationContext: string | null;
   scene: Scene | null;
 };
@@ -114,6 +115,7 @@ export default function POIClient({
   const audioCtxRef     = useRef<AudioContext | null>(null);
   const silenceTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recordingStartRef  = useRef<number>(0);
+  const speakAbortRef      = useRef<AbortController | null>(null);
   const isRecordingRef  = useRef(false);
   const shouldListenRef = useRef(false);
 
@@ -135,6 +137,11 @@ export default function POIClient({
 
   // ── TTS ──
   const speak = useCallback(async (text: string) => {
+    // Annule tout speak précédent (fixes double-speak en StrictMode)
+    speakAbortRef.current?.abort();
+    const controller = new AbortController();
+    speakAbortRef.current = controller;
+
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     window.speechSynthesis.cancel();
 
@@ -144,6 +151,7 @@ export default function POIClient({
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = "ja-JP"; utter.rate = 0.85;
       const go = () => {
+        if (controller.signal.aborted) return;
         const jp = window.speechSynthesis.getVoices().find(v => v.lang.startsWith("ja"));
         if (jp) utter.voice = jp;
         utter.onstart = () => setIsSpeaking(true);
@@ -161,9 +169,11 @@ export default function POIClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, voiceId: vId }),
+        signal: controller.signal,
       });
       if (!r.ok) throw new Error("TTS failed");
       const blob  = await r.blob();
+      if (controller.signal.aborted) return;
       const url   = URL.createObjectURL(blob);
       const audio = new Audio(url);
       audioRef.current = audio;
@@ -179,7 +189,7 @@ export default function POIClient({
       };
       await audio.play();
     } catch {
-      setIsSpeaking(false);
+      if (!controller.signal.aborted) setIsSpeaking(false);
     }
   }, []);
 
@@ -423,12 +433,16 @@ export default function POIClient({
         setActiveQuest(initQuest);
         activeQuestRef.current = initQuest;
 
+        const suggestions = initQuest
+          ? ["Bonjour !", "Excusez-moi…", "Pouvez-vous m'aider ?"]
+          : ["Bonjour !", "Comment ça va ?", "Qu'est-ce que vous recommandes ?"];
+
+        // Affichage immédiat avec breakdown stocké en DB (aucun appel API)
         setCurrentReply({
           reply: c.greetingMessage,
-          translation: "", words: [],
-          suggestions: initQuest
-            ? ["Bonjour !", "Excusez-moi…", "Pouvez-vous m'aider ?"]
-            : ["Bonjour !", "Comment ça va ?", "Qu'est-ce que vous recommandez ?"],
+          translation: c.greetingTranslation ?? "",
+          words: c.greetingWords ?? [],
+          suggestions,
         });
         speak(c.greetingMessage);
       })
@@ -436,6 +450,7 @@ export default function POIClient({
 
     return () => {
       cancelled = true;
+      speakAbortRef.current?.abort();
       audioRef.current?.pause();
       ambientRef.current?.pause();
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);

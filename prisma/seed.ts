@@ -45,9 +45,29 @@ async function main() {
 
   // ── Characters ──────────────────────────────────────────────────────────────
 
+  const WORDS_KENJI = [
+    { furigana: "", jp: "いらっしゃいませ！", romaji: "irasshaimase", fr: "bienvenue (formule de politesse)" },
+    { furigana: "なに", jp: "何か", romaji: "nanika", fr: "quelque chose" },
+    { furigana: "", jp: "お探しですか？", romaji: "osagashi desu ka", fr: "cherchez-vous ? (forme polie)" },
+  ];
+  const WORDS_HANA = [
+    { furigana: "", jp: "こんにちは！", romaji: "konnichiwa", fr: "bonjour" },
+    { furigana: "きょう", jp: "今日は", romaji: "kyou wa", fr: "aujourd'hui" },
+    { furigana: "なに", jp: "何か", romaji: "nanika", fr: "quelque chose" },
+    { furigana: "", jp: "ご入り用ですか？", romaji: "go-iriyo desu ka", fr: "avez-vous besoin de ? (très poli)" },
+  ];
+  const WORDS_TARO = [
+    { furigana: "", jp: "いらっしゃいませ。", romaji: "irasshaimase", fr: "bienvenue" },
+    { furigana: "きょうと", jp: "京都へ", romaji: "kyouto e", fr: "à Kyoto" },
+    { furigana: "", jp: "ようこそ。", romaji: "youkoso", fr: "bienvenue (accueil)" },
+    { furigana: "なに", jp: "何か", romaji: "nanika", fr: "quelque chose" },
+    { furigana: "", jp: "お手伝いできることは", romaji: "otetsudai dekiru koto wa", fr: "ce en quoi je peux aider" },
+    { furigana: "", jp: "ありますか？", romaji: "arimasu ka", fr: "y a-t-il ?" },
+  ];
+
   await prisma.character.upsert({
     where: { id: "char-kenji" },
-    update: { voiceId: VOICE_KENJI },
+    update: { voiceId: VOICE_KENJI, greetingTranslation: "Bienvenue ! Cherchez-vous quelque chose ?", greetingWords: WORDS_KENJI },
     create: {
       id: "char-kenji",
       name: "Tanaka Kenji",
@@ -62,6 +82,8 @@ async function main() {
 相手が日本語を学んでいる外国人であることを念頭に置き、少しゆっくり、分かりやすい言葉を使ってください。
 絶対に日本語以外の言語を使わないでください。`,
       greetingMessage: "いらっしゃいませ！何かお探しですか？",
+      greetingTranslation: "Bienvenue ! Cherchez-vous quelque chose ?",
+      greetingWords: WORDS_KENJI,
       isFriendable: false,
       isActive: true,
     },
@@ -69,7 +91,7 @@ async function main() {
 
   await prisma.character.upsert({
     where: { id: "char-hana" },
-    update: { voiceId: VOICE_HANA },
+    update: { voiceId: VOICE_HANA, greetingTranslation: "Bonjour ! Avez-vous besoin de quelque chose aujourd'hui ?", greetingWords: WORDS_HANA },
     create: {
       id: "char-hana",
       name: "Yamamoto Hana",
@@ -84,6 +106,8 @@ async function main() {
 相手が日本語を学んでいる外国人であることを念頭に置き、ゆっくり、はっきりと話してください。
 絶対に日本語以外の言語を使わないでください。`,
       greetingMessage: "こんにちは！今日は何かご入り用ですか？",
+      greetingTranslation: "Bonjour ! Avez-vous besoin de quelque chose aujourd'hui ?",
+      greetingWords: WORDS_HANA,
       isFriendable: true,
       isActive: true,
     },
@@ -91,7 +115,7 @@ async function main() {
 
   await prisma.character.upsert({
     where: { id: "char-taro" },
-    update: { voiceId: VOICE_TARO },
+    update: { voiceId: VOICE_TARO, greetingTranslation: "Bienvenue. Bienvenue à Kyoto. Y a-t-il quelque chose en quoi je peux vous aider ?", greetingWords: WORDS_TARO },
     create: {
       id: "char-taro",
       name: "Suzuki Taro",
@@ -106,6 +130,8 @@ async function main() {
 相手が日本語を学んでいる外国人であることを念頭に置き、丁寧な言葉を使ってください。
 絶対に日本語以外の言語を使わないでください。`,
       greetingMessage: "いらっしゃいませ。京都へようこそ。何かお手伝いできることはありますか？",
+      greetingTranslation: "Bienvenue. Bienvenue à Kyoto. Y a-t-il quelque chose en quoi je peux vous aider ?",
+      greetingWords: WORDS_TARO,
       isFriendable: false,
       isActive: true,
     },

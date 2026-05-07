@@ -60,7 +60,7 @@ Deux fichiers d'env :
 - `User` — profil central (email, pseudo unique, firstName, lastName, birthDate, image, password haché bcrypt)
 - `Account` — méthode de connexion liée à un User (géré par NextAuth)
 - `Session` — toujours vide (JWT strategy)
-- `Character` — personnage IA sans `poiId` (peut apparaître dans plusieurs lieux). Contient `id` stable (ex: `"char-kenji"`), `systemPrompt`, `greetingMessage`, `image`, `voiceId` (ElevenLabs), `isFriendable` (active la mémoire + outil `remember_fact`)
+- `Character` — personnage IA sans `poiId` (peut apparaître dans plusieurs lieux). Contient `id` stable (ex: `"char-kenji"`), `systemPrompt`, `greetingMessage`, `greetingTranslation`, `greetingWords` (Json — `Word[]` pré-calculé, évite un appel IA au chargement), `image`, `voiceId` (ElevenLabs), `isFriendable` (active la mémoire + outil `remember_fact`)
 - `CharacterAppearance` — table de jonction many-to-many `Character ↔ POI`. Champs : `characterId`, `poiId`, `locationContext?` (injection supplémentaire dans le system prompt pour contextualiser le lieu). Contrainte `@@unique([characterId, poiId])`
 - `Scene` — décor lié à un POI (`poiId @unique`). Champs : `backgroundImage?`, `entrySound?`, `ambientSound?`. Séparé du personnage car le même lieu peut avoir un autre personnage à l'avenir
 - `CharacterMemory` — mémoire persistante par `(characterId, userId, key)`. Valeur mise à jour via upsert. Activée uniquement si `character.isFriendable = true` + utilisateur connecté. Contrainte `@@unique([characterId, userId, key])`
@@ -74,6 +74,7 @@ Deux fichiers d'env :
 
 `prisma/seed.ts` — crée `Scene`, `Character`, `CharacterAppearance` et `Quest` avec des IDs stables.
 - Personnages : upsert par `id` stable (`"char-kenji"`, `"char-hana"`, `"char-taro"`)
+- `greetingWords` et `greetingTranslation` hardcodés dans le seed — pour un nouveau personnage, appeler `/api/analyze` une fois pour générer le breakdown puis le coller dans le seed
 - Scènes : upsert par `poiId` (konbini-shinjuku, konbini-shibuya, konbini-kyoto) avec `entrySound: "/sounds/konbini_enter.mp3"`
 - Apparitions : upsert par `@@unique([characterId, poiId])`
 - Quêtes : `findUnique` + `create` — idempotentes, non recréées si l'ID existe déjà
@@ -102,7 +103,8 @@ Deux fichiers d'env :
 |-------|---------|-------------|
 | `/api/characters/[poiId]` | GET | Récupère le personnage via `CharacterAppearance` + `Scene` du POI ; retourne `{...character, locationContext, scene}` |
 | `/api/chat` | POST | Envoie un message à Claude Haiku. Body : `{messages, systemPrompt, characterId}`. Retourne `{reply, translation, words, suggestions}`. Agentic loop (max 5 tours) avec outil `remember_fact` si personnage `isFriendable` |
-| `/api/transcribe` | POST | Transcrit un audio via Groq Whisper |
+| `/api/analyze` | POST | Analyse un texte japonais, retourne `{translation, words}`. Usage ponctuel (admin/seed) — ne pas appeler au runtime |
+| `/api/transcribe` | POST | Transcrit un audio via Groq Whisper (`language: "ja"`, prompt japonais) |
 | `/api/tts` | POST | TTS ElevenLabs server-side (`{text, voiceId}`), retourne `audio/mpeg` |
 | `/api/user/stats` | GET | Stats XP/Yens/niveau de l'utilisateur connecté |
 | `/api/quests/poi/[poiId]` | GET | Liste les quêtes d'un POI avec progression utilisateur |
@@ -143,18 +145,37 @@ Deux fichiers d'env :
 - Claude reçoit l'outil `remember_fact(key, value)` via tool_choice `auto`. Il l'appelle discrètement quand l'utilisateur mentionne son nom, métier, goûts, événements notables
 - **Agentic loop** : si `stop_reason === "tool_use"` → upsert `CharacterMemory` en DB → ajoute `tool_result "Mémorisé."` → continue (max 5 tours) → réponse texte finale
 
+### VAD — Voice Activity Detection (POIClient)
+
+Remplace le push-to-talk. Le micro est ouvert en permanence après le chargement du personnage.
+
+- **Démarrage** : `startVAD()` appelé dans le `useEffect` de chargement. Crée un `AudioContext` + `AnalyserNode` (fftSize 512). Stream micro gardé ouvert toute la session
+- **Détection** : boucle `requestAnimationFrame` calcule le RMS sur chaque frame. Si `rms > VAD_THRESHOLD (0.025)` et `shouldListenRef.current = true` → démarre un `MediaRecorder` frais
+- **Fin d'énoncé** : silence > `SILENCE_DELAY (1200ms)` → stoppe le recorder → envoie à `/api/transcribe`
+- **Filtre bruit court** : enregistrement ignoré si durée < `MIN_RECORD_MS (400ms)` (`recordingStartRef` tracke le timestamp de départ)
+- **shouldListenRef** : `false` si `isPaused || isSpeaking || isLoading || isTranscribing` — l'IA ne s'écoute pas elle-même. Mis à jour via `useEffect([isPaused, isSpeaking, isLoading, isTranscribing])`
+- **Mobile HTTP** : `navigator.mediaDevices` est `undefined` en contexte non sécurisé → guard `if (navigator.mediaDevices)` obligatoire
+- **Cleanup** : `audioCtxRef.current?.close()` + `streamRef.current?.getTracks().forEach(t => t.stop())` à l'unmount. `audioCtxRef.current = null` arrête la boucle RAF
+
+### Bouton Pause (POIClient)
+
+- Bouton centré dans la top bar (`z-50`), icône `Pause` / `Play`
+- **Pause** : coupe ambient sound, TTS en cours (`audioRef`), `speechSynthesis`, force `isSpeaking = false`
+- **Reprise** : relance ambient, appelle `audioCtxRef.current?.resume()` (le browser peut suspendre l'AudioContext quand audio s'arrête)
+- **Overlay** : z-40, cliquable (onClick = togglePause) pour reprendre en tapant n'importe où
+- Les effets de bord sont dans un `useEffect([isPaused])` séparé — ne jamais appeler `setState` inside un `setState` updater
+
 ### Système sonore (POIClient)
 
 - **Entry sound** : `new Audio(c.scene.entrySound).play()` au chargement du personnage, volume 0.7
 - **Ambient sound** : audio en loop (volume 0.25) stocké dans `ambientRef` — stoppé proprement à l'unmount
 - Les sons sont dans `public/sounds/` (ex: `konbini_enter.mp3`)
-- `navigator.mediaDevices` est `undefined` sur mobile HTTP (contexte non sécurisé) → guard `if (navigator.mediaDevices)` obligatoire avant `getUserMedia`
 
 ### TTS ElevenLabs
 
 - `Character.voiceId` stocke l'ID de voix ElevenLabs (ex: `TX3LPaxmHKxFdv7VOQHJ`)
 - `speak()` dans `POIClient` : ElevenLabs si `voiceId` présent, fallback `speechSynthesis` browser
-- React StrictMode double-invoke : flag `let cancelled = false` dans le `useEffect` de chargement
+- **Double-speak (React StrictMode)** : `speak()` crée un `AbortController` à chaque appel (`speakAbortRef`) et annule le précédent. La requête TTS est passée avec `signal: controller.signal`. Le cleanup du `useEffect` appelle `speakAbortRef.current?.abort()`
 - Voix seed : Kenji=Liam (`TX3LPaxmHKxFdv7VOQHJ`), Hana=Matilda (`XrExE9yKIg1WjnnlVkGX`), Taro=Daniel (`onwK4e9ZLuTAKqWW03F9`)
 
 ### SessionProvider
