@@ -4,23 +4,56 @@ const prisma = new PrismaClient();
 
 async function main() {
   // ElevenLabs voice IDs (eleven_multilingual_v2)
-  // Tanaka Kenji  → "Liam"  — male, calm
-  // Yamamoto Hana → "Matilda" — female, warm
-  // Suzuki Taro   → "Daniel" — male, authoritative
-  const VOICE_KENJI   = "TX3LPaxmHKxFdv7VOQHJ"; // Liam
-  const VOICE_HANA    = "XrExE9yKIg1WjnnlVkGX"; // Matilda
-  const VOICE_TARO    = "onwK4e9ZLuTAKqWW03F9"; // Daniel
+  const VOICE_KENJI = "TX3LPaxmHKxFdv7VOQHJ"; // Liam — male, calm
+  const VOICE_HANA  = "XrExE9yKIg1WjnnlVkGX"; // Matilda — female, warm
+  const VOICE_TARO  = "onwK4e9ZLuTAKqWW03F9"; // Daniel — male, authoritative
 
-  await prisma.character.upsert({
+  // ── Scenes (décors liés aux POI) ────────────────────────────────────────────
+
+  await prisma.scene.upsert({
     where: { poiId: "konbini-shinjuku" },
-    update: { voiceId: VOICE_KENJI },
+    update: {},
     create: {
       poiId: "konbini-shinjuku",
+      backgroundImage: "/backgrounds/konbini.jpg",
+      entrySound: "/sounds/konbini_enter.mp3",
+      ambientSound: null,
+    },
+  });
+
+  await prisma.scene.upsert({
+    where: { poiId: "konbini-shibuya" },
+    update: {},
+    create: {
+      poiId: "konbini-shibuya",
+      backgroundImage: "/backgrounds/konbini.jpg",
+      entrySound: "/sounds/konbini_enter.mp3",
+      ambientSound: null,
+    },
+  });
+
+  await prisma.scene.upsert({
+    where: { poiId: "konbini-kyoto" },
+    update: {},
+    create: {
+      poiId: "konbini-kyoto",
+      backgroundImage: "/backgrounds/konbini.jpg",
+      entrySound: "/sounds/konbini_enter.mp3",
+      ambientSound: null,
+    },
+  });
+
+  // ── Characters ──────────────────────────────────────────────────────────────
+
+  await prisma.character.upsert({
+    where: { id: "char-kenji" },
+    update: { voiceId: VOICE_KENJI },
+    create: {
+      id: "char-kenji",
       name: "Tanaka Kenji",
       nameJp: "田中 健二",
       role: "Vendeur de konbini",
       image: "/characters/konbini_vendor.png",
-      backgroundImage: "/backgrounds/konbini.jpg",
       voiceId: VOICE_KENJI,
       systemPrompt: `あなたは新宿のコンビニで働く田中健二です。
 あなたは親切で少し内気な若い男性で、毎日同じお客さんたちと話すのを楽しんでいます。
@@ -35,15 +68,14 @@ async function main() {
   });
 
   await prisma.character.upsert({
-    where: { poiId: "konbini-shibuya" },
+    where: { id: "char-hana" },
     update: { voiceId: VOICE_HANA },
     create: {
-      poiId: "konbini-shibuya",
+      id: "char-hana",
       name: "Yamamoto Hana",
       nameJp: "山本 花",
       role: "Caissière de konbini",
       image: "/characters/konbini_vendor.png",
-      backgroundImage: "/backgrounds/konbini.jpg",
       voiceId: VOICE_HANA,
       systemPrompt: `あなたは渋谷のコンビニで働く山本花です。
 あなたは明るくて元気な若い女性で、お客さんと話すのが大好きです。
@@ -58,15 +90,14 @@ async function main() {
   });
 
   await prisma.character.upsert({
-    where: { poiId: "konbini-kyoto" },
+    where: { id: "char-taro" },
     update: { voiceId: VOICE_TARO },
     create: {
-      poiId: "konbini-kyoto",
+      id: "char-taro",
       name: "Suzuki Taro",
       nameJp: "鈴木 太郎",
       role: "Gérant de konbini",
       image: "/characters/konbini_vendor.png",
-      backgroundImage: "/backgrounds/konbini.jpg",
       voiceId: VOICE_TARO,
       systemPrompt: `あなたは京都のコンビニを経営している鈴木太郎です。
 あなたは落ち着いた中年の男性で、京都の文化や歴史についてよく知っています。
@@ -78,6 +109,26 @@ async function main() {
       isFriendable: false,
       isActive: true,
     },
+  });
+
+  // ── CharacterAppearances (who appears at which POI) ─────────────────────────
+
+  await prisma.characterAppearance.upsert({
+    where: { characterId_poiId: { characterId: "char-kenji", poiId: "konbini-shinjuku" } },
+    update: {},
+    create: { characterId: "char-kenji", poiId: "konbini-shinjuku" },
+  });
+
+  await prisma.characterAppearance.upsert({
+    where: { characterId_poiId: { characterId: "char-hana", poiId: "konbini-shibuya" } },
+    update: {},
+    create: { characterId: "char-hana", poiId: "konbini-shibuya" },
+  });
+
+  await prisma.characterAppearance.upsert({
+    where: { characterId_poiId: { characterId: "char-taro", poiId: "konbini-kyoto" } },
+    update: {},
+    create: { characterId: "char-taro", poiId: "konbini-kyoto" },
   });
 
   // ── Quests ──────────────────────────────────────────────────────────────────
@@ -97,7 +148,6 @@ async function main() {
         yenReward: 120,
         tasks: {
           create: [
-            // ── Tâche 1 : localiser les onigiri ─────────────────────────────
             {
               id: "task-ks-i1-1",
               order: 1,
@@ -114,7 +164,6 @@ async function main() {
                 ],
               },
             },
-            // ── Tâche 2 : connaître les parfums disponibles ──────────────────
             {
               id: "task-ks-i1-2",
               order: 2,
@@ -131,7 +180,6 @@ async function main() {
                 ],
               },
             },
-            // ── Tâche 3 : connaître le prix ─────────────────────────────────
             {
               id: "task-ks-i1-3",
               order: 3,
@@ -148,7 +196,6 @@ async function main() {
                 ],
               },
             },
-            // ── Tâche 4 : vérifier la fraîcheur ────────────────────────────
             {
               id: "task-ks-i1-4",
               order: 4,
@@ -165,7 +212,6 @@ async function main() {
                 ],
               },
             },
-            // ── Tâche 5 : remerciements ─────────────────────────────────────
             {
               id: "task-ks-i1-5",
               order: 5,

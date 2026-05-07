@@ -21,11 +21,12 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  xp            Int                 @default(0)
-  yens          Int                 @default(0)
-  accounts      Account[]
-  sessions      Session[]
-  questProgress UserQuestProgress[]
+  xp                Int                 @default(0)
+  yens              Int                 @default(0)
+  accounts          Account[]
+  sessions          Session[]
+  questProgress     UserQuestProgress[]
+  characterMemories CharacterMemory[]
 }
 
 model Account {
@@ -64,21 +65,61 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Character {
+// ── Scenes — décors liés à un lieu (POI) ─────────────────────────────────────
+
+model Scene {
   id              String   @id @default(cuid())
   poiId           String   @unique
+  backgroundImage String?
+  entrySound      String?
+  ambientSound    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ── Characters ────────────────────────────────────────────────────────────────
+
+model Character {
+  id              String                @id @default(cuid())
   name            String
   nameJp          String
   role            String
   image           String
-  backgroundImage String
-  systemPrompt    String   @db.Text
+  systemPrompt    String                @db.Text
   greetingMessage String
   voiceId         String?
-  isFriendable    Boolean  @default(false)
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  isFriendable    Boolean               @default(false)
+  isActive        Boolean               @default(true)
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  appearances CharacterAppearance[]
+  memories    CharacterMemory[]
+}
+
+model CharacterAppearance {
+  id              String    @id @default(cuid())
+  characterId     String
+  character       Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  poiId           String
+  locationContext String?   @db.Text
+
+  @@unique([characterId, poiId])
+  @@index([poiId])
+}
+
+model CharacterMemory {
+  id          String    @id @default(cuid())
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key         String
+  value       String    @db.Text
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([characterId, userId, key])
+  @@index([characterId, userId])
 }
 
 // ── Quest system ──────────────────────────────────────────────────────────────
@@ -126,11 +167,11 @@ model TaskChoice {
 }
 
 model UserQuestProgress {
-  id           String             @id @default(cuid())
-  userId       String
-  user         User               @relation(fields: [userId], references: [id])
-  questId      String
-  quest        Quest              @relation(fields: [questId], references: [id])
+  id               String             @id @default(cuid())
+  userId           String
+  user             User               @relation(fields: [userId], references: [id])
+  questId          String
+  quest            Quest              @relation(fields: [questId], references: [id])
   status           QuestStatus        @default(IN_PROGRESS)
   startedAt        DateTime           @default(now())
   completedAt      DateTime?

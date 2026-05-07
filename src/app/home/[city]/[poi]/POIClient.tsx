@@ -3,18 +3,24 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Mic, MicOff, Loader2, ArrowLeft } from "lucide-react";
-import cities from "@/lib/cities";
-
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Message  = { role: "user" | "assistant"; content: string };
 type Word     = { furigana: string; jp: string; romaji: string; fr: string };
 type AIReply  = { reply: string; translation: string; words: Word[]; suggestions: string[] };
 
+type Scene = {
+  backgroundImage: string | null;
+  entrySound: string | null;
+  ambientSound: string | null;
+};
+
 type Character = {
-  id: string; poiId: string; name: string; nameJp: string; role: string;
-  image: string; backgroundImage: string; systemPrompt: string;
+  id: string; name: string; nameJp: string; role: string;
+  image: string; systemPrompt: string;
   greetingMessage: string; isFriendable: boolean; voiceId: string | null;
+  locationContext: string | null;
+  scene: Scene | null;
 };
 
 type TaskChoice = { id: string; text: string; isCorrect: boolean; order: number };
@@ -68,7 +74,6 @@ export default function POIClient({
   citySlug: string; poiId: string; questId?: string;
 }) {
   const router = useRouter();
-  const city   = cities[citySlug];
 
   // ── State ──
   const [character, setCharacter]     = useState<Character | null>(null);
@@ -94,11 +99,13 @@ export default function POIClient({
   // ── Refs ──
   const messagesRef    = useRef<Message[]>([]);
   const systemRef      = useRef("");
+  const characterIdRef = useRef<string | null>(null);
   const activeQuestRef = useRef<ActiveQuest | null>(null);
   const recorderRef    = useRef<MediaRecorder | null>(null);
   const chunksRef      = useRef<Blob[]>([]);
   const streamRef      = useRef<MediaStream | null>(null);
   const audioRef       = useRef<HTMLAudioElement | null>(null);
+  const ambientRef     = useRef<HTMLAudioElement | null>(null);
   const voiceIdRef     = useRef<string | null>(null);
 
   useEffect(() => { messagesRef.current = messages; }, [messages]);
@@ -115,8 +122,29 @@ export default function POIClient({
       .then(([c, q]: [Character, QuestData[]]) => {
         if (cancelled) return;
         setCharacter(c);
-        systemRef.current = c.systemPrompt;
+
+        // Build system prompt — inject location context for multi-POI appearances
+        let sysPrompt = c.systemPrompt;
+        if (c.locationContext) {
+          sysPrompt += `\n\n[CONTEXTE DU LIEU]\n${c.locationContext}`;
+        }
+        systemRef.current = sysPrompt;
         voiceIdRef.current = c.voiceId ?? null;
+        characterIdRef.current = c.id;
+
+        // ── Sounds ──
+        if (c.scene?.entrySound) {
+          const entry = new Audio(c.scene.entrySound);
+          entry.volume = 0.7;
+          entry.play().catch(() => {});
+        }
+        if (c.scene?.ambientSound) {
+          const ambient = new Audio(c.scene.ambientSound);
+          ambient.loop = true;
+          ambient.volume = 0.25;
+          ambientRef.current = ambient;
+          ambient.play().catch(() => {});
+        }
 
         // Mic setup
         navigator.mediaDevices.getUserMedia({ audio: true })
@@ -136,7 +164,6 @@ export default function POIClient({
             const isCompleted  = existing?.status === "COMPLETED";
             const isInProgress = existing?.status === "IN_PROGRESS";
 
-            // Replay and new quests start at task 0; only resume picks up mid-way
             const currentTaskIndex = isInProgress
               ? (existing?.taskProgress?.filter((tp: { status: string }) => tp.status === "COMPLETED").length ?? 0)
               : 0;
@@ -149,7 +176,6 @@ export default function POIClient({
               currentTaskIndex,
             };
 
-            // Create DB record for new quests, reset it for replays
             if (!existing || isCompleted) {
               fetch(`/api/quests/${quest.id}/start`, { method: "POST" })
                 .then(r => r.ok ? r.json() : null)
@@ -184,6 +210,7 @@ export default function POIClient({
     return () => {
       cancelled = true;
       if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+      if (ambientRef.current) { ambientRef.current.pause(); ambientRef.current = null; }
       window.speechSynthesis.cancel();
       streamRef.current?.getTracks().forEach(t => t.stop());
     };
@@ -192,14 +219,12 @@ export default function POIClient({
 
   // ── TTS ──
   const speak = useCallback(async (text: string) => {
-    // Stop whatever is currently playing
     if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
     window.speechSynthesis.cancel();
 
     const vId = voiceIdRef.current;
 
     if (!vId) {
-      // Browser TTS fallback (no ElevenLabs key or no voiceId)
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = "ja-JP"; utter.rate = 0.85;
       const go = () => {
@@ -214,7 +239,6 @@ export default function POIClient({
       return;
     }
 
-    // ElevenLabs TTS
     setIsSpeaking(true);
     try {
       const r = await fetch("/api/tts", {
@@ -252,7 +276,6 @@ export default function POIClient({
     setIsLoading(true);
     setCurrentReply(null);
 
-    // Inject quest context into system prompt
     const aq = activeQuestRef.current;
     let sysPrompt = systemRef.current;
     if (aq) {
@@ -266,7 +289,11 @@ export default function POIClient({
       const r = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: next, systemPrompt: sysPrompt }),
+        body: JSON.stringify({
+          messages: next,
+          systemPrompt: sysPrompt,
+          characterId: characterIdRef.current,
+        }),
       });
       const d: AIReply = await r.json();
       setMessages(p => [...p, { role: "assistant", content: d.reply }]);
@@ -363,6 +390,8 @@ export default function POIClient({
   if (notFound) return <div className="flex h-screen items-center justify-center text-gray-400">Personnage introuvable.</div>;
   if (!character) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-violet-400" /></div>;
 
+  const backgroundImage = character.scene?.backgroundImage ?? "/backgrounds/konbini.jpg";
+
   // ════════════════════════════════════════════════════════════════════════════
   // CONVERSATION
   // ════════════════════════════════════════════════════════════════════════════
@@ -372,7 +401,7 @@ export default function POIClient({
       {/* Background */}
       <div className="absolute inset-0 bg-black">
         <div className="absolute inset-0"
-          style={{ backgroundImage: `url(${character.backgroundImage})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+          style={{ backgroundImage: `url(${backgroundImage})`, backgroundSize: "cover", backgroundPosition: "center" }} />
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
       </div>
 
@@ -387,7 +416,6 @@ export default function POIClient({
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 z-30 flex items-start justify-between px-5 pt-4">
 
-        {/* Quest HUD or free indicator */}
         {activeQuest ? (
           <div className="flex items-start gap-2 rounded-xl bg-black/65 px-3 py-2.5 backdrop-blur-sm border border-yellow-400/20" style={{ maxWidth: 260 }}>
             <span className="mt-0.5 shrink-0">🎯</span>
@@ -416,7 +444,6 @@ export default function POIClient({
           </div>
         )}
 
-        {/* Back to city map */}
         <button
           onClick={() => { window.speechSynthesis.cancel(); router.push(`/home/${citySlug}`); }}
           className="flex items-center gap-2 rounded-xl bg-black/60 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white/70 backdrop-blur-sm hover:text-white transition-colors"

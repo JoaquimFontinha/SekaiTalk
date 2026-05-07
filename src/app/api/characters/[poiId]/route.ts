@@ -5,13 +5,23 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { poiId: string } }
 ) {
-  const character = await prisma.character.findUnique({
-    where: { poiId: params.poiId },
-  });
+  const { poiId } = params;
 
-  if (!character) {
+  const [appearance, scene] = await Promise.all([
+    prisma.characterAppearance.findFirst({
+      where: { poiId },
+      include: { character: true },
+    }),
+    prisma.scene.findUnique({ where: { poiId } }),
+  ]);
+
+  if (!appearance) {
     return NextResponse.json({ error: "Character not found" }, { status: 404 });
   }
 
-  return NextResponse.json(character);
+  return NextResponse.json({
+    ...appearance.character,
+    locationContext: appearance.locationContext ?? null,
+    scene: scene ?? null,
+  });
 }
