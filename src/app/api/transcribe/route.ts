@@ -15,8 +15,8 @@ export async function POST(req: NextRequest) {
   const whisperForm = new FormData();
   whisperForm.append("file", audio, "audio.webm");
   whisperForm.append("model", "whisper-large-v3-turbo");
-  whisperForm.append("language", "fr");
-  whisperForm.append("prompt", "Conversation avec un personnage de jeu.");
+  whisperForm.append("language", "ja");
+  whisperForm.append("prompt", "日本語で話しています。");
 
   const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
     method: "POST",

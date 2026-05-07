@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Mic, MicOff, Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Pause, Play } from "lucide-react";
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type Message  = { role: "user" | "assistant"; content: string };
@@ -46,6 +47,10 @@ const WORD_COLORS = [
   "text-emerald-400", "text-orange-400", "text-blue-400", "text-rose-400",
 ];
 
+const VAD_THRESHOLD  = 0.025; // RMS volume to start recording
+const SILENCE_DELAY  = 1200;  // ms of silence before sending
+const MIN_RECORD_MS  = 400;   // discard recordings shorter than this (background noise)
+
 // ── WordRow ───────────────────────────────────────────────────────────────────
 
 function WordRow({ words }: { words: Word[] }) {
@@ -76,148 +81,57 @@ export default function POIClient({
   const router = useRouter();
 
   // ── State ──
-  const [character, setCharacter]     = useState<Character | null>(null);
-  const [notFound, setNotFound]       = useState(false);
-  const [activeQuest, setActiveQuest] = useState<ActiveQuest | null>(null);
-  const [showQuiz, setShowQuiz]       = useState(false);
+  const [character, setCharacter]       = useState<Character | null>(null);
+  const [notFound, setNotFound]         = useState(false);
+  const [activeQuest, setActiveQuest]   = useState<ActiveQuest | null>(null);
+  const [showQuiz, setShowQuiz]         = useState(false);
   const [choiceResult, setChoiceResult] = useState<{ id: string; correct: boolean } | null>(null);
-  const [questReward, setQuestReward] = useState<{ xpGained: number; yensGained: number; leveledUp: boolean; newLevel: number; isReplay: boolean } | null>(null);
+  const [questReward, setQuestReward]   = useState<{ xpGained: number; yensGained: number; leveledUp: boolean; newLevel: number; isReplay: boolean } | null>(null);
 
-  const [messages, setMessages]         = useState<Message[]>([]);
-  const [currentReply, setCurrentReply] = useState<AIReply | null>(null);
-  const [lastUserMsg, setLastUserMsg]   = useState("");
-  const [isLoading, setIsLoading]       = useState(false);
-  const [isSpeaking, setIsSpeaking]     = useState(false);
-  const [showTip, setShowTip]           = useState(true);
-
-  const [isRecording, setIsRecording]       = useState(false);
+  const [messages, setMessages]           = useState<Message[]>([]);
+  const [currentReply, setCurrentReply]   = useState<AIReply | null>(null);
+  const [lastUserMsg, setLastUserMsg]     = useState("");
+  const [isLoading, setIsLoading]         = useState(false);
+  const [isSpeaking, setIsSpeaking]       = useState(false);
+  const [showTip, setShowTip]             = useState(true);
+  const [isPaused, setIsPaused]           = useState(false);
+  const [isRecording, setIsRecording]     = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [micError, setMicError]             = useState<string | null>(null);
-  const [devices, setDevices]               = useState<MediaDeviceInfo[]>([]);
-  const [selectedDevice, setSelectedDevice] = useState<string>("");
+  const [micError, setMicError]           = useState<string | null>(null);
+  const [micReady, setMicReady]           = useState(false);
 
   // ── Refs ──
-  const messagesRef    = useRef<Message[]>([]);
-  const systemRef      = useRef("");
-  const characterIdRef = useRef<string | null>(null);
-  const activeQuestRef = useRef<ActiveQuest | null>(null);
-  const recorderRef    = useRef<MediaRecorder | null>(null);
-  const chunksRef      = useRef<Blob[]>([]);
-  const streamRef      = useRef<MediaStream | null>(null);
-  const audioRef       = useRef<HTMLAudioElement | null>(null);
-  const ambientRef     = useRef<HTMLAudioElement | null>(null);
-  const voiceIdRef     = useRef<string | null>(null);
+  const messagesRef     = useRef<Message[]>([]);
+  const systemRef       = useRef("");
+  const characterIdRef  = useRef<string | null>(null);
+  const activeQuestRef  = useRef<ActiveQuest | null>(null);
+  const recorderRef     = useRef<MediaRecorder | null>(null);
+  const chunksRef       = useRef<Blob[]>([]);
+  const streamRef       = useRef<MediaStream | null>(null);
+  const audioRef        = useRef<HTMLAudioElement | null>(null);
+  const ambientRef      = useRef<HTMLAudioElement | null>(null);
+  const voiceIdRef      = useRef<string | null>(null);
+  const audioCtxRef     = useRef<AudioContext | null>(null);
+  const silenceTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recordingStartRef  = useRef<number>(0);
+  const isRecordingRef  = useRef(false);
+  const shouldListenRef = useRef(false);
 
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { activeQuestRef.current = activeQuest; }, [activeQuest]);
 
-  // ── Load character + quests ──
+  // ── Update shouldListen whenever speaking / loading / paused changes ──
   useEffect(() => {
-    let cancelled = false;
-
-    Promise.all([
-      fetch(`/api/characters/${poiId}`).then(r => r.ok ? r.json() : Promise.reject()),
-      fetch(`/api/quests/poi/${poiId}`).then(r => r.ok ? r.json() : []),
-    ])
-      .then(([c, q]: [Character, QuestData[]]) => {
-        if (cancelled) return;
-        setCharacter(c);
-
-        // Build system prompt — inject location context for multi-POI appearances
-        let sysPrompt = c.systemPrompt;
-        if (c.locationContext) {
-          sysPrompt += `\n\n[CONTEXTE DU LIEU]\n${c.locationContext}`;
-        }
-        systemRef.current = sysPrompt;
-        voiceIdRef.current = c.voiceId ?? null;
-        characterIdRef.current = c.id;
-
-        // ── Sounds ──
-        if (c.scene?.entrySound) {
-          const entry = new Audio(c.scene.entrySound);
-          entry.volume = 0.7;
-          entry.play().catch(() => {});
-        }
-        if (c.scene?.ambientSound) {
-          const ambient = new Audio(c.scene.ambientSound);
-          ambient.loop = true;
-          ambient.volume = 0.25;
-          ambientRef.current = ambient;
-          ambient.play().catch(() => {});
-        }
-
-        // Mic setup (navigator.mediaDevices is undefined on mobile HTTP)
-        if (navigator.mediaDevices) {
-          navigator.mediaDevices.getUserMedia({ audio: true })
-            .then(s => { s.getTracks().forEach(t => t.stop()); return navigator.mediaDevices.enumerateDevices(); })
-            .then(devs => {
-              const mics = devs.filter(d => d.kind === "audioinput");
-              setDevices(mics);
-              if (mics.length) setSelectedDevice(mics[0].deviceId);
-            }).catch(() => {});
-        }
-
-        // Init quest if questId provided
-        let initQuest: ActiveQuest | null = null;
-        if (questId) {
-          const quest = q.find((qd: QuestData) => qd.id === questId);
-          if (quest) {
-            const existing = quest.userProgress?.[0];
-            const isCompleted  = existing?.status === "COMPLETED";
-            const isInProgress = existing?.status === "IN_PROGRESS";
-
-            const currentTaskIndex = isInProgress
-              ? (existing?.taskProgress?.filter((tp: { status: string }) => tp.status === "COMPLETED").length ?? 0)
-              : 0;
-
-            initQuest = {
-              questId: quest.id,
-              questProgressId: existing?.id ?? null,
-              questTitle: quest.title,
-              tasks: quest.tasks,
-              currentTaskIndex,
-            };
-
-            if (!existing || isCompleted) {
-              fetch(`/api/quests/${quest.id}/start`, { method: "POST" })
-                .then(r => r.ok ? r.json() : null)
-                .then(progress => {
-                  if (progress) {
-                    setActiveQuest(prev => prev ? { ...prev, questProgressId: progress.id } : null);
-                    activeQuestRef.current = activeQuestRef.current
-                      ? { ...activeQuestRef.current, questProgressId: progress.id }
-                      : null;
-                  }
-                })
-                .catch(() => {});
-            }
-          }
-        }
-
-        setActiveQuest(initQuest);
-        activeQuestRef.current = initQuest;
-
-        // Show greeting
-        setCurrentReply({
-          reply: c.greetingMessage,
-          translation: "", words: [],
-          suggestions: initQuest
-            ? ["Bonjour !", "Excusez-moi…", "Pouvez-vous m'aider ?"]
-            : ["Bonjour !", "Comment ça va ?", "Qu'est-ce que vous recommandez ?"],
-        });
-        speak(c.greetingMessage);
-      })
-      .catch(() => setNotFound(true));
-
-    return () => {
-      cancelled = true;
-      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
-      if (ambientRef.current) { ambientRef.current.pause(); ambientRef.current = null; }
-      window.speechSynthesis.cancel();
-      streamRef.current?.getTracks().forEach(t => t.stop());
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [poiId, questId]);
+    const canListen = !isPaused && !isSpeaking && !isLoading && !isTranscribing;
+    shouldListenRef.current = canListen;
+    // If we can no longer listen, abort any in-flight recording
+    if (!canListen && isRecordingRef.current) {
+      if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
+      if (recorderRef.current?.state === "recording") recorderRef.current.stop();
+      isRecordingRef.current = false;
+      setIsRecording(false);
+    }
+  }, [isPaused, isSpeaking, isLoading, isTranscribing]);
 
   // ── TTS ──
   const speak = useCallback(async (text: string) => {
@@ -249,8 +163,8 @@ export default function POIClient({
         body: JSON.stringify({ text, voiceId: vId }),
       });
       if (!r.ok) throw new Error("TTS failed");
-      const blob = await r.blob();
-      const url  = URL.createObjectURL(blob);
+      const blob  = await r.blob();
+      const url   = URL.createObjectURL(blob);
       const audio = new Audio(url);
       audioRef.current = audio;
       audio.onended = () => {
@@ -306,6 +220,79 @@ export default function POIClient({
     } finally { setIsLoading(false); }
   }, [speak]);
 
+  // ── Transcription ──
+  const transcribe = useCallback(async (blob: Blob) => {
+    setIsTranscribing(true);
+    try {
+      const f = new FormData(); f.append("audio", blob, "audio.webm");
+      const r = await fetch("/api/transcribe", { method: "POST", body: f });
+      const d = await r.json();
+      if (d.text?.trim()) await sendMessage(d.text);
+    } catch { /* silent */ }
+    finally { setIsTranscribing(false); }
+  }, [sendMessage]);
+
+  // ── VAD — voice activity detection ──
+  const startVAD = useCallback(async () => {
+    if (!navigator.mediaDevices) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      const ctx = new AudioContext();
+      audioCtxRef.current = ctx;
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 512;
+      ctx.createMediaStreamSource(stream).connect(analyser);
+
+      const data = new Float32Array(analyser.fftSize);
+      const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+        ? "audio/webm;codecs=opus" : "audio/webm";
+
+      const tick = () => {
+        if (!audioCtxRef.current) return; // component unmounted
+        analyser.getFloatTimeDomainData(data);
+        const rms = Math.sqrt(data.reduce((s, v) => s + v * v, 0) / data.length);
+
+        if (shouldListenRef.current && rms > VAD_THRESHOLD) {
+          if (!isRecordingRef.current) {
+            // Start a fresh recording for this utterance
+            chunksRef.current = [];
+            const rec = new MediaRecorder(stream, { mimeType: mime });
+            recorderRef.current = rec;
+            rec.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+            rec.onstop = () => {
+              const duration = Date.now() - recordingStartRef.current;
+              const recorded = new Blob(chunksRef.current, { type: mime });
+              chunksRef.current = [];
+              if (recorded.size > 0 && duration >= MIN_RECORD_MS) transcribe(recorded);
+            };
+            rec.start(100);
+            recordingStartRef.current = Date.now();
+            isRecordingRef.current = true;
+            setIsRecording(true);
+          }
+          // Reset silence countdown
+          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+          silenceTimerRef.current = setTimeout(() => {
+            if (isRecordingRef.current && recorderRef.current?.state === "recording") {
+              recorderRef.current.stop();
+              isRecordingRef.current = false;
+              setIsRecording(false);
+            }
+          }, SILENCE_DELAY);
+        }
+
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+      setMicReady(true);
+    } catch (e: unknown) {
+      const err = e as { name?: string };
+      setMicError(err.name === "NotAllowedError" ? "Micro refusé." : "Micro inaccessible.");
+    }
+  }, [transcribe]);
+
   // ── Complete task ──
   const handleCompleteTask = useCallback(async () => {
     const aq = activeQuestRef.current;
@@ -346,45 +333,119 @@ export default function POIClient({
     }
   }, []);
 
-  // ── Transcription ──
-  const transcribe = useCallback(async (blob: Blob) => {
-    setIsTranscribing(true);
-    try {
-      const f = new FormData(); f.append("audio", blob, "audio.webm");
-      const r = await fetch("/api/transcribe", { method: "POST", body: f });
-      const d = await r.json();
-      if (d.text?.trim()) await sendMessage(d.text);
-      else setMicError("Rien capté — réessaie.");
-    } catch { setMicError("Erreur transcription."); }
-    finally { setIsTranscribing(false); }
-  }, [sendMessage]);
+  // ── Pause / Resume side effects ──
+  useEffect(() => {
+    if (isPaused) {
+      ambientRef.current?.pause();
+      if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    } else {
+      ambientRef.current?.play().catch(() => {});
+      // Re-activate AudioContext if the browser suspended it
+      audioCtxRef.current?.resume().catch(() => {});
+    }
+  }, [isPaused]);
 
-  // ── Mic ──
-  const toggleMic = useCallback(async () => {
-    setMicError(null);
-    if (isRecording) {
-      recorderRef.current?.stop();
+  const togglePause = useCallback(() => setIsPaused(prev => !prev), []);
+
+  // ── Load character + quests ──
+  useEffect(() => {
+    let cancelled = false;
+
+    Promise.all([
+      fetch(`/api/characters/${poiId}`).then(r => r.ok ? r.json() : Promise.reject()),
+      fetch(`/api/quests/poi/${poiId}`).then(r => r.ok ? r.json() : []),
+    ])
+      .then(([c, q]: [Character, QuestData[]]) => {
+        if (cancelled) return;
+        setCharacter(c);
+
+        let sysPrompt = c.systemPrompt;
+        if (c.locationContext) sysPrompt += `\n\n[CONTEXTE DU LIEU]\n${c.locationContext}`;
+        systemRef.current = sysPrompt;
+        voiceIdRef.current = c.voiceId ?? null;
+        characterIdRef.current = c.id;
+
+        // ── Sounds ──
+        if (c.scene?.entrySound) {
+          const entry = new Audio(c.scene.entrySound);
+          entry.volume = 0.7;
+          entry.play().catch(() => {});
+        }
+        if (c.scene?.ambientSound) {
+          const ambient = new Audio(c.scene.ambientSound);
+          ambient.loop = true;
+          ambient.volume = 0.25;
+          ambientRef.current = ambient;
+          ambient.play().catch(() => {});
+        }
+
+        // ── Start VAD ──
+        startVAD();
+
+        // ── Init quest ──
+        let initQuest: ActiveQuest | null = null;
+        if (questId) {
+          const quest = q.find((qd: QuestData) => qd.id === questId);
+          if (quest) {
+            const existing        = quest.userProgress?.[0];
+            const isCompleted     = existing?.status === "COMPLETED";
+            const isInProgress    = existing?.status === "IN_PROGRESS";
+            const currentTaskIndex = isInProgress
+              ? (existing?.taskProgress?.filter((tp: { status: string }) => tp.status === "COMPLETED").length ?? 0)
+              : 0;
+
+            initQuest = {
+              questId: quest.id,
+              questProgressId: existing?.id ?? null,
+              questTitle: quest.title,
+              tasks: quest.tasks,
+              currentTaskIndex,
+            };
+
+            if (!existing || isCompleted) {
+              fetch(`/api/quests/${quest.id}/start`, { method: "POST" })
+                .then(r => r.ok ? r.json() : null)
+                .then(progress => {
+                  if (progress) {
+                    setActiveQuest(prev => prev ? { ...prev, questProgressId: progress.id } : null);
+                    activeQuestRef.current = activeQuestRef.current
+                      ? { ...activeQuestRef.current, questProgressId: progress.id }
+                      : null;
+                  }
+                })
+                .catch(() => {});
+            }
+          }
+        }
+
+        setActiveQuest(initQuest);
+        activeQuestRef.current = initQuest;
+
+        setCurrentReply({
+          reply: c.greetingMessage,
+          translation: "", words: [],
+          suggestions: initQuest
+            ? ["Bonjour !", "Excusez-moi…", "Pouvez-vous m'aider ?"]
+            : ["Bonjour !", "Comment ça va ?", "Qu'est-ce que vous recommandez ?"],
+        });
+        speak(c.greetingMessage);
+      })
+      .catch(() => setNotFound(true));
+
+    return () => {
+      cancelled = true;
+      audioRef.current?.pause();
+      ambientRef.current?.pause();
+      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      audioCtxRef.current?.close();
+      audioCtxRef.current = null;
       streamRef.current?.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-      setIsRecording(false);
-      return;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: selectedDevice ? { deviceId: { exact: selectedDevice } } : true,
-      });
-      streamRef.current = stream;
-      const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm";
-      const rec  = new MediaRecorder(stream, { mimeType: mime });
-      recorderRef.current = rec; chunksRef.current = [];
-      rec.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
-      rec.onstop = () => { transcribe(new Blob(chunksRef.current, { type: mime })); chunksRef.current = []; };
-      rec.start(100); setIsRecording(true);
-    } catch (e: unknown) {
-      const err = e as { name?: string };
-      setMicError(err.name === "NotAllowedError" ? "Micro refusé." : "Micro inaccessible.");
-    }
-  }, [isRecording, selectedDevice, transcribe]);
+      window.speechSynthesis.cancel();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [poiId, questId]);
 
   const isBusy = isLoading || isTranscribing;
 
@@ -395,7 +456,7 @@ export default function POIClient({
   const backgroundImage = character.scene?.backgroundImage ?? "/backgrounds/konbini.jpg";
 
   // ════════════════════════════════════════════════════════════════════════════
-  // CONVERSATION
+  // RENDER
   // ════════════════════════════════════════════════════════════════════════════
   return (
     <div className="relative h-screen w-screen overflow-hidden select-none">
@@ -415,9 +476,10 @@ export default function POIClient({
           draggable={false} />
       </div>
 
-      {/* Top bar */}
-      <div className="absolute top-0 left-0 right-0 z-30 flex items-start justify-between px-5 pt-4">
+      {/* Top bar — left | center pause | right */}
+      <div className="absolute top-0 left-0 right-0 z-50 flex items-start justify-between px-5 pt-4">
 
+        {/* Left: quest info or free conversation */}
         {activeQuest ? (
           <div className="flex items-start gap-2 rounded-xl bg-black/65 px-3 py-2.5 backdrop-blur-sm border border-yellow-400/20" style={{ maxWidth: 260 }}>
             <span className="mt-0.5 shrink-0">🎯</span>
@@ -446,6 +508,21 @@ export default function POIClient({
           </div>
         )}
 
+        {/* Center: pause button */}
+        <button
+          onClick={togglePause}
+          className="flex flex-col items-center gap-0.5 rounded-xl bg-black/60 px-5 py-2.5 backdrop-blur-sm hover:bg-black/80 transition-colors"
+        >
+          {isPaused
+            ? <Play  className="h-5 w-5 text-white/80" />
+            : <Pause className="h-5 w-5 text-white/80" />
+          }
+          <span className="text-[9px] font-bold uppercase tracking-wider text-white/35">
+            {isPaused ? "Reprendre" : "Pause"}
+          </span>
+        </button>
+
+        {/* Right: back to map */}
         <button
           onClick={() => { window.speechSynthesis.cancel(); router.push(`/home/${citySlug}`); }}
           className="flex items-center gap-2 rounded-xl bg-black/60 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white/70 backdrop-blur-sm hover:text-white transition-colors"
@@ -453,6 +530,19 @@ export default function POIClient({
           <ArrowLeft className="h-4 w-4" /> Carte
         </button>
       </div>
+
+      {/* Pause overlay — cliquable pour reprendre */}
+      {isPaused && (
+        <div
+          className="absolute inset-0 z-40 flex items-center justify-center bg-black/55 backdrop-blur-sm cursor-pointer"
+          onClick={togglePause}
+        >
+          <div className="flex flex-col items-center gap-3 text-white/60">
+            <Play className="h-10 w-10" />
+            <p className="text-sm font-bold uppercase tracking-widest">Appuyer pour reprendre</p>
+          </div>
+        </div>
+      )}
 
       {/* Quest complete reward toast */}
       {questReward && (
@@ -476,9 +566,7 @@ export default function POIClient({
             </div>
           )}
           {questReward.leveledUp && (
-            <p className="text-xs font-bold text-violet-400 mt-0.5">
-              ✨ Niveau {questReward.newLevel} atteint !
-            </p>
+            <p className="text-xs font-bold text-violet-400 mt-0.5">✨ Niveau {questReward.newLevel} atteint !</p>
           )}
           {questReward.isReplay && (
             <p className="text-[11px] text-white/40 mt-0.5">Aucune récompense pour la reprise</p>
@@ -504,6 +592,24 @@ export default function POIClient({
           </div>
           <span className="text-sm font-bold text-white">{character.name}</span>
           <span className="text-[11px] text-white/35 font-medium">{character.nameJp}</span>
+
+          {/* VAD status indicator */}
+          {micReady && !isPaused && (
+            <span className={`ml-auto flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider ${
+              isRecording ? "text-red-400" : isSpeaking || isBusy ? "text-white/25" : "text-emerald-400/80"
+            }`}>
+              <span className={`inline-block h-1.5 w-1.5 rounded-full ${
+                isRecording    ? "bg-red-400 animate-pulse"
+                : isBusy      ? "bg-white/20"
+                : isSpeaking  ? "bg-violet-400/40"
+                : "bg-emerald-400/80 animate-pulse"
+              }`} />
+              {isRecording ? "Écoute" : isTranscribing ? "…" : isLoading ? "…" : isSpeaking ? "Parle" : "Prêt"}
+            </span>
+          )}
+          {!micReady && !micError && !isPaused && (
+            <span className="ml-auto text-[9px] text-white/20">micro…</span>
+          )}
         </div>
 
         {lastUserMsg && <p className="text-xs text-white/40 italic pl-1">&gt; {lastUserMsg}</p>}
@@ -538,18 +644,9 @@ export default function POIClient({
         </div>
 
         {micError && <p className="text-[10px] text-red-400 pl-1">{micError}</p>}
-
-        {devices.length > 1 && (
-          <select value={selectedDevice} onChange={e => setSelectedDevice(e.target.value)} disabled={isRecording}
-            className="w-full rounded-lg bg-black/50 border border-white/10 px-3 py-1.5 text-[11px] text-white/50 outline-none backdrop-blur-sm">
-            {devices.map(d => (
-              <option key={d.deviceId} value={d.deviceId}>{d.label || `Micro ${d.deviceId.slice(0, 8)}`}</option>
-            ))}
-          </select>
-        )}
       </div>
 
-      {/* Suggestions + quest verify */}
+      {/* Bottom: suggestions + quest verify */}
       <div className="absolute bottom-5 left-0 right-0 z-30 flex justify-center items-center gap-2 px-4">
         {activeQuest && currentReply && !isBusy && (
           <button
@@ -566,19 +663,6 @@ export default function POIClient({
             <span className="text-[9px] text-white/25">{i + 1}</span>
           </button>
         ))}
-      </div>
-
-      {/* Mic */}
-      <div className="absolute bottom-5 right-6 z-30 flex flex-col items-center gap-1.5">
-        <button onClick={toggleMic} disabled={isBusy}
-          className={`flex h-14 w-14 items-center justify-center rounded-full shadow-xl transition-all active:scale-95 disabled:opacity-40 ${
-            isRecording
-              ? "animate-pulse bg-red-500 shadow-red-500/40 border border-red-400"
-              : "border border-white/20 bg-white/10 backdrop-blur-md hover:bg-violet-600/80"
-          }`}>
-          {isRecording ? <MicOff className="h-6 w-6 text-white" /> : <Mic className="h-6 w-6 text-white" />}
-        </button>
-        <p className="text-[9px] font-medium text-white/35">{isRecording ? "Stop" : "Micro"}</p>
       </div>
 
       {/* ── Quiz modal ── */}

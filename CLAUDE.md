@@ -60,7 +60,10 @@ Deux fichiers d'env :
 - `User` — profil central (email, pseudo unique, firstName, lastName, birthDate, image, password haché bcrypt)
 - `Account` — méthode de connexion liée à un User (géré par NextAuth)
 - `Session` — toujours vide (JWT strategy)
-- `Character` — personnage IA lié à un POI (`poiId` unique). Contient `systemPrompt`, `greetingMessage`, `image`, `backgroundImage`, `voiceId` (ElevenLabs)
+- `Character` — personnage IA sans `poiId` (peut apparaître dans plusieurs lieux). Contient `id` stable (ex: `"char-kenji"`), `systemPrompt`, `greetingMessage`, `image`, `voiceId` (ElevenLabs), `isFriendable` (active la mémoire + outil `remember_fact`)
+- `CharacterAppearance` — table de jonction many-to-many `Character ↔ POI`. Champs : `characterId`, `poiId`, `locationContext?` (injection supplémentaire dans le system prompt pour contextualiser le lieu). Contrainte `@@unique([characterId, poiId])`
+- `Scene` — décor lié à un POI (`poiId @unique`). Champs : `backgroundImage?`, `entrySound?`, `ambientSound?`. Séparé du personnage car le même lieu peut avoir un autre personnage à l'avenir
+- `CharacterMemory` — mémoire persistante par `(characterId, userId, key)`. Valeur mise à jour via upsert. Activée uniquement si `character.isFriendable = true` + utilisateur connecté. Contrainte `@@unique([characterId, userId, key])`
 - `Quest` — quête liée à un POI (`poiId`). Plusieurs quêtes possibles par POI, ordonnées par `order`
 - `QuestTask` — tâche ordonnée dans une quête. Contient `instruction` (affiché à l'utilisateur) et `aiContext` (injecté dans le system prompt pour guider l'IA)
 - `TaskChoice` — choix QCM d'une tâche (`isCorrect` pour la bonne réponse)
@@ -69,7 +72,11 @@ Deux fichiers d'env :
 
 ### Seed
 
-`prisma/seed.ts` — crée les `Character` et les `Quest` avec des IDs stables (upsert pour les personnages, findUnique + create pour les quêtes). Les quêtes sont idempotentes : si l'ID existe déjà, on ne recrée pas.
+`prisma/seed.ts` — crée `Scene`, `Character`, `CharacterAppearance` et `Quest` avec des IDs stables.
+- Personnages : upsert par `id` stable (`"char-kenji"`, `"char-hana"`, `"char-taro"`)
+- Scènes : upsert par `poiId` (konbini-shinjuku, konbini-shibuya, konbini-kyoto) avec `entrySound: "/sounds/konbini_enter.mp3"`
+- Apparitions : upsert par `@@unique([characterId, poiId])`
+- Quêtes : `findUnique` + `create` — idempotentes, non recréées si l'ID existe déjà
 
 ### Navigation et routes
 
@@ -93,8 +100,8 @@ Deux fichiers d'env :
 
 | Route | Méthode | Description |
 |-------|---------|-------------|
-| `/api/characters/[poiId]` | GET | Récupère le personnage d'un POI |
-| `/api/chat` | POST | Envoie un message à Claude Haiku, retourne `{reply, translation, words, suggestions}` |
+| `/api/characters/[poiId]` | GET | Récupère le personnage via `CharacterAppearance` + `Scene` du POI ; retourne `{...character, locationContext, scene}` |
+| `/api/chat` | POST | Envoie un message à Claude Haiku. Body : `{messages, systemPrompt, characterId}`. Retourne `{reply, translation, words, suggestions}`. Agentic loop (max 5 tours) avec outil `remember_fact` si personnage `isFriendable` |
 | `/api/transcribe` | POST | Transcrit un audio via Groq Whisper |
 | `/api/tts` | POST | TTS ElevenLabs server-side (`{text, voiceId}`), retourne `audio/mpeg` |
 | `/api/user/stats` | GET | Stats XP/Yens/niveau de l'utilisateur connecté |
@@ -129,12 +136,26 @@ Deux fichiers d'env :
 - Les récompenses s'affichent dans la modale quête (`CityClient`) et en toast post-quête (`POIClient`)
 - Replay d'une quête : `isReplay = status === "IN_PROGRESS" && !!firstCompletedAt` → pas de récompense
 
+### Système de mémoire (`CharacterMemory`)
+
+- Activé uniquement si `character.isFriendable = true` ET utilisateur connecté (`userId` via `getServerSession`)
+- `POST /api/chat` charge les souvenirs existants et les injecte dans le system prompt : `[MÉMOIRE]\nkey: value`
+- Claude reçoit l'outil `remember_fact(key, value)` via tool_choice `auto`. Il l'appelle discrètement quand l'utilisateur mentionne son nom, métier, goûts, événements notables
+- **Agentic loop** : si `stop_reason === "tool_use"` → upsert `CharacterMemory` en DB → ajoute `tool_result "Mémorisé."` → continue (max 5 tours) → réponse texte finale
+
+### Système sonore (POIClient)
+
+- **Entry sound** : `new Audio(c.scene.entrySound).play()` au chargement du personnage, volume 0.7
+- **Ambient sound** : audio en loop (volume 0.25) stocké dans `ambientRef` — stoppé proprement à l'unmount
+- Les sons sont dans `public/sounds/` (ex: `konbini_enter.mp3`)
+- `navigator.mediaDevices` est `undefined` sur mobile HTTP (contexte non sécurisé) → guard `if (navigator.mediaDevices)` obligatoire avant `getUserMedia`
+
 ### TTS ElevenLabs
 
 - `Character.voiceId` stocke l'ID de voix ElevenLabs (ex: `TX3LPaxmHKxFdv7VOQHJ`)
 - `speak()` dans `POIClient` : ElevenLabs si `voiceId` présent, fallback `speechSynthesis` browser
 - React StrictMode double-invoke : flag `let cancelled = false` dans le `useEffect` de chargement
-- Voix seed : Kenji=Liam, Hana=Matilda, Taro=Daniel
+- Voix seed : Kenji=Liam (`TX3LPaxmHKxFdv7VOQHJ`), Hana=Matilda (`XrExE9yKIg1WjnnlVkGX`), Taro=Daniel (`onwK4e9ZLuTAKqWW03F9`)
 
 ### SessionProvider
 `src/app/providers.tsx` wrappe l'app avec le `SessionProvider` NextAuth, inclus dans `src/app/layout.tsx`.
