@@ -143,6 +143,8 @@ export default function POIClient({
   const [micError, setMicError]           = useState<string | null>(null);
   const [micReady, setMicReady]           = useState(false);
   const [displayMode, setDisplayMode]     = useState<DisplayMode>("full");
+  const [replaySpeed, setReplaySpeed]     = useState<1 | 0.7>(1);
+  const [hasAudio, setHasAudio]           = useState(false);
 
   // ── Refs ──
   const messagesRef     = useRef<Message[]>([]);
@@ -159,8 +161,9 @@ export default function POIClient({
   const silenceTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recordingStartRef  = useRef<number>(0);
   const speakAbortRef      = useRef<AbortController | null>(null);
-  const isRecordingRef  = useRef(false);
-  const shouldListenRef = useRef(false);
+  const isRecordingRef     = useRef(false);
+  const shouldListenRef    = useRef(false);
+  const lastAudioBlobRef   = useRef<Blob | null>(null);
 
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { activeQuestRef.current = activeQuest; }, [activeQuest]);
@@ -217,6 +220,8 @@ export default function POIClient({
       if (!r.ok) throw new Error("TTS failed");
       const blob  = await r.blob();
       if (controller.signal.aborted) return;
+      lastAudioBlobRef.current = blob;
+      setHasAudio(true);
       const url   = URL.createObjectURL(blob);
       const audio = new Audio(url);
       audioRef.current = audio;
@@ -235,6 +240,28 @@ export default function POIClient({
       if (!controller.signal.aborted) setIsSpeaking(false);
     }
   }, []);
+
+  // ── Replay ──
+  const replay = useCallback((speed: 1 | 0.7) => {
+    if (!lastAudioBlobRef.current || isSpeaking) return;
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; }
+    const url   = URL.createObjectURL(lastAudioBlobRef.current);
+    const audio = new Audio(url);
+    audio.playbackRate = speed;
+    audioRef.current = audio;
+    setIsSpeaking(true);
+    audio.onended = () => {
+      setIsSpeaking(false);
+      URL.revokeObjectURL(url);
+      if (audioRef.current === audio) audioRef.current = null;
+    };
+    audio.onerror = () => {
+      setIsSpeaking(false);
+      URL.revokeObjectURL(url);
+      if (audioRef.current === audio) audioRef.current = null;
+    };
+    audio.play();
+  }, [isSpeaking]);
 
   // ── Send message ──
   const sendMessage = useCallback(async (text: string) => {
@@ -689,7 +716,29 @@ export default function POIClient({
 
         {lastUserMsg && <p className="text-xs text-white/40 italic pl-1">&gt; {lastUserMsg}</p>}
 
-        <div className="rounded-2xl bg-black/65 p-5 backdrop-blur-md border border-white/8 shadow-2xl">
+        <div className="relative rounded-2xl bg-black/65 p-5 backdrop-blur-md border border-white/8 shadow-2xl">
+          {hasAudio && !isBusy && (
+            <div className="absolute top-3 right-3 flex items-center rounded-full bg-white/10 backdrop-blur-md border border-white/15 overflow-hidden">
+              <button
+                onClick={() => replay(replaySpeed)}
+                className="flex items-center justify-center px-3 py-1.5 hover:bg-white/10 transition-colors"
+                title="Rejouer"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white/80">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                </svg>
+              </button>
+              <div className="w-px h-4 bg-white/20" />
+              <button
+                onClick={() => setReplaySpeed(s => s === 1 ? 0.7 : 1)}
+                className="px-2.5 py-1.5 text-[11px] font-bold text-white/70 hover:text-white hover:bg-white/10 transition-colors tabular-nums"
+              >
+                {replaySpeed === 1 ? "x1" : ".7x"}
+              </button>
+            </div>
+          )}
           {isBusy ? (
             <div className="flex items-center gap-3 text-white/40 py-2">
               <Loader2 className="h-5 w-5 animate-spin" />
