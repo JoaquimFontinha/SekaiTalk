@@ -146,14 +146,16 @@ export default function POIClient({
           ambient.play().catch(() => {});
         }
 
-        // Mic setup
-        navigator.mediaDevices.getUserMedia({ audio: true })
-          .then(s => { s.getTracks().forEach(t => t.stop()); return navigator.mediaDevices.enumerateDevices(); })
-          .then(devs => {
-            const mics = devs.filter(d => d.kind === "audioinput");
-            setDevices(mics);
-            if (mics.length) setSelectedDevice(mics[0].deviceId);
-          }).catch(() => {});
+        // Mic setup (navigator.mediaDevices is undefined on mobile HTTP)
+        if (navigator.mediaDevices) {
+          navigator.mediaDevices.getUserMedia({ audio: true })
+            .then(s => { s.getTracks().forEach(t => t.stop()); return navigator.mediaDevices.enumerateDevices(); })
+            .then(devs => {
+              const mics = devs.filter(d => d.kind === "audioinput");
+              setDevices(mics);
+              if (mics.length) setSelectedDevice(mics[0].deviceId);
+            }).catch(() => {});
+        }
 
         // Init quest if questId provided
         let initQuest: ActiveQuest | null = null;
