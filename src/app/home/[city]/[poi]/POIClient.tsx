@@ -41,6 +41,17 @@ type ActiveQuest = {
   currentTaskIndex: number;
 };
 
+// ── Types affichage ───────────────────────────────────────────────────────────
+
+type DisplayMode = "full" | "kanji" | "romaji";
+
+const DISPLAY_MODES: DisplayMode[] = ["full", "kanji", "romaji"];
+const MODE_CONFIG: Record<DisplayMode, { char: string; color: string; label: string }> = {
+  full:   { char: "全",   color: "bg-white/60",   label: "Complet" },
+  kanji:  { char: "漢",   color: "bg-yellow-400", label: "Kanji"   },
+  romaji: { char: "abc",  color: "bg-violet-400", label: "Romaji"  },
+};
+
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const WORD_COLORS = [
@@ -54,7 +65,38 @@ const MIN_RECORD_MS  = 400;   // discard recordings shorter than this (backgroun
 
 // ── WordRow ───────────────────────────────────────────────────────────────────
 
-function WordRow({ words }: { words: Word[] }) {
+function WordRow({ words, mode }: { words: Word[]; mode: DisplayMode }) {
+  if (mode === "kanji") {
+    return (
+      <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+        {words.map((w, i) => (
+          <div key={i} className="flex flex-col items-center gap-[2px]">
+            <span className="text-[11px] font-medium text-white/60 min-h-[14px]">{w.furigana}</span>
+            <span className="text-[26px] font-bold text-white leading-none tracking-wide">{w.jp}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (mode === "romaji") {
+    return (
+      <div className="flex flex-wrap items-end gap-x-5 gap-y-4">
+        {words.map((w, i) => {
+          const color = WORD_COLORS[i % WORD_COLORS.length];
+          return (
+            <div key={i} className="flex flex-col items-center gap-[3px]">
+              <span className={`text-[11px] font-medium min-h-[16px] ${color} opacity-80`}>{w.furigana}</span>
+              <span className="text-[24px] font-bold leading-none text-white tracking-wide">{w.jp}</span>
+              <span className={`text-[11px] font-semibold underline underline-offset-2 decoration-dotted ${color}`}>{w.romaji}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
+  // mode === "full"
   return (
     <div className="flex flex-wrap items-end gap-x-5 gap-y-4">
       {words.map((w, i) => {
@@ -100,6 +142,7 @@ export default function POIClient({
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [micError, setMicError]           = useState<string | null>(null);
   const [micReady, setMicReady]           = useState(false);
+  const [displayMode, setDisplayMode]     = useState<DisplayMode>("full");
 
   // ── Refs ──
   const messagesRef     = useRef<Message[]>([]);
@@ -608,6 +651,23 @@ export default function POIClient({
           <span className="text-sm font-bold text-white">{character.name}</span>
           <span className="text-[11px] text-white/35 font-medium">{character.nameJp}</span>
 
+          {/* Bouton cycle mode d'affichage */}
+          {currentReply && currentReply.words.length > 0 && (
+            <button
+              onClick={() => {
+                const idx = DISPLAY_MODES.indexOf(displayMode);
+                setDisplayMode(DISPLAY_MODES[(idx + 1) % DISPLAY_MODES.length]);
+              }}
+              title={MODE_CONFIG[displayMode].label}
+              className="flex flex-col items-center justify-center gap-[3px] h-8 w-8 rounded-full bg-black/75 border border-white/15 backdrop-blur-sm hover:border-white/35 active:scale-95 transition-all"
+            >
+              <span className="text-[11px] font-bold text-white leading-none">
+                {MODE_CONFIG[displayMode].char}
+              </span>
+              <span className={`h-[2px] w-3.5 rounded-full ${MODE_CONFIG[displayMode].color}`} />
+            </button>
+          )}
+
           {/* VAD status indicator */}
           {micReady && !isPaused && (
             <span className={`ml-auto flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider ${
@@ -639,8 +699,8 @@ export default function POIClient({
             <div className="flex flex-col gap-4">
               {currentReply.words.length > 0 ? (
                 <>
-                  <WordRow words={currentReply.words} />
-                  {currentReply.translation && (
+                  <WordRow words={currentReply.words} mode={displayMode} />
+                  {currentReply.translation && displayMode !== "romaji" && (
                     <p className="text-xs text-white/40 border-t border-white/10 pt-3 mt-1 italic">
                       {currentReply.translation}
                     </p>

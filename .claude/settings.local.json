@@ -23,7 +23,10 @@
       "PowerShell($sky = Get-Item \"C:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\models\\\\tokyo_skytree.glb\"; $tower = Get-Item \"C:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\models\\\\tokyo_tower.glb\"; Write-Output \"Skytree: $\\($sky.Length\\) bytes\"; Write-Output \"Tower:   $\\($tower.Length\\) bytes\")",
       "PowerShell(New-Item -ItemType Directory -Path \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\sounds\" -Force)",
       "PowerShell(Copy-Item \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\konbini_enter_soundeffect.mp3\" \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\sounds\\\\konbini_enter.mp3\" -Force)",
-      "Bash(npx prisma *)"
+      "Bash(npx prisma *)",
+      "Bash(Copy-Item \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\Large Building.glb\" \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\models\\\\large_building.glb\")",
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\Large Building.glb\" \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\models\\\\large_building.glb\" -Force)",
+      "PowerShell(if \\($?\\) { \"OK\" } else { \"FAILED\" })"
     ],
     "additionalDirectories": [
       "C:\\Program Files\\PostgreSQL\\17\\data",
