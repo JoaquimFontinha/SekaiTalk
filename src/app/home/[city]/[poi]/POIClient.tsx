@@ -147,6 +147,8 @@ export default function POIClient({
   const [replaySpeed, setReplaySpeed]     = useState<1 | 0.7>(1);
   const [hasAudio, setHasAudio]           = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [questTimeLeft, setQuestTimeLeft]     = useState<number | null>(null);
+  const [sessionExpired, setSessionExpired]   = useState(false);
 
   // ── Refs ──
   const messagesRef     = useRef<Message[]>([]);
@@ -170,9 +172,23 @@ export default function POIClient({
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { activeQuestRef.current = activeQuest; }, [activeQuest]);
 
+  // ── Quest timer — 15 min per quest, paused when isPaused ──────────────────
+  useEffect(() => {
+    if (!activeQuest) { setQuestTimeLeft(null); return; }
+    setQuestTimeLeft(15 * 60);
+    setSessionExpired(false);
+  }, [activeQuest?.questId]);
+
+  useEffect(() => {
+    if (questTimeLeft === null || isPaused || sessionExpired) return;
+    if (questTimeLeft === 0) { setSessionExpired(true); return; }
+    const id = setTimeout(() => setQuestTimeLeft(t => (t !== null ? t - 1 : null)), 1000);
+    return () => clearTimeout(id);
+  }, [questTimeLeft, isPaused, sessionExpired]);
+
   // ── Update shouldListen whenever speaking / loading / paused / modal changes ──
   useEffect(() => {
-    const canListen = !isPaused && !isSpeaking && !isLoading && !isTranscribing && !showSuggestions;
+    const canListen = !isPaused && !isSpeaking && !isLoading && !isTranscribing && !showSuggestions && !sessionExpired;
     shouldListenRef.current = canListen;
     // If we can no longer listen, abort any in-flight recording
     if (!canListen && isRecordingRef.current) {
@@ -181,7 +197,7 @@ export default function POIClient({
       isRecordingRef.current = false;
       setIsRecording(false);
     }
-  }, [isPaused, isSpeaking, isLoading, isTranscribing, showSuggestions]);
+  }, [isPaused, isSpeaking, isLoading, isTranscribing, showSuggestions, sessionExpired]);
 
   // ── TTS ──
   const speak = useCallback(async (text: string) => {
@@ -595,19 +611,36 @@ export default function POIClient({
           </div>
         )}
 
-        {/* Center: pause button */}
-        <button
-          onClick={togglePause}
-          className="flex flex-col items-center gap-0.5 rounded-xl bg-black/60 px-5 py-2.5 backdrop-blur-sm hover:bg-black/80 transition-colors"
-        >
-          {isPaused
-            ? <Play  className="h-5 w-5 text-white/80" />
-            : <Pause className="h-5 w-5 text-white/80" />
-          }
-          <span className="text-[9px] font-bold uppercase tracking-wider text-white/35">
-            {isPaused ? "Reprendre" : "Pause"}
-          </span>
-        </button>
+        {/* Center: pause button + timer */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={togglePause}
+            className="flex flex-col items-center gap-0.5 rounded-xl bg-black/60 px-5 py-2.5 backdrop-blur-sm hover:bg-black/80 transition-colors"
+          >
+            {isPaused
+              ? <Play  className="h-5 w-5 text-white/80" />
+              : <Pause className="h-5 w-5 text-white/80" />
+            }
+            <span className="text-[9px] font-bold uppercase tracking-wider text-white/35">
+              {isPaused ? "Reprendre" : "Pause"}
+            </span>
+          </button>
+          {questTimeLeft !== null && (() => {
+            const m = Math.floor(questTimeLeft / 60);
+            const s = questTimeLeft % 60;
+            const display = `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+            const isWarn  = questTimeLeft <= 5 * 60;
+            const isCrit  = questTimeLeft <= 60;
+            return (
+              <div className={`rounded-xl bg-black/60 px-3 py-2.5 backdrop-blur-sm text-center min-w-[56px] ${isCrit ? "animate-pulse" : ""}`}>
+                <p className={`text-base font-black tabular-nums leading-none ${
+                  isCrit ? "text-red-400" : isWarn ? "text-orange-400" : "text-white/70"
+                }`}>{display}</p>
+                <p className="text-[8px] font-bold uppercase tracking-widest text-white/25 mt-0.5">Session</p>
+              </div>
+            );
+          })()}
+        </div>
 
         {/* Right: back to map */}
         <button
@@ -627,6 +660,25 @@ export default function POIClient({
           <div className="flex flex-col items-center gap-3 text-white/60">
             <Play className="h-10 w-10" />
             <p className="text-sm font-bold uppercase tracking-widest">Appuyer pour reprendre</p>
+          </div>
+        </div>
+      )}
+
+      {/* Session expired overlay */}
+      {sessionExpired && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md">
+          <div className="flex flex-col items-center gap-5 rounded-2xl border border-white/10 bg-gray-950/95 px-10 py-8 shadow-2xl">
+            <p className="text-4xl">⏱</p>
+            <div className="text-center">
+              <p className="text-xl font-black text-white">Fin de session</p>
+              <p className="text-sm text-white/40 mt-1.5">Ton temps de quête est écoulé.</p>
+            </div>
+            <button
+              onClick={() => { window.speechSynthesis.cancel(); router.push(`/home/${citySlug}`); }}
+              className="rounded-full bg-white/10 border border-white/20 px-8 py-3 text-sm font-bold text-white hover:bg-white/20 transition-colors"
+            >
+              Terminé
+            </button>
           </div>
         </div>
       )}
