@@ -151,6 +151,7 @@ model QuestTask {
   order        Int
   instruction  String
   aiContext    String?            @db.Text
+  suggestions  Json               @default("[]")
   choices      TaskChoice[]
   userProgress UserTaskProgress[]
   createdAt    DateTime           @default(now())

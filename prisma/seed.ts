@@ -261,6 +261,57 @@ async function main() {
     console.log("Quest 'Demander des informations 1' created for konbini-shinjuku.");
   }
 
+  // ── Task suggestions (upsert so re-running seed keeps them up to date) ────────
+  type SuggestionEntry = { fr: string; jp: string; romaji: string };
+  const taskSuggestions: { id: string; suggestions: SuggestionEntry[] }[] = [
+    {
+      id: "task-ks-i1-1",
+      suggestions: [
+        { fr: "Excusez-moi",            jp: "すみません",               romaji: "sumimasen" },
+        { fr: "Où sont les onigiri ?",  jp: "おにぎりはどこですか？",   romaji: "onigiri wa doko desu ka ?" },
+        { fr: "Il y en a ?",            jp: "ありますか？",              romaji: "arimasu ka ?" },
+      ],
+    },
+    {
+      id: "task-ks-i1-2",
+      suggestions: [
+        { fr: "Quels parfums avez-vous ?", jp: "どんな種類がありますか？", romaji: "donna shurui ga arimasu ka ?" },
+        { fr: "Thon mayonnaise",           jp: "ツナマヨ",                 romaji: "tsuna mayo" },
+        { fr: "Saumon",                    jp: "さけ",                     romaji: "sake" },
+        { fr: "Prune salée",              jp: "うめぼし",                 romaji: "umeboshi" },
+      ],
+    },
+    {
+      id: "task-ks-i1-3",
+      suggestions: [
+        { fr: "C'est combien ?",       jp: "いくらですか？",            romaji: "ikura desu ka ?" },
+        { fr: "Un onigiri",            jp: "おにぎり一つ",              romaji: "onigiri hitotsu" },
+        { fr: "Cent vingt yens",       jp: "百二十円",                  romaji: "hyaku ni-juu en" },
+      ],
+    },
+    {
+      id: "task-ks-i1-4",
+      suggestions: [
+        { fr: "C'est frais ?",         jp: "新鮮ですか？",              romaji: "shinsen desu ka ?" },
+        { fr: "D'aujourd'hui ?",       jp: "今日のですか？",            romaji: "kyou no desu ka ?" },
+        { fr: "Livré ce matin",        jp: "今朝届きましたか？",        romaji: "kesa todokimashita ka ?" },
+      ],
+    },
+    {
+      id: "task-ks-i1-5",
+      suggestions: [
+        { fr: "Merci beaucoup",        jp: "ありがとうございます",      romaji: "arigatou gozaimasu" },
+        { fr: "Au revoir",             jp: "さようなら",                romaji: "sayounara" },
+        { fr: "À bientôt !",           jp: "またいつでもどうぞ",        romaji: "mata itsu demo douzo" },
+      ],
+    },
+  ];
+
+  for (const { id, suggestions } of taskSuggestions) {
+    await prisma.questTask.updateMany({ where: { id }, data: { suggestions } });
+  }
+  console.log("Task suggestions updated.");
+
   console.log("Seed completed.");
 }
 

@@ -25,8 +25,9 @@ type Character = {
   scene: Scene | null;
 };
 
-type TaskChoice = { id: string; text: string; isCorrect: boolean; order: number };
-type QuestTask  = { id: string; order: number; instruction: string; aiContext: string | null; choices: TaskChoice[] };
+type TaskChoice  = { id: string; text: string; isCorrect: boolean; order: number };
+type Suggestion  = { fr: string; jp: string; romaji: string };
+type QuestTask   = { id: string; order: number; instruction: string; aiContext: string | null; suggestions: Suggestion[]; choices: TaskChoice[] };
 type QuestData  = {
   id: string; title: string; description: string | null;
   tasks: QuestTask[];
@@ -145,6 +146,7 @@ export default function POIClient({
   const [displayMode, setDisplayMode]     = useState<DisplayMode>("full");
   const [replaySpeed, setReplaySpeed]     = useState<1 | 0.7>(1);
   const [hasAudio, setHasAudio]           = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   // ── Refs ──
   const messagesRef     = useRef<Message[]>([]);
@@ -168,9 +170,9 @@ export default function POIClient({
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { activeQuestRef.current = activeQuest; }, [activeQuest]);
 
-  // ── Update shouldListen whenever speaking / loading / paused changes ──
+  // ── Update shouldListen whenever speaking / loading / paused / modal changes ──
   useEffect(() => {
-    const canListen = !isPaused && !isSpeaking && !isLoading && !isTranscribing;
+    const canListen = !isPaused && !isSpeaking && !isLoading && !isTranscribing && !showSuggestions;
     shouldListenRef.current = canListen;
     // If we can no longer listen, abort any in-flight recording
     if (!canListen && isRecordingRef.current) {
@@ -179,7 +181,7 @@ export default function POIClient({
       isRecordingRef.current = false;
       setIsRecording(false);
     }
-  }, [isPaused, isSpeaking, isLoading, isTranscribing]);
+  }, [isPaused, isSpeaking, isLoading, isTranscribing, showSuggestions]);
 
   // ── TTS ──
   const speak = useCallback(async (text: string) => {
@@ -770,8 +772,16 @@ export default function POIClient({
         {micError && <p className="text-[10px] text-red-400 pl-1">{micError}</p>}
       </div>
 
-      {/* Bottom: suggestions + quest verify */}
+      {/* Bottom: suggestions button + quest verify */}
       <div className="absolute bottom-5 left-0 right-0 z-30 flex justify-center items-center gap-2 px-4">
+        {activeQuest && (activeQuest.tasks[activeQuest.currentTaskIndex]?.suggestions?.length ?? 0) > 0 && (
+          <button
+            onClick={() => setShowSuggestions(true)}
+            className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/60 px-4 py-2.5 text-xs font-bold text-white/60 backdrop-blur-md transition-all hover:border-violet-500/40 hover:bg-violet-900/30 hover:text-white"
+          >
+            💬 Suggestions
+          </button>
+        )}
         {activeQuest && currentReply && !isBusy && (
           <button
             onClick={() => setShowQuiz(true)}
@@ -780,14 +790,58 @@ export default function POIClient({
             🎯 Vérifier
           </button>
         )}
-        {currentReply?.suggestions?.map((s, i) => (
-          <button key={i} onClick={() => !isBusy && sendMessage(s)} disabled={isBusy}
-            className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/60 px-4 py-2.5 text-xs font-medium text-white/80 backdrop-blur-md transition-all hover:border-violet-500/60 hover:bg-violet-900/50 hover:text-white active:scale-95 disabled:opacity-40">
-            {s}
-            <span className="text-[9px] text-white/25">{i + 1}</span>
-          </button>
-        ))}
       </div>
+
+      {/* Suggestions modal — pauses mic while open */}
+      {showSuggestions && activeQuest && (() => {
+        const task = activeQuest.tasks[activeQuest.currentTaskIndex];
+        const suggestions = task?.suggestions ?? [];
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4"
+            onClick={() => setShowSuggestions(false)}
+          >
+            <div
+              className="w-full max-w-sm rounded-2xl border border-white/10 bg-gray-950/95 shadow-2xl overflow-hidden"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-violet-400/70">
+                    💬 Phrases utiles — Tâche {activeQuest.currentTaskIndex + 1}
+                  </p>
+                  <p className="text-sm font-semibold text-white mt-0.5">{task?.instruction}</p>
+                </div>
+                <button
+                  onClick={() => setShowSuggestions(false)}
+                  className="ml-3 shrink-0 rounded-full p-1.5 text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Phrase list */}
+              <div className="flex flex-col divide-y divide-white/6 max-h-[60vh] overflow-y-auto">
+                {suggestions.map((s, i) => (
+                  <div key={i} className="px-5 py-4 flex flex-col gap-1">
+                    <p className="text-[11px] font-medium text-white/40 uppercase tracking-wide">{s.fr}</p>
+                    <p className="text-2xl font-bold text-white leading-snug">{s.jp}</p>
+                    <p className="text-xs text-violet-300/70 italic">{s.romaji}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Footer hint */}
+              <div className="px-5 py-3 border-t border-white/8 bg-white/3">
+                <p className="text-[10px] text-white/30 text-center">
+                  Mémorise les phrases, puis dis-les à voix haute 🎤
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Quiz modal ── */}
       {showQuiz && activeQuest && (
