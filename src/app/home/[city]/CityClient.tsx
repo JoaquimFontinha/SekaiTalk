@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Bell, Settings, User, Flame, Menu, MapPin, Users, BookOpen, ArrowLeft, X, Loader2, CheckCircle } from "lucide-react";
+import { Bell, Settings, User, Flame, Menu, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle } from "lucide-react";
 import cities, { POI, POIType } from "@/lib/cities";
+import { getNeighborhood } from "@/lib/tokyo-neighborhoods";
 import IllustratedMap from "./IllustratedMap";
 import { useMapCtx } from "../MapContext";
 
@@ -22,7 +23,7 @@ type PoiQuest = {
   userProgress: { id: string; status: string; firstCompletedAt: string | null; taskProgress: { taskId: string; status: string }[] }[];
 };
 
-type SidebarPanel = "lieux" | "contacts" | "revision" | null;
+type SidebarPanel = "lieux" | "contacts" | "evenements" | "revision" | null;
 
 type Contact = {
   id:          string;
@@ -37,9 +38,10 @@ type Contact = {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const SIDEBAR_BUTTONS: { panel: Exclude<SidebarPanel, null>; Icon: React.ElementType; label: string; enabled: boolean }[] = [
-  { panel: "lieux",    Icon: MapPin,   label: "Lieux",    enabled: true },
-  { panel: "contacts", Icon: Users,    label: "Contacts", enabled: true },
-  { panel: "revision", Icon: BookOpen, label: "Révision", enabled: false },
+  { panel: "lieux",      Icon: MapPin,    label: "Lieux",      enabled: true  },
+  { panel: "contacts",   Icon: Users,     label: "Contacts",   enabled: true  },
+  { panel: "evenements", Icon: Sparkles,  label: "Évènements", enabled: true  },
+  { panel: "revision",   Icon: BookOpen,  label: "Révision",   enabled: false },
 ];
 
 function getFriendshipLevel(count: number): { label: string; color: string } {
@@ -97,6 +99,17 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
   const [contactsLoading, setContactsLoading] = useState(false);
   const [rdvOpenId, setRdvOpenId]           = useState<string | null>(null);
 
+  const [tokyoTime, setTokyoTime]       = useState("");
+  const [neighborhood, setNeighborhood] = useState("");
+  useEffect(() => {
+    const tick = () => setTokyoTime(
+      new Date().toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit", hour12: false })
+    );
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+
   const city = cities[citySlug];
 
   if (!city) {
@@ -131,6 +144,30 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
     const map = (mapRef as React.RefObject<any>).current?.getMap?.();
     if (map) map.flyTo({ center: [poi.lng, poi.lat], zoom: 17, pitch: 60, duration: 1500 });
   }, [mapRef]);
+
+  // Neighborhood from local static table — zero API calls
+  useEffect(() => {
+    if (!city.use3DMap) return;
+    let map: any;
+
+    const update = () => {
+      const { lat, lng } = map.getCenter();
+      setNeighborhood(getNeighborhood(lat, lng));
+    };
+
+    const init = setTimeout(() => {
+      map = (mapRef as React.RefObject<any>).current?.getMap?.();
+      if (!map) return;
+      map.on("moveend", update);
+      update();
+    }, 150);
+
+    return () => {
+      clearTimeout(init);
+      if (map) map.off("moveend", update);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [city.use3DMap]);
 
   // Register click handler into shared ref so the persistent map can call it
   useEffect(() => {
@@ -177,9 +214,6 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
       {/* Navbar */}
       <header className="pointer-events-auto flex h-14 shrink-0 items-center justify-between border-b border-gray-100 bg-white px-6">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/home")} className="text-gray-400 transition-colors hover:text-gray-700">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
           <span className="text-xl font-bold tracking-tight text-gray-900">SekaiTalk</span>
           <span className="text-gray-300">/</span>
           <span className="text-sm font-semibold text-gray-500">{city.name}</span>
@@ -228,37 +262,39 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
         <main className="relative flex-1 overflow-hidden">
 
           {/* HUD title */}
-          <div className="pointer-events-none absolute left-5 top-5 z-[999]">
-            <h2 className="text-2xl font-black uppercase tracking-widest text-white drop-shadow-lg">{city.name}</h2>
-            <div className="mt-1 flex items-center gap-2">
-              <div className="h-px w-8 bg-violet-400" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-violet-300 drop-shadow">
-                {city.pois.length} lieux
-              </span>
+          <div
+            className="pointer-events-none absolute top-5 z-[999] flex flex-col gap-2 transition-all duration-300"
+            style={{ left: sidebarPanel ? 396 : 20 }}
+          >
+
+            {/* Back pill */}
+            <button
+              onClick={() => router.push("/home")}
+              className="pointer-events-auto flex w-fit items-center gap-1.5 rounded-full border border-white/15 bg-black/35 px-3 py-1.5 text-white/45 backdrop-blur-sm transition-all hover:border-white/30 hover:bg-black/55 hover:text-white/80"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              <span className="text-[9px] font-bold uppercase tracking-[0.2em]">Retour</span>
+            </button>
+
+            {/* Info */}
+            <div>
+              <p className="text-2xl font-black uppercase leading-none tracking-widest text-white drop-shadow-lg">
+                {city.name}
+                {neighborhood && (
+                  <span className="ml-2 text-base font-semibold normal-case tracking-normal text-white/50">
+                    — {neighborhood}
+                  </span>
+                )}
+              </p>
+              <div className="mt-1.5 flex items-center gap-2">
+                <div className="h-px w-8 bg-violet-400" />
+                <span className="font-mono text-[11px] tabular-nums text-violet-300/85">{tokyoTime}</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-violet-400/50">JST</span>
+              </div>
             </div>
+
           </div>
 
-          {/* HUD filters */}
-          <div className="pointer-events-auto absolute right-5 top-5 z-[999] flex flex-col gap-1.5">
-            {(Object.keys(POI_META) as POIType[]).map(type => {
-              const meta    = POI_META[type];
-              const isActive = activeType === type;
-              return (
-                <button key={type} onClick={() => setActiveType(isActive ? null : type)}
-                  className="flex items-center gap-2 rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-all"
-                  style={{
-                    background:    isActive ? `${meta.color}22` : "rgba(10,10,20,0.7)",
-                    border:        `1.5px solid ${isActive ? meta.color : "rgba(255,255,255,0.15)"}`,
-                    color:         isActive ? meta.color : "rgba(255,255,255,0.7)",
-                    boxShadow:     isActive ? `0 0 10px ${meta.color}40` : "0 1px 4px rgba(0,0,0,0.3)",
-                    backdropFilter: "blur(8px)",
-                  }}>
-                  <span className="h-2 w-2 rounded-full" style={{ background: meta.color, boxShadow: `0 0 5px ${meta.color}` }} />
-                  {meta.label}
-                </button>
-              );
-            })}
-          </div>
 
           {/* Lieux panel — overlay on 3D map */}
           {city.use3DMap && sidebarPanel === "lieux" && (
@@ -372,6 +408,34 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Évènements panel */}
+          {city.use3DMap && sidebarPanel === "evenements" && (
+            <div className="pointer-events-auto absolute left-0 top-0 z-[1000] flex h-full w-[380px] flex-col border-r border-white/10 bg-gray-950/93 backdrop-blur-xl">
+
+              <div className="flex shrink-0 items-center justify-between border-b border-white/8 px-5 py-4">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">Saison</span>
+                  <h3 className="mt-0.5 text-sm font-bold text-white">Évènements</h3>
+                </div>
+                <button onClick={() => setSidebarPanel(null)} className="text-white/30 transition-colors hover:text-white/70">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/8 bg-white/5 text-2xl">
+                  🌸
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-white/60">Aucun évènement en cours</p>
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-white/30">
+                    Les évènements saisonniers apparaîtront ici — hanami, matsuri, Halloween, illuminations de Noël…
+                  </p>
                 </div>
               </div>
             </div>
