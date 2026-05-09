@@ -121,29 +121,30 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
   const panelPois    = lieuxType  ? city.pois.filter(p => p.type === lieuxType)  : city.pois;
 
   // Click a POI → open modal and fetch quests
+  // Camera fly-to for panel preview
+  const flyToPoi = useCallback((poi: POI) => {
+    const map = (mapRef as React.RefObject<any>).current?.getMap?.();
+    if (map) map.flyTo({ center: [poi.lng, poi.lat], zoom: 17, pitch: 60, duration: 1500 });
+  }, [mapRef]);
+
   const handlePoiClick = useCallback((poiId: string) => {
     const poi = city.pois.find(p => p.id === poiId);
     if (!poi) return;
     setSelectedPoi(poi);
     setPoiQuests([]);
     setQuestsLoading(true);
+    flyToPoi(poi);
     fetch(`/api/quests/poi/${poiId}`)
       .then(r => r.ok ? r.json() : [])
       .then(setPoiQuests)
       .catch(() => setPoiQuests([]))
       .finally(() => setQuestsLoading(false));
-  }, [city]);
+  }, [city, flyToPoi]);
 
   const closeModal = useCallback(() => {
     setSelectedPoi(null);
     setPoiQuests([]);
   }, []);
-
-  // Camera fly-to for panel preview
-  const flyToPoi = useCallback((poi: POI) => {
-    const map = (mapRef as React.RefObject<any>).current?.getMap?.();
-    if (map) map.flyTo({ center: [poi.lng, poi.lat], zoom: 17, pitch: 60, duration: 1500 });
-  }, [mapRef]);
 
   // Neighborhood from local static table — zero API calls
   useEffect(() => {
@@ -374,8 +375,8 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                         key={poi.id}
                         className="group flex items-center gap-2 rounded-xl border border-white/6 bg-white/4 px-3 py-3 transition-all hover:border-white/12 hover:bg-white/8"
                       >
-                        {/* Preview click (fly-to) */}
-                        <button className="min-w-0 flex-1 text-left" onClick={() => flyToPoi(poi)}>
+                        {/* Preview click (fly-to + open drawer) */}
+                        <button className="min-w-0 flex-1 text-left" onClick={() => { flyToPoi(poi); handlePoiClick(poi.id); }}>
                           <div className="flex items-center gap-2.5">
                             <span className="text-lg leading-none">{POI_META[poi.type].icon}</span>
                             <div className="min-w-0">
@@ -581,142 +582,150 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
               </MapContainer>
             </>
           )}
-        </main>
-      </div>
-
-      {/* ── POI Modal ── */}
-      {selectedPoi && (
-        <div
-          className="pointer-events-auto fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
-          onClick={e => { if (e.target === e.currentTarget) closeModal(); }}
-        >
-          <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-gray-950 shadow-2xl">
-
-            {/* POI header */}
-            <div className="flex items-start justify-between border-b border-white/8 px-5 py-4">
-              <div>
-                <div className="mb-1 flex items-center gap-2">
-                  <span className="text-base">{POI_META[selectedPoi.type].icon}</span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest"
-                    style={{ color: POI_META[selectedPoi.type].color }}>
-                    {POI_META[selectedPoi.type].label}
-                  </span>
-                </div>
-                <h2 className="text-lg font-bold text-white">{selectedPoi.name}</h2>
-              </div>
-              <button onClick={closeModal} className="mt-0.5 text-white/30 transition-colors hover:text-white/70">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Quests */}
-            <div className="flex max-h-[55vh] flex-col gap-3 overflow-y-auto px-5 py-4">
-              {questsLoading ? (
-                <div className="flex justify-center py-6">
-                  <Loader2 className="h-5 w-5 animate-spin text-violet-400" />
-                </div>
-              ) : poiQuests.length > 0 ? (
-                <>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-white/30">Quêtes disponibles</p>
-                  {poiQuests.map(quest => {
-                    const progress  = quest.userProgress?.[0];
-                    const isDone    = progress?.status === "COMPLETED";
-                    const isReplay  = progress?.status === "IN_PROGRESS" && !!progress.firstCompletedAt;
-                    const isResume  = progress?.status === "IN_PROGRESS" && !progress.firstCompletedAt;
-                    const doneTasks = isResume
-                      ? progress.taskProgress.filter(tp => tp.status === "COMPLETED").length
-                      : isDone ? quest.tasks.length : 0;
-
-                    return (
-                      <div key={quest.id} className="flex flex-col gap-2.5 rounded-xl border border-white/8 bg-white/5 p-4">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <p className="text-sm font-bold text-white">{quest.title}</p>
-                            {quest.description && (
-                              <p className="mt-0.5 text-[11px] leading-snug text-white/40">{quest.description}</p>
-                            )}
-                          </div>
-                          {isDone && (
-                            <span className="flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
-                              <CheckCircle className="h-3 w-3" /> OK
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Rewards */}
-                        {(quest.xpReward > 0 || quest.yenReward > 0) && (
-                          <div className="flex items-center gap-1.5">
-                            {quest.xpReward > 0 && (
-                              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${
-                                isDone || isReplay
-                                  ? "border-white/10 text-white/25"
-                                  : "border-violet-500/40 bg-violet-500/10 text-violet-300"
-                              }`}>+{quest.xpReward} XP</span>
-                            )}
-                            {quest.yenReward > 0 && (
-                              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${
-                                isDone || isReplay
-                                  ? "border-white/10 text-white/25"
-                                  : "border-yellow-500/40 bg-yellow-500/10 text-yellow-300"
-                              }`}>+¥{quest.yenReward}</span>
-                            )}
-                            {(isDone || isReplay) && (
-                              <span className="text-[10px] italic text-white/20">déjà obtenu</span>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Task dots */}
-                        <div className="flex items-center gap-1.5">
-                          {quest.tasks.map((_, i) => (
-                            <div key={i} className={`h-1.5 w-1.5 rounded-full ${
-                              i < doneTasks ? "bg-emerald-400"
-                              : isResume && i === doneTasks ? "bg-yellow-400"
-                              : "bg-white/20"
-                            }`} />
-                          ))}
-                          <span className="ml-1 text-[10px] text-white/30">{quest.tasks.length} tâches</span>
-                        </div>
-
-                        <button
-                          onClick={() => { closeModal(); router.push(`/home/${citySlug}/${selectedPoi.id}?quest=${quest.id}`); }}
-                          className={`w-full rounded-lg py-2.5 text-xs font-bold transition-all ${
-                            isDone || isReplay
-                              ? "border border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60"
-                              : isResume
-                              ? "border border-yellow-400/30 bg-yellow-400/15 text-yellow-400 hover:bg-yellow-400/25"
-                              : "border border-violet-500/50 bg-violet-600/80 text-white hover:bg-violet-500"
-                          }`}
-                        >
-                          {isDone || isReplay
-                            ? "🔄 Refaire (sans récompense)"
-                            : isResume
-                            ? `▶ Continuer (tâche ${doneTasks + 1}/${quest.tasks.length})`
-                            : "▶ Faire la quête"}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </>
+          {/* ── POI Drawer ── */}
+          <div
+            className="absolute right-0 top-0 z-[1000] flex h-full w-[420px] flex-col border-l border-white/10 bg-gray-950/96 backdrop-blur-xl transition-transform duration-300 ease-in-out"
+            style={{
+              transform:     selectedPoi ? "translateX(0)"    : "translateX(100%)",
+              pointerEvents: selectedPoi ? "auto"             : "none",
+            }}
+          >
+            {/* Hero */}
+            <div className="relative h-52 shrink-0 overflow-hidden">
+              {selectedPoi?.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={selectedPoi.image} alt={selectedPoi.name} className="h-full w-full object-cover" />
               ) : (
-                <p className="py-4 text-center text-[11px] text-white/30">
-                  Aucune quête disponible ici pour l&apos;instant.
-                </p>
+                <div
+                  className="h-full w-full"
+                  style={{
+                    background: selectedPoi
+                      ? `linear-gradient(135deg, ${POI_META[selectedPoi.type].color}12 0%, ${POI_META[selectedPoi.type].color}30 100%)`
+                      : "transparent",
+                  }}
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/20 to-transparent" />
+              <button
+                onClick={closeModal}
+                className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/50 text-white/60 backdrop-blur-sm transition-all hover:border-white/30 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              {selectedPoi && (
+                <div className="absolute bottom-4 left-5">
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="text-sm">{POI_META[selectedPoi.type].icon}</span>
+                    <span className="text-[9px] font-bold uppercase tracking-[0.18em]"
+                      style={{ color: POI_META[selectedPoi.type].color }}>
+                      {POI_META[selectedPoi.type].label}
+                    </span>
+                  </div>
+                  <h2 className="text-xl font-black text-white drop-shadow-lg">{selectedPoi.name}</h2>
+                </div>
               )}
             </div>
 
-            {/* Free conversation */}
-            <div className="flex flex-col gap-2 border-t border-white/8 px-5 py-4">
-              <button
-                onClick={() => { closeModal(); router.push(`/home/${citySlug}/${selectedPoi.id}`); }}
-                className="w-full rounded-xl border border-white/12 bg-white/5 px-4 py-3 text-xs font-bold text-white/60 transition-all hover:border-white/20 hover:bg-white/10 hover:text-white"
-              >
-                Conversation libre →
-              </button>
+            {/* Content */}
+            <div className="flex flex-1 flex-col gap-5 overflow-y-auto px-5 py-5">
+
+              {/* Travel tip */}
+              {selectedPoi?.description && (
+                <div>
+                  <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">À savoir</p>
+                  <p className="text-[13px] leading-relaxed text-white/65">{selectedPoi.description}</p>
+                </div>
+              )}
+
+              {/* Quests */}
+              <div>
+                <p className="mb-3 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">Quêtes</p>
+                {questsLoading ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-violet-400" />
+                  </div>
+                ) : poiQuests.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {poiQuests.map(quest => {
+                      const progress  = quest.userProgress?.[0];
+                      const isDone    = progress?.status === "COMPLETED";
+                      const isReplay  = progress?.status === "IN_PROGRESS" && !!progress.firstCompletedAt;
+                      const isResume  = progress?.status === "IN_PROGRESS" && !progress.firstCompletedAt;
+                      const doneTasks = isResume
+                        ? progress.taskProgress.filter(tp => tp.status === "COMPLETED").length
+                        : isDone ? quest.tasks.length : 0;
+                      return (
+                        <div key={quest.id} className="rounded-xl border border-white/8 bg-white/4 p-4">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-sm font-bold text-white">{quest.title}</p>
+                              {quest.description && (
+                                <p className="mt-0.5 text-[11px] leading-snug text-white/40">{quest.description}</p>
+                              )}
+                            </div>
+                            {isDone && (
+                              <span className="flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                                <CheckCircle className="h-3 w-3" /> OK
+                              </span>
+                            )}
+                          </div>
+                          {(quest.xpReward > 0 || quest.yenReward > 0) && (
+                            <div className="mt-2 flex items-center gap-1.5">
+                              {quest.xpReward > 0 && (
+                                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${isDone || isReplay ? "border-white/10 text-white/25" : "border-violet-500/40 bg-violet-500/10 text-violet-300"}`}>
+                                  +{quest.xpReward} XP
+                                </span>
+                              )}
+                              {quest.yenReward > 0 && (
+                                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${isDone || isReplay ? "border-white/10 text-white/25" : "border-yellow-500/40 bg-yellow-500/10 text-yellow-300"}`}>
+                                  +¥{quest.yenReward}
+                                </span>
+                              )}
+                              {(isDone || isReplay) && <span className="text-[10px] italic text-white/20">déjà obtenu</span>}
+                            </div>
+                          )}
+                          <div className="mt-2 flex items-center gap-1.5">
+                            {quest.tasks.map((_, i) => (
+                              <div key={i} className={`h-1.5 w-1.5 rounded-full ${i < doneTasks ? "bg-emerald-400" : isResume && i === doneTasks ? "bg-yellow-400" : "bg-white/20"}`} />
+                            ))}
+                            <span className="ml-1 text-[10px] text-white/30">{quest.tasks.length} tâches</span>
+                          </div>
+                          <button
+                            onClick={() => { closeModal(); if (selectedPoi) router.push(`/home/${citySlug}/${selectedPoi.id}?quest=${quest.id}`); }}
+                            className={`mt-3 w-full rounded-lg py-2.5 text-xs font-bold transition-all ${
+                              isDone || isReplay ? "border border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60"
+                              : isResume ? "border border-yellow-400/30 bg-yellow-400/15 text-yellow-400 hover:bg-yellow-400/25"
+                              : "border border-violet-500/50 bg-violet-600/80 text-white hover:bg-violet-500"
+                            }`}
+                          >
+                            {isDone || isReplay ? "🔄 Refaire (sans récompense)" : isResume ? `▶ Continuer (tâche ${doneTasks + 1}/${quest.tasks.length})` : "▶ Faire la quête"}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="py-3 text-center text-[11px] text-white/25">Aucune quête disponible ici pour l&apos;instant.</p>
+                )}
+              </div>
+
+              {/* Free conversation */}
+              <div className="pb-2">
+                <button
+                  onClick={() => { closeModal(); if (selectedPoi) router.push(`/home/${citySlug}/${selectedPoi.id}`); }}
+                  className="w-full rounded-xl border border-white/12 bg-white/5 px-4 py-3 text-xs font-bold text-white/60 transition-all hover:border-white/20 hover:bg-white/10 hover:text-white"
+                >
+                  Conversation libre →
+                </button>
+              </div>
+
             </div>
           </div>
-        </div>
-      )}
+
+        </main>
+      </div>
     </div>
   );
 }
+
+

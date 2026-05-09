@@ -40,7 +40,9 @@
       "Bash(Remove-Item -Force src/app/home/MapContext.tsx)",
       "Bash(Remove-Item -Force src/app/home/layout.tsx)",
       "Bash(Remove-Item -Recurse -Force public/cesium)",
-      "Bash(Select-String \"topojson|d3-geo|world-atlas\")"
+      "Bash(Select-String \"topojson|d3-geo|world-atlas\")",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\images\\\\pois\")",
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\3009_01.jpg\" \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\images\\\\pois\\\\tokyo-tower.jpg\")"
     ],
     "additionalDirectories": [
       "C:\\Program Files\\PostgreSQL\\17\\data",
