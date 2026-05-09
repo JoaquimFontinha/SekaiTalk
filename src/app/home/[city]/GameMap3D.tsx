@@ -323,8 +323,8 @@ export default function GameMap3D({
         bearing:   -20,
       }}
       minZoom={14}
-      maxPitch={58}
-      minPitch={35}
+      maxPitch={85}
+      minPitch={20}
       maxBounds={[
         [139.58, 35.62],
         [139.85, 35.75],
