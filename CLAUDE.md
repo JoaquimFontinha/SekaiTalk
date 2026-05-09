@@ -31,8 +31,8 @@ net stop "postgresql-x64-17"
 - **@anthropic-ai/sdk** — Claude Haiku (`claude-haiku-4-5-20251001`) pour les conversations IA
 - **Groq API** — Whisper `whisper-large-v3-turbo` pour la transcription vocale (micro)
 - **ElevenLabs API** — TTS par personnage (`eleven_multilingual_v2`), proxié via `/api/tts`
-- **MapLibre GL JS v5** + **react-map-gl v8** — carte 3D Tokyo (tuiles OpenFreeMap, gratuit sans clé)
-- **Three.js v0.184** + **GLTFLoader** — modèle GLB Tokyo Skytree rendu en custom layer MapLibre
+- **Mapbox GL JS** + **react-map-gl v8** — carte 3D Tokyo (style `mapbox://styles/mapbox/standard`, token `NEXT_PUBLIC_MAPBOX_TOKEN`)
+- **Three.js v0.184** + **GLTFLoader** — modèle GLB Tokyo Skytree rendu en custom layer Mapbox
 
 ## Variables d'environnement
 
@@ -44,6 +44,7 @@ Deux fichiers d'env :
   - `NEXTAUTH_SECRET`, `NEXTAUTH_URL`
   - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
   - `ELEVENLABS_API_KEY` — clé ElevenLabs pour le TTS des personnages
+  - `NEXT_PUBLIC_MAPBOX_TOKEN` — token Mapbox (plan gratuit, 50k Map Loads/mois)
 
 ## Architecture
 
@@ -114,14 +115,15 @@ Deux fichiers d'env :
 ### Carte 3D Tokyo (`GameMap3D`)
 
 `src/app/home/[city]/GameMap3D.tsx` — carte 3D interactive pour les villes avec `use3DMap: true` dans `cities.ts`.
-- **Rendu** : MapLibre GL JS v5 + react-map-gl v8, tuiles gratuites OpenFreeMap (`bright`)
-- **Import SSR** : `dynamic(() => import("./GameMap3D"), { ssr: false })` dans `CityClient`
-- **Bâtiments 3D** : layer `fill-extrusion` sur source `openmaptiles`, palette couleur japonaise (crème→bleu→indigo selon hauteur), bâtiments Skytree exclus par filtre géographique `within`
-- **Modèle Skytree** : `public/models/tokyo_skytree.glb` rendu via custom Three.js layer. Transform : `projMatrix × T(mercator) × Scale(1,−1,1) × RotX(+π/2)`. Scale model : `mpu = meterInMercatorCoordinateUnits()`. API MapLibre v3+ : `args.defaultProjectionData.mainMatrix` (pas `matrix` directement)
+- **Rendu** : Mapbox GL JS + react-map-gl v8 (`react-map-gl/mapbox`), style `mapbox://styles/mapbox/standard`
+- **Architecture persistante** : la map est montée une seule fois dans `src/app/home/layout.tsx` (jamais démontée) → 1 seul Map Load par session. CSS `visibility` toggle pour afficher/masquer. État partagé via `src/app/home/MapContext.tsx` (`mapRef`, `activeType`, `poiClickRef`)
+- **Import SSR** : `dynamic(() => import("./[city]/GameMap3D"), { ssr: false })` dans `home/layout.tsx`
+- **Style** : `setConfigProperty("basemap", "lightPreset", "dusk")` + tous les labels masqués (`showPointOfInterestLabels`, `showTransitLabels`, `showPlaceLabels`, `showRoadLabels` → false)
+- **Modèle Skytree + Tokyo Tower** : `public/models/tokyo_skytree.glb` + `public/models/tokyo_tower.glb` rendus via custom Three.js layer. Transform : `projMatrix × T(mercator) × Scale(1,−1,1) × RotX(+π/2)`. Scale model : `mpu = meterInMercatorCoordinateUnits()`. API : `args.defaultProjectionData.mainMatrix`
 - **Animations canvas** : eau (`fill-pattern` "water-anim" 128×128) et herbe (`fill-pattern` "grass-anim" 32×32) via `map.addImage()` avec `render()` + `triggerRepaint()`
-- **Style routes** : routes sombres (`#1c1c2e`→`#505062`), chemins piétons terracotta (`#d4956a`), rails acier avec tirets traverses
 - **Contraintes caméra** : `minZoom=14`, `maxPitch=58`, `minPitch=35`, `maxBounds` Tokyo centre, bearing clampé ±25° autour de −20° via `map.on('rotate',...)`
-- **Fog + Sky** : `setFog({range:[0.3,5]})` + layer `sky` type `atmosphere` pour cacher les tuiles plates à l'horizon en vue inclinée
+- **Changement de ville** : `map.flyTo()` déclenché par `useEffect([city.name])` sans recharger la map
+- **Pointer events** : `CityClient` root en `pointer-events-none`, `pointer-events-auto` sur header, aside, filtres HUD et modal
 
 ### Carte illustrée (`IllustratedMap`)
 

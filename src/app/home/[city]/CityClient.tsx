@@ -1,16 +1,14 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Bell, Settings, User, Flame, Menu, Star, ArrowLeft, X, Loader2, CheckCircle } from "lucide-react";
 import cities, { POI, POIType } from "@/lib/cities";
 import IllustratedMap from "./IllustratedMap";
-
-const GameMap3D = dynamic(() => import("./GameMap3D"), { ssr: false });
+import { useMapCtx } from "../MapContext";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -59,7 +57,7 @@ function MapClickBlocker() { useMapEvents({}); return null; }
 
 export default function CityClient({ citySlug }: { citySlug: string }) {
   const router = useRouter();
-  const [activeType, setActiveType] = useState<POIType | null>(null);
+  const { activeType, setActiveType, poiClickRef } = useMapCtx();
 
   // Modal state
   const [selectedPoi, setSelectedPoi]   = useState<POI | null>(null);
@@ -94,11 +92,17 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
     setPoiQuests([]);
   }, []);
 
+  // Register click handler into shared ref so the persistent map can call it
+  useEffect(() => {
+    poiClickRef.current = handlePoiClick;
+    return () => { poiClickRef.current = null; };
+  }, [handlePoiClick, poiClickRef]);
+
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-white">
+    <div className="pointer-events-none flex h-screen flex-col overflow-hidden">
 
       {/* Navbar */}
-      <header className="flex h-14 shrink-0 items-center justify-between border-b border-gray-100 bg-white px-6">
+      <header className="pointer-events-auto flex h-14 shrink-0 items-center justify-between border-b border-gray-100 bg-white px-6">
         <div className="flex items-center gap-3">
           <button onClick={() => router.push("/home")} className="text-gray-400 transition-colors hover:text-gray-700">
             <ArrowLeft className="h-5 w-5" />
@@ -123,7 +127,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
       <div className="flex flex-1 overflow-hidden">
 
         {/* Sidebar */}
-        <aside className="flex w-[72px] shrink-0 flex-col items-center gap-7 border-r border-gray-100 bg-white py-5">
+        <aside className="pointer-events-auto flex w-[72px] shrink-0 flex-col items-center gap-7 border-r border-gray-100 bg-white py-5">
           <button className="text-gray-400 transition-colors hover:text-gray-700">
             <Menu className="h-5 w-5" />
           </button>
@@ -175,10 +179,8 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
             })}
           </div>
 
-          {/* Map */}
-          {city.use3DMap ? (
-            <GameMap3D city={city} activeType={activeType} onPoiClick={handlePoiClick} />
-          ) : city.mapImage && city.mapBounds ? (
+          {/* Map — 3D map is rendered persistently in home/layout.tsx */}
+          {city.use3DMap ? null : city.mapImage && city.mapBounds ? (
             <IllustratedMap city={city} activeType={activeType} loadingPoiId={null} onPoiClick={handlePoiClick} />
           ) : (
             <>
@@ -204,7 +206,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
       {/* ── POI Modal ── */}
       {selectedPoi && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+          className="pointer-events-auto fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
           onClick={e => { if (e.target === e.currentTarget) closeModal(); }}
         >
           <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-gray-950 shadow-2xl overflow-hidden">

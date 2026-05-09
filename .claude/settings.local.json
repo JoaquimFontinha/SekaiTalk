@@ -26,7 +26,20 @@
       "Bash(npx prisma *)",
       "Bash(Copy-Item \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\Large Building.glb\" \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\models\\\\large_building.glb\")",
       "PowerShell(Copy-Item \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\Large Building.glb\" \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\models\\\\large_building.glb\" -Force)",
-      "PowerShell(if \\($?\\) { \"OK\" } else { \"FAILED\" })"
+      "PowerShell(if \\($?\\) { \"OK\" } else { \"FAILED\" })",
+      "Bash(npm list *)",
+      "Bash(node -e \"require\\('react-map-gl/mapbox'\\)\")",
+      "Bash(findstr MAPBOX)",
+      "Bash(node -e \"const p = require\\('./node_modules/react-map-gl/package.json'\\); console.log\\(JSON.stringify\\(Object.keys\\(p.exports || {}\\), null, 2\\)\\)\")",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"require\\('cesium'\\); console.log\\('cesium OK'\\); require\\('resium'\\); console.log\\('resium OK'\\)\")",
+      "Bash(node -e \"const p=require\\('./node_modules/cesium/package.json'\\); console.log\\('cesium', p.version\\)\")",
+      "WebSearch",
+      "Bash(git show *)",
+      "Bash(git checkout *)",
+      "Bash(Remove-Item -Force src/app/home/MapContext.tsx)",
+      "Bash(Remove-Item -Force src/app/home/layout.tsx)",
+      "Bash(Remove-Item -Recurse -Force public/cesium)"
     ],
     "additionalDirectories": [
       "C:\\Program Files\\PostgreSQL\\17\\data",

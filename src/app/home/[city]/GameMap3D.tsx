@@ -1,14 +1,15 @@
 "use client";
 
 import { useRef, useCallback, useEffect } from "react";
-import Map, { Marker, type MapRef } from "react-map-gl/maplibre";
-import maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
+import Map, { Marker, type MapRef } from "react-map-gl/mapbox";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { CityData, POIType } from "@/lib/cities";
 
-const STYLE_URL = "https://tiles.openfreemap.org/styles/bright";
+const STYLE_URL    = "mapbox://styles/mapbox/standard";
+const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
 const POI_COLORS: Record<POIType, string> = {
   station:  "#0ea5e9",
@@ -29,7 +30,6 @@ const POI_ICONS: Record<POIType, string> = {
 };
 
 // ── Landmarks — unified Three.js layer (Skytree + Tokyo Tower) ───────────────
-// One renderer, two independent scenes, each with its own Mercator origin.
 
 function addLights(scene: THREE.Scene) {
   scene.add(new THREE.AmbientLight(0xffeedd, 1.2));
@@ -45,8 +45,8 @@ function createLandmarksLayer(map: ReturnType<MapRef["getMap"]>) {
   let renderer: THREE.WebGLRenderer;
   let camera:   THREE.Camera;
 
-  const skytreeOrigin = maplibregl.MercatorCoordinate.fromLngLat({ lng: 139.8107, lat: 35.7101 }, 0);
-  const towerOrigin   = maplibregl.MercatorCoordinate.fromLngLat({ lng: 139.7454, lat: 35.6586 }, 0);
+  const skytreeOrigin = mapboxgl.MercatorCoordinate.fromLngLat({ lng: 139.8107, lat: 35.7101 }, 0);
+  const towerOrigin   = mapboxgl.MercatorCoordinate.fromLngLat({ lng: 139.7454, lat: 35.6586 }, 0);
   const skytreeScene  = new THREE.Scene();
   const towerScene    = new THREE.Scene();
 
@@ -89,31 +89,26 @@ function createLandmarksLayer(map: ReturnType<MapRef["getMap"]>) {
       );
 
       const towerMpu = towerOrigin.meterInMercatorCoordinateUnits();
-      const TOWER_TARGET_M = 333; // real Tokyo Tower height
+      const TOWER_TARGET_M = 333;
       new GLTFLoader().load(
         "/models/tokyo_tower.glb",
         (gltf) => {
-          // Initial scale to measure model height in meters
           gltf.scene.scale.setScalar(towerMpu);
-          const box0     = new THREE.Box3().setFromObject(gltf.scene);
-          const modelH   = (box0.max.y - box0.min.y) / towerMpu; // model height in meters
-          // Rescale so the model stands at the real tower height
+          const box0   = new THREE.Box3().setFromObject(gltf.scene);
+          const modelH = (box0.max.y - box0.min.y) / towerMpu;
           const finalScale = towerMpu * (modelH > 1 ? TOWER_TARGET_M / modelH : 1);
           gltf.scene.scale.setScalar(finalScale);
-
           const box = new THREE.Box3().setFromObject(gltf.scene);
           const c   = box.getCenter(new THREE.Vector3());
           gltf.scene.position.set(-c.x, -box.min.y, -c.z);
-
           gltf.scene.traverse((obj: any) => {
-            obj.frustumCulled = false; // prevent Three.js culling with custom camera
+            obj.frustumCulled = false;
             if (obj.isMesh && obj.material) {
               const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
               mats.forEach((m: any) => { m.side = THREE.DoubleSide; });
             }
           });
           towerScene.add(gltf.scene);
-          console.log("[TokyoTower] added to scene, modelH=", Math.round(modelH), "m, scaled to", TOWER_TARGET_M, "m");
           map.triggerRepaint();
         },
         undefined,
@@ -125,7 +120,7 @@ function createLandmarksLayer(map: ReturnType<MapRef["getMap"]>) {
       const projMatrix: number[] =
         args?.defaultProjectionData?.mainMatrix ?? args;
 
-      const makeTransform = (origin: maplibregl.MercatorCoordinate) =>
+      const makeTransform = (origin: mapboxgl.MercatorCoordinate) =>
         new THREE.Matrix4()
           .fromArray(projMatrix)
           .multiply(
@@ -151,145 +146,49 @@ export default function GameMap3D({
   city,
   activeType,
   onPoiClick,
+  mapRef: externalRef,
 }: {
   city: CityData;
   activeType: POIType | null;
   onPoiClick: (poiId: string) => void;
+  mapRef?: React.RefObject<any>;
 }) {
-  const mapRef = useRef<MapRef>(null);
+  const internalRef = useRef<MapRef>(null);
+  const mapRef = (externalRef ?? internalRef) as React.RefObject<MapRef>;
   const pois = activeType ? city.pois.filter(p => p.type === activeType) : city.pois;
 
   useEffect(() => () => { mapRef.current?.getMap()?.removeImage?.("water-anim"); }, []);
+
+  // Fly to city when city prop changes (persistent map survives city switches)
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    if (!map) return;
+    map.flyTo({
+      center: [city.center[1], city.center[0]],
+      zoom: 15.2,
+      duration: 2000,
+    });
+  }, [city.name]);
 
   const handleLoad = useCallback(() => {
     const map = mapRef.current?.getMap();
     if (!map) return;
 
-    // ── Hide all base labels + icons (bus stops, POI text…) ──
-    // ── Hide flat 2D building footprints ──────────────────────
-    map.getStyle().layers.forEach((layer: any) => {
-      if (layer.type === "symbol") {
-        try { map.setLayoutProperty(layer.id, "visibility", "none"); } catch {}
-      }
-      if (layer.type === "fill" && (layer.id as string).includes("building")) {
-        try { map.setLayoutProperty(layer.id, "visibility", "none"); } catch {}
-      }
-    });
+    // ── Mapbox Standard style — dusk + no labels ──────────────
+    try {
+      (map as any).setConfigProperty("basemap", "lightPreset", "dusk");
+      (map as any).setConfigProperty("basemap", "showPointOfInterestLabels", false);
+      (map as any).setConfigProperty("basemap", "showTransitLabels", false);
+      (map as any).setConfigProperty("basemap", "showPlaceLabels", false);
+      (map as any).setConfigProperty("basemap", "showRoadLabels", false);
+    } catch (e) { console.warn("[Map] setConfigProperty:", e); }
 
-    // ── Route styling — asphalte sombre + chemins terracotta ─
-    map.getStyle().layers.forEach((layer: any) => {
-      if (layer.type !== "line") return;
-      const id: string = layer.id;
-      if (/water/.test(id)) return;
-
-      try {
-        if (/casing/.test(id)) {
-          // Casing (contour) légèrement plus clair
-          if (/motorway|trunk/.test(id))    map.setPaintProperty(id, "line-color", "#14141f");
-          else if (/primary/.test(id))      map.setPaintProperty(id, "line-color", "#1e1e30");
-          else if (/secondary/.test(id))    map.setPaintProperty(id, "line-color", "#28283a");
-          else                              map.setPaintProperty(id, "line-color", "#38384a");
-        } else if (/motorway|trunk/.test(id)) {
-          map.setPaintProperty(id, "line-color", "#1c1c2e");
-        } else if (/primary/.test(id)) {
-          map.setPaintProperty(id, "line-color", "#26263a");
-        } else if (/secondary/.test(id)) {
-          map.setPaintProperty(id, "line-color", "#343448");
-        } else if (/tertiary/.test(id)) {
-          map.setPaintProperty(id, "line-color", "#424256");
-        } else if (/path|footway|pedestrian|steps/.test(id)) {
-          map.setPaintProperty(id, "line-color", "#d4956a");
-          try { map.setPaintProperty(id, "line-dasharray", [2, 2]); } catch {}
-        } else if (/cycleway|cycle/.test(id)) {
-          map.setPaintProperty(id, "line-color", "#5cc8b8");
-        } else if (/road|street|minor|service/.test(id)) {
-          map.setPaintProperty(id, "line-color", "#505062");
-        }
-      } catch {}
-    });
-
-    // ── Chemin de fer — rails + traverses ────────────────────
-    map.getStyle().layers.forEach((layer: any) => {
-      if (layer.type !== "line") return;
-      const id: string = layer.id;
-      if (!/rail|railway|transit|subway|metro|tram/.test(id)) return;
-      try {
-        if (/casing|outline/.test(id)) {
-          // Ballast (fond gris-pierre)
-          map.setPaintProperty(id, "line-color",   "#5a5a6a");
-          map.setPaintProperty(id, "line-opacity",  0.9);
-        } else if (/transit|subway|metro/.test(id)) {
-          // Métro / transit — acier bleuté + tirets traverses
-          map.setPaintProperty(id, "line-color",     "#7c8caa");
-          map.setPaintProperty(id, "line-width",     2);
-          try { map.setPaintProperty(id, "line-dasharray", [4, 2]); } catch {}
-        } else if (/tram/.test(id)) {
-          // Tramway — cuivre doré
-          map.setPaintProperty(id, "line-color",  "#b8942a");
-          map.setPaintProperty(id, "line-width",  1.5);
-        } else {
-          // Rail principal — acier sombre + traverses blanches
-          map.setPaintProperty(id, "line-color",  "#3c3c50");
-          map.setPaintProperty(id, "line-width",  3);
-          try { map.setPaintProperty(id, "line-dasharray", [6, 3]); } catch {}
-          map.setPaintProperty(id, "line-opacity", 1);
-        }
-      } catch {}
-    });
-
-    // ── Warm daylight ─────────────────────────────────────────
-    map.setLight({
-      anchor:    "map" as any,
-      color:     "#fff8f0",
-      intensity: 0.4,
-      position:  [1.5, 135, 45] as any,
-    });
-
-    // ── 3D buildings — Japanese palette ───────────────────────
-    const labelLayerId = map.getStyle().layers.find(
-      l => l.type === "symbol" && (l.layout as any)?.["text-field"]
-    )?.id;
-
-    if (!map.getLayer("game-3d-buildings")) {
-      map.addLayer(
-        {
-          id: "game-3d-buildings",
-          type: "fill-extrusion",
-          source: "openmaptiles",
-          "source-layer": "building",
-          minzoom: 13,
-          filter: [
-            "all",
-            ["has", "render_height"],
-            [">", ["get", "render_height"], 0],
-            ["<", ["get", "render_height"], 60],   // cap at 60 m — Skytree (634m) and Tower (333m) excluded by height alone
-          ],
-          paint: {
-            // crème → pêche → orange doux → bleu ciel → indigo
-            "fill-extrusion-color": [
-              "interpolate", ["linear"],
-              ["coalesce", ["get", "render_height"], 3],
-              0,  "#fef3c7",   // crème pâle — kiosques
-              6,  "#fcd9a0",   // pêche      — maisons
-              15, "#f9a26c",   // orange     — immeubles bas
-              30, "#7dd3fc",   // bleu ciel  — bureaux
-              60, "#38bdf8",   // bleu clair — max cap (pas de violet)
-            ],
-            "fill-extrusion-height": ["coalesce", ["get", "render_height"], 3],
-            "fill-extrusion-base":    ["coalesce", ["get", "render_min_height"], 0],
-            "fill-extrusion-opacity": 0.9,
-          },
-        } as any,
-        labelLayerId
-      );
-    }
-
-    // ── Skytree + Tokyo Tower — single unified layer ──────────
+    // ── Skytree + Tokyo Tower ─────────────────────────────────
     if (!map.getLayer("landmarks")) {
       map.addLayer(createLandmarksLayer(map) as any);
     }
 
-    // ── Anime water — wave pattern ────────────────────────────
+    // ── Anime water ───────────────────────────────────────────
     const waterFillIds: string[] = [];
     map.getStyle().layers.forEach((layer: any) => {
       if (layer.type === "fill" && /water/.test(layer.id)) waterFillIds.push(layer.id);
@@ -302,34 +201,26 @@ export default function GameMap3D({
       const ctx = cvs.getContext("2d")!;
 
       map.addImage("water-anim", {
-        width: SZ,
-        height: SZ,
+        width: SZ, height: SZ,
         data: new Uint8Array(SZ * SZ * 4),
         render() {
           const t = performance.now() / 1000;
           ctx.clearRect(0, 0, SZ, SZ);
-
-          // Base blue
           ctx.fillStyle = "#5badec";
           ctx.fillRect(0, 0, SZ, SZ);
-
-          // Small scrolling wave lines
           const spacing = 14;
           const offset  = (t * 10) % spacing;
           ctx.lineWidth = 1.2;
-
           for (let i = -1; i <= SZ / spacing + 1; i++) {
             const baseY = i * spacing + offset;
             ctx.beginPath();
             for (let x = 0; x <= SZ; x++) {
-              // 2 full cycles per tile width → seamless X tiling
               const y = baseY + Math.sin((x / SZ) * Math.PI * 4 + t * 1.8) * 2.5;
               x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
             }
             ctx.strokeStyle = "rgba(255,255,255,0.24)";
             ctx.stroke();
           }
-
           const d = ctx.getImageData(0, 0, SZ, SZ);
           this.data = new Uint8Array(d.data.buffer);
           map.triggerRepaint();
@@ -342,7 +233,7 @@ export default function GameMap3D({
       });
     }
 
-    // ── Anime grass — swaying blades on green areas ──────────
+    // ── Anime grass ───────────────────────────────────────────
     const grassFillIds: string[] = [];
     map.getStyle().layers.forEach((layer: any) => {
       if (layer.type === "fill" && /park|grass|garden|wood|forest|nature|recreation/i.test(layer.id))
@@ -350,12 +241,11 @@ export default function GameMap3D({
     });
 
     if (grassFillIds.length > 0 && !map.hasImage("grass-anim")) {
-      const GSZ   = 32;
-      const gcvs  = document.createElement("canvas");
-      gcvs.width  = GSZ; gcvs.height = GSZ;
-      const gctx  = gcvs.getContext("2d")!;
+      const GSZ  = 32;
+      const gcvs = document.createElement("canvas");
+      gcvs.width = GSZ; gcvs.height = GSZ;
+      const gctx = gcvs.getContext("2d")!;
 
-      // Fixed tuft positions with staggered phases for natural breeze
       const tufts = [
         { x:  4, h: 4, phase: 0.0 },
         { x: 10, h: 3, phase: 1.1 },
@@ -365,26 +255,19 @@ export default function GameMap3D({
       ];
 
       map.addImage("grass-anim", {
-        width: GSZ,
-        height: GSZ,
+        width: GSZ, height: GSZ,
         data: new Uint8Array(GSZ * GSZ * 4),
         render() {
           const t = performance.now() / 1000;
           gctx.clearRect(0, 0, GSZ, GSZ);
-
-          // Base anime park green
           gctx.fillStyle = "#b5d97c";
           gctx.fillRect(0, 0, GSZ, GSZ);
-
           tufts.forEach(({ x, h, phase }) => {
-            // Gentle breeze sway — each tuft independent
             const sway = Math.sin(t * 1.3 + phase) * 1.2;
-
-            // Two blades per tuft
             [[0, 1.0, "rgba(45,110,20,0.85)"], [3, 0.7, "rgba(70,145,30,0.55)"]].forEach(
               ([dx, scale, color]) => {
                 const bx = x + (dx as number);
-                const bh = h  * (scale as number);
+                const bh = h * (scale as number);
                 const sw = sway * (scale as number);
                 gctx.beginPath();
                 gctx.moveTo(bx, GSZ);
@@ -396,7 +279,6 @@ export default function GameMap3D({
               }
             );
           });
-
           const d = gctx.getImageData(0, 0, GSZ, GSZ);
           this.data = new Uint8Array(d.data.buffer);
           map.triggerRepaint();
@@ -409,7 +291,7 @@ export default function GameMap3D({
       });
     }
 
-    // ── Bearing clamp ±25° autour du bearing initial ─────────
+    // ── Bearing clamp ±25° ────────────────────────────────────
     const BASE_BEARING = -20;
     const MAX_DELTA    =  25;
     map.on("rotate", () => {
@@ -419,19 +301,6 @@ export default function GameMap3D({
         map.jumpTo({ bearing: BASE_BEARING + Math.sign(delta) * MAX_DELTA });
       }
     });
-
-    // ── Fog — cache les tuiles plates à l'horizon ────────────
-    // (MapLibre v5 supprime le type "sky", on utilise setFog seul)
-    try {
-      (map as any).setFog({
-        range:           [0.3, 5],
-        color:           "#f0e8d8",
-        "high-color":    "#c8d8ee",
-        "horizon-blend": 0.18,
-        "space-color":   "#d4e4f0",
-        "star-intensity": 0,
-      });
-    } catch {}
 
     // ── Cinematic tilt-in ─────────────────────────────────────
     map.easeTo({
@@ -444,6 +313,7 @@ export default function GameMap3D({
   return (
     <Map
       ref={mapRef}
+      mapboxAccessToken={MAPBOX_TOKEN}
       mapStyle={STYLE_URL}
       initialViewState={{
         longitude: city.center[1],
