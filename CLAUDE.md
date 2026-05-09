@@ -108,9 +108,28 @@ Deux fichiers d'env :
 | `/api/transcribe` | POST | Transcrit un audio via Groq Whisper (`language: "ja"`, prompt japonais) |
 | `/api/tts` | POST | TTS ElevenLabs server-side (`{text, voiceId}`), retourne `audio/mpeg` |
 | `/api/user/stats` | GET | Stats XP/Yens/niveau de l'utilisateur connecté |
+| `/api/contacts` | GET | Liste tous les personnages `isFriendable + isActive` avec `memoryCount` (groupBy CharacterMemory) et `locations` (POIs résolus depuis cities.ts) |
 | `/api/quests/poi/[poiId]` | GET | Liste les quêtes d'un POI avec progression utilisateur |
 | `/api/quests/[questId]/start` | POST | Crée un `UserQuestProgress` (auth requise) |
 | `/api/quests/tasks/[taskId]/complete` | POST | Valide une tâche, débloque la suivante ou termine la quête |
+
+### Sidebar CityClient (`src/app/home/[city]/CityClient.tsx`)
+
+La sidebar (72px) contient 3 boutons d'icône qui togglent des panneaux overlay sur la carte 3D (`z-[1000]`, positionnés `absolute left-0 top-0 h-full`). Seuls les panneaux actifs (`city.use3DMap`) sont rendus.
+
+**Panneau Lieux** (`sidebarPanel === "lieux"`, 380px)
+- Colonne gauche (148px) : sélecteur de type POI (Tous + par type) avec compteur. Filtre `lieuxType`.
+- Colonne droite : liste scrollable des POIs du type sélectionné. Chaque ligne affiche nom + `done/total quêtes` (fetchés en parallèle via `/api/quests/poi/[poiId]` à l'ouverture du panneau, cachés dans `poiQuestData`).
+- Clic sur la ligne → `map.flyTo({ center, zoom:17, pitch:60, duration:1500 })` (prévisualisation caméra).
+- Bouton `→` au hover → ferme le panneau + ouvre la modale POI.
+
+**Panneau Contacts** (`sidebarPanel === "contacts"`, 380px)
+- Fetche `GET /api/contacts` une seule fois (guard `contacts.length > 0`).
+- Carte par personnage `isFriendable` : avatar rond, nom + `nameJp`, rôle, badge niveau d'amitié, compteur souvenirs.
+- Niveau d'amitié calculé côté client depuis `memoryCount` : 0=Étranger (gris), 1-2=Connaissance (bleu), 3-5=Ami (vert), 6+=Proche (violet).
+- Bouton "📍 RDV" → toggle `rdvOpenId` → affiche la liste des lieux du personnage (bouton "Inviter →" désactivé, à implémenter).
+
+**Panneau Révision** — bouton présent mais désactivé (`enabled: false`), à implémenter.
 
 ### Carte 3D Tokyo (`GameMap3D`)
 
