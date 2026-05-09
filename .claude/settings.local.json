@@ -39,7 +39,8 @@
       "Bash(git checkout *)",
       "Bash(Remove-Item -Force src/app/home/MapContext.tsx)",
       "Bash(Remove-Item -Force src/app/home/layout.tsx)",
-      "Bash(Remove-Item -Recurse -Force public/cesium)"
+      "Bash(Remove-Item -Recurse -Force public/cesium)",
+      "Bash(Select-String \"topojson|d3-geo|world-atlas\")"
     ],
     "additionalDirectories": [
       "C:\\Program Files\\PostgreSQL\\17\\data",

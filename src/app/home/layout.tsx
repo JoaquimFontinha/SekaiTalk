@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { MapProvider, useMapCtx } from "./MapContext";
 import cities from "@/lib/cities";
@@ -18,6 +19,26 @@ function PersistentMap() {
   const city = citySlug ? cities[citySlug] : null;
   const isOnCityPage = !!city?.use3DMap && parts.length === 1;
   const displayCity = city?.use3DMap ? city : DEFAULT_CITY;
+  const warmedUp = useRef(false);
+
+  // Préchargement des tuiles des autres villes quand la map est cachée
+  // (user en conv ou sur /home) — jumps invisibles, SW met tout en cache
+  useEffect(() => {
+    if (isOnCityPage || warmedUp.current) return;
+    const map = (mapRef.current as any)?.getMap?.();
+    if (!map) return;
+    warmedUp.current = true;
+
+    const targets = Object.values(cities).filter(c => c.use3DMap);
+    let i = 0;
+    const next = () => {
+      if (i >= targets.length) return;
+      const c = targets[i++];
+      map.once("idle", () => setTimeout(next, 400));
+      map.jumpTo({ center: [c.center[1], c.center[0]], zoom: 15 });
+    };
+    setTimeout(next, 800);
+  }, [isOnCityPage, mapRef]);
 
   return (
     <div
