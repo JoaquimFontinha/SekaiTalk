@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ComposableMap, Geographies, Geography, Marker } from "react-simple-maps";
-import { Bell, User, Flame, Lock } from "lucide-react";
+import { Bell, User, Flame, Lock, Menu, MapPin, Users, BookOpen, Sparkles } from "lucide-react";
 import cities from "@/lib/cities";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -13,6 +13,13 @@ type UserStats = {
   xp: number; yens: number; level: number;
   xpInLevel: number; xpNeeded: number | null; percent: number;
 };
+
+const SIDEBAR_BUTTONS = [
+  { Icon: MapPin,   label: "Lieux"      },
+  { Icon: Users,    label: "Contacts"   },
+  { Icon: Sparkles, label: "Évènements" },
+  { Icon: BookOpen, label: "Révision"   },
+];
 
 const CITY_LIST = Object.entries(cities).map(([slug, data]) => ({
   slug,
@@ -41,8 +48,10 @@ function CompassRose() {
 
 export default function HomeClient() {
   const router = useRouter();
-  const [hoveredCity, setHoveredCity] = useState<string | null>(null);
-  const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [hoveredCity, setHoveredCity]         = useState<string | null>(null);
+  const [userStats, setUserStats]             = useState<UserStats | null>(null);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     fetch("/api/user/stats")
@@ -51,55 +60,98 @@ export default function HomeClient() {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    if (!sidebarExpanded) return;
+    const handler = (e: MouseEvent) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
+        setSidebarExpanded(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [sidebarExpanded]);
+
   return (
-    <div className="relative h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden">
 
-      {/* Floating HUD — top bar */}
-      <div className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-5 pt-4 pointer-events-none">
-        {/* Logo */}
-        <div className="pointer-events-auto rounded-xl bg-white shadow-sm border border-gray-200 px-4 py-2">
-          <span className="text-base font-black tracking-tight text-gray-900">SekaiTalk</span>
-        </div>
-
-        {/* Stats */}
-        <div className="pointer-events-auto flex items-center gap-3 rounded-xl bg-white shadow-sm border border-gray-200 px-4 py-2">
-          {userStats && (
-            <>
-              <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-bold text-violet-700">
-                Nv.{userStats.level}
-              </span>
-              <div className="flex flex-col gap-0.5">
-                <div className="h-1.5 w-16 rounded-full bg-gray-100 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-violet-500 transition-all duration-700"
-                    style={{ width: `${userStats.percent}%` }}
-                  />
-                </div>
-                <span className="text-[8px] text-gray-400 text-right leading-none tabular-nums">
-                  {userStats.xpInLevel}/{userStats.xpNeeded ?? "MAX"} XP
-                </span>
-              </div>
-              <div className="w-px h-4 bg-gray-200" />
-            </>
+      {/* Sidebar — same as /home/[city] */}
+      <aside
+        ref={sidebarRef}
+        className={`relative z-[1001] flex shrink-0 flex-col border-r border-gray-100 bg-white py-5 transition-all duration-200 ${
+          sidebarExpanded ? "w-52 items-start gap-1 px-3" : "w-[88px] items-center gap-7"
+        }`}
+      >
+        {/* Hamburger */}
+        <button
+          onClick={() => setSidebarExpanded(e => !e)}
+          className={`flex items-center gap-3 rounded-lg transition-colors hover:bg-gray-100 ${
+            sidebarExpanded ? "w-full px-2 py-2" : "p-2.5"
+          }`}
+        >
+          <Menu className="h-5 w-5 shrink-0 text-gray-400" />
+          {sidebarExpanded && (
+            <span className="text-sm font-black tracking-tight text-gray-800">SekaiTalk</span>
           )}
-          <button className="flex items-center gap-1 text-gray-400 hover:text-orange-400 transition-colors">
-            <Flame className="h-4 w-4 text-orange-300" />
-            <span className="text-xs font-semibold text-gray-600">0</span>
-          </button>
-          <button className="text-gray-400 hover:text-gray-700 transition-colors"><Bell className="h-4 w-4" /></button>
-          <button className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-gray-200 text-gray-400 hover:border-gray-400 hover:text-gray-700 transition-colors">
-            <User className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
+        </button>
 
-      {/* Full-screen map */}
+        {/* Nav buttons — disabled on home, panels not available here */}
+        {SIDEBAR_BUTTONS.map(({ Icon, label }) => (
+          <div
+            key={label}
+            className={`flex cursor-default items-center opacity-35 ${
+              sidebarExpanded
+                ? "w-full gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-500"
+                : "flex-col gap-1"
+            }`}
+          >
+            {sidebarExpanded ? (
+              <Icon className="h-4 w-4 shrink-0 text-gray-400" />
+            ) : (
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-gray-200 text-gray-400">
+                <Icon className="h-5 w-5" />
+              </div>
+            )}
+            <span className={sidebarExpanded ? "" : "text-[9px] font-medium text-gray-400"}>{label}</span>
+          </div>
+        ))}
+      </aside>
+
+      {/* Map */}
       <main
-        className="absolute inset-0"
+        className="relative flex-1 overflow-hidden"
         style={{
           background: "radial-gradient(ellipse at 65% 35%, #9ec5d8 0%, #7aaec5 45%, #5f97b0 100%)",
         }}
       >
+
+        {/* Stats HUD — top right */}
+        <div className="pointer-events-auto absolute top-4 right-4 z-20 flex items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-3 shadow-sm">
+          {userStats && (
+            <>
+              <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
+                Nv.{userStats.level}
+              </span>
+              <div className="flex flex-col gap-1">
+                <div className="h-2 w-20 rounded-full bg-gray-100 overflow-hidden">
+                  <div className="h-full rounded-full bg-violet-500 transition-all duration-700" style={{ width: `${userStats.percent}%` }} />
+                </div>
+                <span className="text-[9px] text-gray-400 text-right leading-none tabular-nums">
+                  {userStats.xpInLevel}/{userStats.xpNeeded ?? "MAX"} XP
+                </span>
+              </div>
+              <div className="w-px h-5 bg-gray-200" />
+            </>
+          )}
+          <button className="flex items-center gap-1.5 text-gray-400 hover:text-orange-400 transition-colors">
+            <Flame className="h-5 w-5 text-orange-300" />
+            <span className="text-sm font-semibold text-gray-600">0</span>
+          </button>
+          <button className="text-gray-400 hover:text-gray-700 transition-colors"><Bell className="h-5 w-5" /></button>
+          <button className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-200 text-gray-400 hover:border-gray-400 hover:text-gray-700 transition-colors">
+            <User className="h-4 w-4" />
+          </button>
+        </div>
+
           {/* Dot grid ocean texture */}
           <div
             className="pointer-events-none absolute inset-0"
@@ -338,7 +390,7 @@ export default function HomeClient() {
               );
             })}
           </ComposableMap>
-        </main>
+      </main>
     </div>
   );
 }
