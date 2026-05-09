@@ -2,10 +2,7 @@
 
 import { useRef, useCallback, useEffect } from "react";
 import Map, { Marker, type MapRef } from "react-map-gl/mapbox";
-import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { CityData, POIType } from "@/lib/cities";
 
 const STYLE_URL    = "mapbox://styles/mapbox/standard";
@@ -28,119 +25,6 @@ const POI_ICONS: Record<POIType, string> = {
   market:   "🛒",
   landmark: "📍",
 };
-
-// ── Landmarks — unified Three.js layer (Skytree + Tokyo Tower) ───────────────
-
-function addLights(scene: THREE.Scene) {
-  scene.add(new THREE.AmbientLight(0xffeedd, 1.2));
-  const sun = new THREE.DirectionalLight(0xfff3cc, 2.0);
-  sun.position.set(1, 2, 1.5);
-  scene.add(sun);
-  const fill = new THREE.DirectionalLight(0xaaccff, 0.6);
-  fill.position.set(-1, 0.5, -1);
-  scene.add(fill);
-}
-
-function createLandmarksLayer(map: ReturnType<MapRef["getMap"]>) {
-  let renderer: THREE.WebGLRenderer;
-  let camera:   THREE.Camera;
-
-  const skytreeOrigin = mapboxgl.MercatorCoordinate.fromLngLat({ lng: 139.8107, lat: 35.7101 }, 0);
-  const towerOrigin   = mapboxgl.MercatorCoordinate.fromLngLat({ lng: 139.7454, lat: 35.6586 }, 0);
-  const skytreeScene  = new THREE.Scene();
-  const towerScene    = new THREE.Scene();
-
-  return {
-    id:            "landmarks",
-    type:          "custom"  as const,
-    renderingMode: "3d"      as const,
-
-    onAdd(_map: typeof map, gl: WebGL2RenderingContext) {
-      camera   = new THREE.Camera();
-      renderer = new THREE.WebGLRenderer({
-        canvas:    map.getCanvas(),
-        context:   gl,
-        antialias: true,
-      });
-      renderer.autoClear = false;
-
-      addLights(skytreeScene);
-      addLights(towerScene);
-
-      const skytreeMpu = skytreeOrigin.meterInMercatorCoordinateUnits();
-      new GLTFLoader().load(
-        "/models/tokyo_skytree.glb",
-        (gltf) => {
-          gltf.scene.scale.setScalar(skytreeMpu);
-          const box = new THREE.Box3().setFromObject(gltf.scene);
-          const c   = box.getCenter(new THREE.Vector3());
-          gltf.scene.position.set(-c.x, -box.min.y, -c.z);
-          gltf.scene.traverse((obj: any) => {
-            if (obj.isMesh && obj.material) {
-              const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-              mats.forEach((m: any) => { m.side = THREE.DoubleSide; });
-            }
-          });
-          skytreeScene.add(gltf.scene);
-          map.triggerRepaint();
-        },
-        undefined,
-        (err) => console.error("[Skytree] load error:", err)
-      );
-
-      const towerMpu = towerOrigin.meterInMercatorCoordinateUnits();
-      const TOWER_TARGET_M = 333;
-      new GLTFLoader().load(
-        "/models/tokyo_tower.glb",
-        (gltf) => {
-          gltf.scene.scale.setScalar(towerMpu);
-          const box0   = new THREE.Box3().setFromObject(gltf.scene);
-          const modelH = (box0.max.y - box0.min.y) / towerMpu;
-          const finalScale = towerMpu * (modelH > 1 ? TOWER_TARGET_M / modelH : 1);
-          gltf.scene.scale.setScalar(finalScale);
-          const box = new THREE.Box3().setFromObject(gltf.scene);
-          const c   = box.getCenter(new THREE.Vector3());
-          gltf.scene.position.set(-c.x, -box.min.y, -c.z);
-          gltf.scene.traverse((obj: any) => {
-            obj.frustumCulled = false;
-            if (obj.isMesh && obj.material) {
-              const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-              mats.forEach((m: any) => { m.side = THREE.DoubleSide; });
-            }
-          });
-          towerScene.add(gltf.scene);
-          map.triggerRepaint();
-        },
-        undefined,
-        (err) => console.error("[TokyoTower] load error:", err)
-      );
-    },
-
-    render(_gl: WebGL2RenderingContext, args: any) {
-      const projMatrix: number[] =
-        args?.defaultProjectionData?.mainMatrix ?? args;
-
-      const makeTransform = (origin: mapboxgl.MercatorCoordinate) =>
-        new THREE.Matrix4()
-          .fromArray(projMatrix)
-          .multiply(
-            new THREE.Matrix4()
-              .makeTranslation(origin.x, origin.y, origin.z ?? 0)
-              .scale(new THREE.Vector3(1, -1, 1))
-              .multiply(new THREE.Matrix4().makeRotationX(Math.PI / 2))
-          );
-
-      renderer.resetState();
-      camera.projectionMatrix = makeTransform(skytreeOrigin);
-      renderer.render(skytreeScene, camera);
-
-      camera.projectionMatrix = makeTransform(towerOrigin);
-      renderer.render(towerScene, camera);
-
-      map.triggerRepaint();
-    },
-  };
-}
 
 export default function GameMap3D({
   city,
@@ -182,11 +66,6 @@ export default function GameMap3D({
       (map as any).setConfigProperty("basemap", "showPlaceLabels", false);
       (map as any).setConfigProperty("basemap", "showRoadLabels", false);
     } catch (e) { console.warn("[Map] setConfigProperty:", e); }
-
-    // ── Skytree + Tokyo Tower ─────────────────────────────────
-    if (!map.getLayer("landmarks")) {
-      map.addLayer(createLandmarksLayer(map) as any);
-    }
 
     // ── Anime water ───────────────────────────────────────────
     const waterFillIds: string[] = [];
