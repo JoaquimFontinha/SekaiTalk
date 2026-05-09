@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Bell, Settings, User, Flame, Menu, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle } from "lucide-react";
+import { Bell, User, Flame, Menu, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle } from "lucide-react";
 import cities, { POI, POIType } from "@/lib/cities";
 import { getNeighborhood } from "@/lib/tokyo-neighborhoods";
 import IllustratedMap from "./IllustratedMap";
@@ -24,6 +24,11 @@ type PoiQuest = {
 };
 
 type SidebarPanel = "lieux" | "contacts" | "evenements" | "revision" | null;
+
+type UserStats = {
+  xp: number; yens: number; level: number;
+  xpInLevel: number; xpNeeded: number | null; percent: number;
+};
 
 type Contact = {
   id:          string;
@@ -99,8 +104,12 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
   const [contactsLoading, setContactsLoading] = useState(false);
   const [rdvOpenId, setRdvOpenId]           = useState<string | null>(null);
 
-  const [tokyoTime, setTokyoTime]       = useState("");
-  const [neighborhood, setNeighborhood] = useState("");
+  const [tokyoTime, setTokyoTime]         = useState("");
+  const [neighborhood, setNeighborhood]   = useState("");
+  const [userStats, setUserStats]         = useState<UserStats | null>(null);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
+
   useEffect(() => {
     const tick = () => setTokyoTime(
       new Date().toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit", hour12: false })
@@ -109,6 +118,24 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    fetch("/api/user/stats")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setUserStats(data); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!sidebarExpanded) return;
+    const handler = (e: MouseEvent) => {
+      if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
+        setSidebarExpanded(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [sidebarExpanded]);
 
   const city = cities[citySlug];
 
@@ -210,57 +237,97 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
   }, [sidebarPanel, contacts.length]);
 
   return (
-    <div className="pointer-events-none flex h-screen flex-col overflow-hidden">
+    <div className="pointer-events-none flex h-screen overflow-hidden">
 
-      {/* Navbar */}
-      <header className="pointer-events-auto flex h-14 shrink-0 items-center justify-between border-b border-gray-100 bg-white px-6">
-        <div className="flex items-center gap-3">
-          <span className="text-xl font-bold tracking-tight text-gray-900">SekaiTalk</span>
-          <span className="text-gray-300">/</span>
-          <span className="text-sm font-semibold text-gray-500">{city.name}</span>
-        </div>
-        <div className="flex items-center gap-5 text-gray-400">
-          <button className="flex items-center gap-1.5 transition-colors hover:text-orange-400">
-            <Flame className="h-5 w-5 text-orange-300" />
-            <span className="text-sm font-semibold text-gray-600">0</span>
-          </button>
-          <button className="transition-colors hover:text-gray-900"><Bell className="h-5 w-5" /></button>
-          <button className="transition-colors hover:text-gray-900"><Settings className="h-5 w-5" /></button>
-          <button className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-200 transition-colors hover:border-gray-400 hover:text-gray-900">
-            <User className="h-4 w-4" />
-          </button>
-        </div>
-      </header>
+      {/* Sidebar */}
+      <aside
+        ref={sidebarRef}
+        className={`pointer-events-auto relative z-[1001] flex shrink-0 flex-col border-r border-gray-100 bg-white py-5 transition-all duration-200 ${
+          sidebarExpanded ? "w-52 items-start gap-1 px-3" : "w-[88px] items-center gap-7"
+        }`}
+      >
+        {/* Hamburger */}
+        <button
+          onClick={() => setSidebarExpanded(e => !e)}
+          className={`flex items-center gap-3 rounded-lg transition-colors hover:bg-gray-100 ${
+            sidebarExpanded ? "w-full px-2 py-2" : "p-2.5"
+          }`}
+        >
+          <Menu className="h-5 w-5 shrink-0 text-gray-400" />
+          {sidebarExpanded && (
+            <span className="text-sm font-black tracking-tight text-gray-800">SekaiTalk</span>
+          )}
+        </button>
 
-      <div className="flex flex-1 overflow-hidden">
-
-        {/* Sidebar */}
-        <aside className="pointer-events-auto flex w-[72px] shrink-0 flex-col items-center gap-7 border-r border-gray-100 bg-white py-5">
-          <button className="text-gray-400 transition-colors hover:text-gray-700">
-            <Menu className="h-5 w-5" />
-          </button>
-          {SIDEBAR_BUTTONS.map(({ panel, Icon, label, enabled }) => (
-            <button
-              key={panel}
-              onClick={() => enabled && setSidebarPanel(prev => prev === panel ? null : panel)}
-              className={`group flex flex-col items-center gap-1 ${!enabled ? "cursor-default opacity-35" : ""}`}
-            >
-              <div className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all ${
+        {/* Nav buttons */}
+        {SIDEBAR_BUTTONS.map(({ panel, Icon, label, enabled }) => (
+          <button
+            key={panel}
+            onClick={() => {
+              if (!enabled) return;
+              setSidebarPanel(prev => prev === panel ? null : panel);
+              setSidebarExpanded(false);
+            }}
+            className={`group flex items-center transition-all ${!enabled ? "cursor-default opacity-35" : ""} ${
+              sidebarExpanded
+                ? `w-full gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${
+                    sidebarPanel === panel
+                      ? "bg-violet-50 text-violet-600"
+                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                  }`
+                : "flex-col gap-1"
+            }`}
+          >
+            {sidebarExpanded ? (
+              <Icon className={`h-4 w-4 shrink-0 ${sidebarPanel === panel ? "text-violet-500" : "text-gray-400 group-hover:text-gray-700"}`} />
+            ) : (
+              <div className={`flex h-12 w-12 items-center justify-center rounded-full border-2 transition-all ${
                 sidebarPanel === panel
                   ? "border-violet-500 bg-violet-50 text-violet-600"
                   : "border-gray-200 text-gray-400 group-hover:border-violet-400 group-hover:bg-violet-50 group-hover:text-violet-500"
               }`}>
-                <Icon className="h-4 w-4" />
+                <Icon className="h-5 w-5" />
               </div>
-              <span className={`text-[9px] font-medium transition-colors ${
-                sidebarPanel === panel ? "text-violet-500" : "text-gray-400 group-hover:text-violet-500"
-              }`}>{label}</span>
-            </button>
-          ))}
-        </aside>
+            )}
+            <span className={sidebarExpanded ? "" : `text-[9px] font-medium transition-colors ${
+              sidebarPanel === panel ? "text-violet-500" : "text-gray-400 group-hover:text-violet-500"
+            }`}>
+              {label}
+            </span>
+          </button>
+        ))}
+      </aside>
 
-        {/* Map zone */}
-        <main className="relative flex-1 overflow-hidden">
+      {/* Map zone */}
+      <main className="relative flex-1 overflow-hidden">
+
+        {/* Floating top-right HUD — same as /home */}
+        <div className="pointer-events-auto absolute top-4 right-4 z-[1000] flex items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-3 shadow-sm">
+          {userStats && (
+            <>
+              <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
+                Nv.{userStats.level}
+              </span>
+              <div className="flex flex-col gap-1">
+                <div className="h-2 w-20 rounded-full bg-gray-100 overflow-hidden">
+                  <div className="h-full rounded-full bg-violet-500 transition-all duration-700" style={{ width: `${userStats.percent}%` }} />
+                </div>
+                <span className="text-[9px] text-gray-400 text-right leading-none tabular-nums">
+                  {userStats.xpInLevel}/{userStats.xpNeeded ?? "MAX"} XP
+                </span>
+              </div>
+              <div className="w-px h-5 bg-gray-200" />
+            </>
+          )}
+          <button className="flex items-center gap-1.5 text-gray-400 hover:text-orange-400 transition-colors">
+            <Flame className="h-5 w-5 text-orange-300" />
+            <span className="text-sm font-semibold text-gray-600">0</span>
+          </button>
+          <button className="text-gray-400 hover:text-gray-700 transition-colors"><Bell className="h-5 w-5" /></button>
+          <button className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-200 text-gray-400 hover:border-gray-400 hover:text-gray-700 transition-colors">
+            <User className="h-4 w-4" />
+          </button>
+        </div>
 
           {/* HUD title */}
           <div
@@ -271,26 +338,26 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
             {/* Back pill */}
             <button
               onClick={() => router.push("/home")}
-              className="pointer-events-auto flex w-fit items-center gap-1.5 rounded-full border border-white/15 bg-black/35 px-3 py-1.5 text-white/45 backdrop-blur-sm transition-all hover:border-white/30 hover:bg-black/55 hover:text-white/80"
+              className="pointer-events-auto flex w-fit items-center gap-2 rounded-full border border-white/15 bg-black/35 px-4 py-2 text-white/55 backdrop-blur-sm transition-all hover:border-white/30 hover:bg-black/55 hover:text-white/80"
             >
-              <ArrowLeft className="h-3 w-3" />
-              <span className="text-[9px] font-bold uppercase tracking-[0.2em]">Retour</span>
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Retour</span>
             </button>
 
             {/* Info */}
             <div>
-              <p className="text-2xl font-black uppercase leading-none tracking-widest text-white drop-shadow-lg">
+              <p className="text-3xl font-black uppercase leading-none tracking-widest text-white drop-shadow-lg">
                 {city.name}
                 {neighborhood && (
-                  <span className="ml-2 text-base font-semibold normal-case tracking-normal text-white/50">
+                  <span className="ml-3 text-lg font-semibold normal-case tracking-normal text-white/50">
                     — {neighborhood}
                   </span>
                 )}
               </p>
-              <div className="mt-1.5 flex items-center gap-2">
-                <div className="h-px w-8 bg-violet-400" />
-                <span className="font-mono text-[11px] tabular-nums text-violet-300/85">{tokyoTime}</span>
-                <span className="text-[9px] font-bold uppercase tracking-wider text-violet-400/50">JST</span>
+              <div className="mt-2 flex items-center gap-2">
+                <div className="h-px w-10 bg-violet-400" />
+                <span className="font-mono text-sm tabular-nums text-violet-300/85">{tokyoTime}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-violet-400/50">JST</span>
               </div>
             </div>
 
@@ -723,7 +790,6 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
           </div>
 
         </main>
-      </div>
     </div>
   );
 }
