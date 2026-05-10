@@ -43,6 +43,8 @@ type Contact = {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
+const CITY_JP: Record<string, string> = { tokyo: "東京", osaka: "大阪", kyoto: "京都" };
+
 const SIDEBAR_BUTTONS: { panel: Exclude<SidebarPanel, null>; Icon: React.ElementType; label: string; enabled: boolean }[] = [
   { panel: "lieux",      Icon: MapPin,    label: "Lieux",      enabled: true  },
   { panel: "contacts",   Icon: Users,     label: "Contacts",   enabled: true  },
@@ -113,6 +115,8 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
   const [userStats, setUserStats]         = useState<UserStats | null>(null);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
+  const [mapLoading, setMapLoading] = useState(!!cities[citySlug]?.use3DMap);
+  const [mapFading,  setMapFading]  = useState(false);
 
   useEffect(() => {
     const tick = () => setTokyoTime(
@@ -176,6 +180,30 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
     setSelectedPoi(null);
     setPoiQuests([]);
   }, []);
+
+  // City loading screen — hide once map has finished flying in
+  useEffect(() => {
+    if (!cities[citySlug]?.use3DMap) return;
+    setMapLoading(true);
+    setMapFading(false);
+    let done = false;
+    const triggerReady = () => {
+      if (done) return;
+      done = true;
+      setMapFading(true);
+      setTimeout(() => setMapLoading(false), 400);
+    };
+    const fallback = setTimeout(triggerReady, 3000);
+    let pollId: ReturnType<typeof setTimeout>;
+    const tryListen = () => {
+      const map = (mapRef as React.RefObject<any>).current?.getMap?.();
+      if (map) { map.once("idle", triggerReady); }
+      else      { pollId = setTimeout(tryListen, 100); }
+    };
+    const initId = setTimeout(tryListen, 80);
+    return () => { done = true; clearTimeout(fallback); clearTimeout(pollId!); clearTimeout(initId); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [citySlug]);
 
   // Neighborhood from local static table — zero API calls
   useEffect(() => {
@@ -242,6 +270,24 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
 
   return (
     <div className="pointer-events-none flex h-screen overflow-hidden">
+
+      {/* ── City loading screen ──────────────────────────────────── */}
+      {mapLoading && (
+        <div
+          className={`pointer-events-auto fixed inset-0 z-[2000] flex flex-col items-center justify-center select-none transition-opacity duration-[400ms] ${mapFading ? "opacity-0" : "opacity-100"}`}
+          style={{ background: "white" }}
+        >
+          <div className="text-center">
+            <p className="mb-4 text-[9px] font-bold tracking-[0.5em] uppercase text-gray-300">Japon</p>
+            <h1 className="text-7xl font-black tracking-tight text-gray-900 leading-none">{city.name.toUpperCase()}</h1>
+            <p className="mt-3 text-2xl font-extralight tracking-[0.35em] text-gray-400">{CITY_JP[citySlug] ?? ""}</p>
+            <div className="mx-auto mt-10 h-[1px] w-44 overflow-hidden rounded-full bg-gray-200">
+              <div className="h-full w-1/3 rounded-full bg-gray-400" style={{ animation: "loadbar-slide 1.4s ease-in-out infinite" }} />
+            </div>
+          </div>
+          <p className="absolute bottom-8 text-[9px] font-medium tracking-[0.35em] text-gray-300">地図を読み込み中</p>
+        </div>
+      )}
 
       {/* Sidebar */}
       <aside

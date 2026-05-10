@@ -58,7 +58,7 @@ export default function GameMap3D({
     map.flyTo({
       center: [city.center[1], city.center[0]],
       zoom: 15.2,
-      duration: 2000,
+      duration: 1000,
     });
   }, [city.name]);
 

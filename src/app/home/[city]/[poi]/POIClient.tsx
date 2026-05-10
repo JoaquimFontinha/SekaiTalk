@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, ArrowLeft, Pause, Play } from "lucide-react";
+import { ArrowLeft, Pause, Play } from "lucide-react";
+import cities from "@/lib/cities";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -149,6 +150,7 @@ export default function POIClient({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [questTimeLeft, setQuestTimeLeft]     = useState<number | null>(null);
   const [sessionExpired, setSessionExpired]   = useState(false);
+  const [leaving, setLeaving]                 = useState(false);
 
   // ── Refs ──
   const messagesRef     = useRef<Message[]>([]);
@@ -574,9 +576,39 @@ export default function POIClient({
 
   const isBusy = isLoading || isTranscribing;
 
+  const handleBack = useCallback(() => {
+    window.speechSynthesis.cancel();
+    speakAbortRef.current?.abort();
+    chatAbortRef.current?.abort();
+    setLeaving(true);
+    setTimeout(() => router.push(`/home/${citySlug}`), 450);
+  }, [router, citySlug]);
+
   // ── Guards ──
   if (notFound) return <div className="flex h-screen items-center justify-center text-gray-400">Personnage introuvable.</div>;
-  if (!character) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-violet-400" /></div>;
+
+  if (!character) {
+    const poi = cities[citySlug]?.pois.find(p => p.id === poiId);
+    const cityName = cities[citySlug]?.name ?? "";
+    return (
+      <div
+        className="flex h-screen w-screen flex-col items-center justify-center select-none"
+        style={{ background: "white", animation: "screen-fadein 0.3s ease-out" }}
+      >
+        <div className="text-center">
+          <p className="mb-4 text-[9px] font-bold tracking-[0.5em] uppercase text-gray-300">{cityName}</p>
+          <h1 className="text-2xl font-bold text-gray-900">{poi?.name ?? "Chargement..."}</h1>
+          <div className="mt-7 flex items-center justify-center gap-2">
+            {[0, 1, 2].map(i => (
+              <div key={i} className="h-1.5 w-1.5 rounded-full bg-gray-300"
+                   style={{ animation: `dot-pulse 1.3s ${i * 0.18}s ease-in-out infinite` }} />
+            ))}
+          </div>
+        </div>
+        <p className="absolute bottom-8 text-[9px] font-medium tracking-[0.35em] text-gray-300">読み込み中</p>
+      </div>
+    );
+  }
 
   const bgSrc = character.scene?.backgroundImage || "/background_placeholder.png";
 
@@ -584,7 +616,13 @@ export default function POIClient({
   // RENDER
   // ════════════════════════════════════════════════════════════════════════════
   return (
-    <div className="relative h-screen w-screen overflow-hidden select-none">
+    <div className="relative h-screen w-screen overflow-hidden select-none" style={{ animation: "screen-fadein 0.4s ease-out" }}>
+
+      {/* Leaving fade overlay */}
+      {leaving && (
+        <div className="fixed inset-0 z-[2000] bg-white pointer-events-none"
+             style={{ animation: "leaving-in 450ms ease-out forwards" }} />
+      )}
 
       {/* Background */}
       <div className="absolute inset-0 bg-black">
@@ -671,7 +709,7 @@ export default function POIClient({
 
         {/* Right: back to map */}
         <button
-          onClick={() => { window.speechSynthesis.cancel(); router.push(`/home/${citySlug}`); }}
+          onClick={handleBack}
           className="flex items-center gap-2 rounded-xl bg-black/60 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white/70 backdrop-blur-sm hover:text-white transition-colors"
         >
           <ArrowLeft className="h-4 w-4" /> Carte
@@ -701,7 +739,7 @@ export default function POIClient({
               <p className="text-sm text-white/40 mt-1.5">Ton temps de quête est écoulé.</p>
             </div>
             <button
-              onClick={() => { window.speechSynthesis.cancel(); router.push(`/home/${citySlug}`); }}
+              onClick={handleBack}
               className="rounded-full bg-white/10 border border-white/20 px-8 py-3 text-sm font-bold text-white hover:bg-white/20 transition-colors"
             >
               Terminé
