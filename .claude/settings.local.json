@@ -42,14 +42,18 @@
       "Bash(Remove-Item -Recurse -Force public/cesium)",
       "Bash(Select-String \"topojson|d3-geo|world-atlas\")",
       "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\images\\\\pois\")",
-      "PowerShell(Copy-Item \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\3009_01.jpg\" \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\images\\\\pois\\\\tokyo-tower.jpg\")"
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\3009_01.jpg\" \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\images\\\\pois\\\\tokyo-tower.jpg\")",
+      "Bash(findstr \"IPv4\")",
+      "Bash(npx next *)",
+      "Bash(cp \"C:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\character_placeholder.png\" \"C:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\character_placeholder.png\")"
     ],
     "additionalDirectories": [
       "C:\\Program Files\\PostgreSQL\\17\\data",
       "C:\\Users\\user\\Documents\\GitHub\\SekaiTalk\\src\\app\\home",
       "c:\\Users\\user\\Documents\\GitHub\\SekaiTalk\\public",
       "c:\\Users\\user\\Documents\\GitHub\\SekaiTalk\\src\\app\\api\\characters",
-      "c:\\Users\\user\\Documents\\GitHub\\SekaiTalk\\src\\app\\home\\[city]"
+      "c:\\Users\\user\\Documents\\GitHub\\SekaiTalk\\src\\app\\home\\[city]",
+      "C:\\Users\\user\\Documents\\GitHub\\SekaiTalk"
     ]
   }
 }

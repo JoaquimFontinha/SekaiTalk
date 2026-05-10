@@ -556,7 +556,7 @@ export default function POIClient({
   if (notFound) return <div className="flex h-screen items-center justify-center text-gray-400">Personnage introuvable.</div>;
   if (!character) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-violet-400" /></div>;
 
-  const backgroundImage = character.scene?.backgroundImage ?? "/backgrounds/konbini.jpg";
+  const bgSrc = character.scene?.backgroundImage || "/background_placeholder.png";
 
   // ════════════════════════════════════════════════════════════════════════════
   // RENDER
@@ -566,14 +566,19 @@ export default function POIClient({
 
       {/* Background */}
       <div className="absolute inset-0 bg-black">
-        <div className="absolute inset-0"
-          style={{ backgroundImage: `url(${backgroundImage})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+        <img
+          src={bgSrc}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          onError={e => { (e.currentTarget as HTMLImageElement).src = "/background_placeholder.png"; }}
+        />
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
       </div>
 
       {/* Character sprite */}
       <div className="absolute bottom-0 right-0 z-10 h-full flex items-end pointer-events-none" style={{ width: "52%" }}>
-        <img src={character.image} alt={character.name}
+        <img src={character.image || "/character_placeholder.png"} alt={character.name}
+          onError={e => { (e.currentTarget as HTMLImageElement).src = "/character_placeholder.png"; }}
           className="h-[92%] w-auto object-contain object-bottom"
           style={{ filter: isSpeaking ? "drop-shadow(0 0 32px rgba(124,58,237,1))" : "drop-shadow(0 0 0px transparent)", transition: "filter .3s" }}
           draggable={false} />
