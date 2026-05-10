@@ -165,7 +165,9 @@ export default function POIClient({
   const silenceTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recordingStartRef  = useRef<number>(0);
   const speakAbortRef      = useRef<AbortController | null>(null);
+  const chatAbortRef       = useRef<AbortController | null>(null);
   const isRecordingRef     = useRef(false);
+  const mountedRef         = useRef(true);
   const shouldListenRef    = useRef(false);
   const lastAudioBlobRef   = useRef<Blob | null>(null);
 
@@ -299,10 +301,15 @@ export default function POIClient({
       }
     }
 
+    chatAbortRef.current?.abort();
+    const chatCtrl = new AbortController();
+    chatAbortRef.current = chatCtrl;
+
     try {
       const r = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: chatCtrl.signal,
         body: JSON.stringify({
           messages: next,
           systemPrompt: sysPrompt,
@@ -310,12 +317,14 @@ export default function POIClient({
         }),
       });
       const d: AIReply = await r.json();
+      if (!mountedRef.current) return;
       setMessages(p => [...p, { role: "assistant", content: d.reply }]);
       setCurrentReply(d);
       speak(d.reply);
-    } catch {
-      setCurrentReply({ reply: "Erreur…", translation: "", words: [], suggestions: [] });
-    } finally { setIsLoading(false); }
+    } catch (err: any) {
+      if (err?.name === "AbortError") return;
+      if (mountedRef.current) setCurrentReply({ reply: "Erreur…", translation: "", words: [], suggestions: [] });
+    } finally { if (mountedRef.current) setIsLoading(false); }
   }, [speak]);
 
   // ── Transcription ──
@@ -538,14 +547,27 @@ export default function POIClient({
 
     return () => {
       cancelled = true;
+      mountedRef.current = false;
+      shouldListenRef.current = false;
+      isRecordingRef.current = false;
+      // Abort in-flight API calls
       speakAbortRef.current?.abort();
+      chatAbortRef.current?.abort();
+      // Stop audio
       audioRef.current?.pause();
       ambientRef.current?.pause();
+      window.speechSynthesis.cancel();
+      // Stop recorder without triggering transcription
+      if (recorderRef.current) {
+        recorderRef.current.onstop = null;
+        if (recorderRef.current.state === "recording") recorderRef.current.stop();
+        recorderRef.current = null;
+      }
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+      // Close AudioContext — stops the VAD RAF loop
       audioCtxRef.current?.close();
       audioCtxRef.current = null;
       streamRef.current?.getTracks().forEach(t => t.stop());
-      window.speechSynthesis.cancel();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [poiId, questId]);
