@@ -4,33 +4,35 @@ import { useRef, useCallback, useEffect } from "react";
 import Map, { Marker, type MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { CityData, POIType } from "@/lib/cities";
+import POI_LOGOS from "@/lib/poi-logos";
 
 const STYLE_URL    = "mapbox://styles/mapbox/standard";
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
 const POI_COLORS: Record<POIType, string> = {
-  station:    "#0ea5e9",
+  transport:  "#0ea5e9",
   konbini:    "#10b981",
   izakaya:    "#f97316",
-  temple:     "#8b5cf6",
+  site:       "#8b5cf6",
   market:     "#f59e0b",
-  landmark:   "#ef4444",
+  loisir:     "#14b8a6",
   shop:       "#ec4899",
   restaurant: "#f43f5e",
   cafe:       "#92400e",
 };
 
 const POI_ICONS: Record<POIType, string> = {
-  station:    "🚉",
+  transport:  "🚇",
   konbini:    "🏪",
   izakaya:    "🍶",
-  temple:     "⛩️",
+  site:       "🏛️",
   market:     "🛒",
-  landmark:   "📍",
+  loisir:     "🎭",
   shop:       "🛍️",
   restaurant: "🍔",
   cafe:       "☕",
 };
+
 
 export default function GameMap3D({
   city,
@@ -229,11 +231,16 @@ export default function GameMap3D({
             className="gm3d-poi"
             style={{ "--pc": POI_COLORS[poi.type] } as React.CSSProperties}
           >
-            <div className="gm3d-pin">
-              <div className="gm3d-pulse" />
-              <span className="gm3d-icon">{POI_ICONS[poi.type]}</span>
+            <div className="gm3d-badge">
+              <div className={`gm3d-icon-wrap${POI_LOGOS[poi.id] ? " gm3d-icon-wrap--logo" : ""}`}>
+                {POI_LOGOS[poi.id]
+                  ? <img src={POI_LOGOS[poi.id]} alt="" className="gm3d-logo" />
+                  : <span className="gm3d-icon">{POI_ICONS[poi.type]}</span>
+                }
+              </div>
+              <span className="gm3d-name">{poi.name}</span>
             </div>
-            <div className="gm3d-label">{poi.name}</div>
+            <div className="gm3d-stem" />
           </div>
         </Marker>
       ))}

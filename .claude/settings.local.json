@@ -45,7 +45,10 @@
       "PowerShell(Copy-Item \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\3009_01.jpg\" \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\images\\\\pois\\\\tokyo-tower.jpg\")",
       "Bash(findstr \"IPv4\")",
       "Bash(npx next *)",
-      "Bash(cp \"C:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\character_placeholder.png\" \"C:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\character_placeholder.png\")"
+      "Bash(cp \"C:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\character_placeholder.png\" \"C:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\character_placeholder.png\")",
+      "Bash(Copy-Item \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\7-eleven_logo.svg.png\" \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\images\\\\pois\\\\logos\\\\7eleven.png\" -Force)",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\images\\\\pois\\\\logos\")",
+      "PowerShell(Copy-Item \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\7-eleven_logo.svg.png\" \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\public\\\\images\\\\pois\\\\logos\\\\7eleven.png\" -Force)"
     ],
     "additionalDirectories": [
       "C:\\Program Files\\PostgreSQL\\17\\data",

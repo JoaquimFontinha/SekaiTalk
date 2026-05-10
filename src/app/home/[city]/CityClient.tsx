@@ -7,6 +7,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Bell, User, Flame, Menu, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle } from "lucide-react";
 import cities, { POI, POIType } from "@/lib/cities";
+import POI_LOGOS from "@/lib/poi-logos";
 import { getNeighborhood } from "@/lib/tokyo-neighborhoods";
 import IllustratedMap from "./IllustratedMap";
 import { useMapCtx } from "../MapContext";
@@ -57,12 +58,12 @@ function getFriendshipLevel(count: number): { label: string; color: string } {
 }
 
 const POI_META: Record<POIType, { label: string; color: string; icon: string }> = {
-  station:    { label: "Station",    color: "#0ea5e9", icon: "🚉" },
+  transport:  { label: "Transport",  color: "#0ea5e9", icon: "🚇" },
   konbini:    { label: "Konbini",    color: "#22c55e", icon: "🏪" },
   izakaya:    { label: "Izakaya",    color: "#f97316", icon: "🍶" },
-  temple:     { label: "Temple",     color: "#a855f7", icon: "⛩️" },
+  site:       { label: "Site",       color: "#8b5cf6", icon: "🏛️" },
   market:     { label: "Marché",     color: "#eab308", icon: "🛒" },
-  landmark:   { label: "Lieu",       color: "#ef4444", icon: "📍" },
+  loisir:     { label: "Loisir",     color: "#14b8a6", icon: "🎭" },
   shop:       { label: "Shop",       color: "#ec4899", icon: "🛍️" },
   restaurant: { label: "Restaurant", color: "#f43f5e", icon: "🍔" },
   cafe:       { label: "Café",       color: "#92400e", icon: "☕" },
@@ -448,7 +449,10 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                         {/* Preview click (fly-to + open drawer) */}
                         <button className="min-w-0 flex-1 text-left" onClick={() => { flyToPoi(poi); handlePoiClick(poi.id); }}>
                           <div className="flex items-center gap-2.5">
-                            <span className="text-lg leading-none">{POI_META[poi.type].icon}</span>
+                            {POI_LOGOS[poi.id]
+                              ? <img src={POI_LOGOS[poi.id]} alt="" className="h-7 w-7 rounded object-contain" />
+                              : <span className="text-lg leading-none">{POI_META[poi.type].icon}</span>
+                            }
                             <div className="min-w-0">
                               <p className="truncate text-sm font-semibold text-white/85 transition-colors group-hover:text-white">
                                 {poi.name}
