@@ -9,21 +9,27 @@ const STYLE_URL    = "mapbox://styles/mapbox/standard";
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
 const POI_COLORS: Record<POIType, string> = {
-  station:  "#0ea5e9",
-  konbini:  "#10b981",
-  izakaya:  "#f97316",
-  temple:   "#8b5cf6",
-  market:   "#f59e0b",
-  landmark: "#ef4444",
+  station:    "#0ea5e9",
+  konbini:    "#10b981",
+  izakaya:    "#f97316",
+  temple:     "#8b5cf6",
+  market:     "#f59e0b",
+  landmark:   "#ef4444",
+  shop:       "#ec4899",
+  restaurant: "#f43f5e",
+  cafe:       "#92400e",
 };
 
 const POI_ICONS: Record<POIType, string> = {
-  station:  "🚉",
-  konbini:  "🏪",
-  izakaya:  "🍶",
-  temple:   "⛩️",
-  market:   "🛒",
-  landmark: "📍",
+  station:    "🚉",
+  konbini:    "🏪",
+  izakaya:    "🍶",
+  temple:     "⛩️",
+  market:     "🛒",
+  landmark:   "📍",
+  shop:       "🛍️",
+  restaurant: "🍔",
+  cafe:       "☕",
 };
 
 export default function GameMap3D({
@@ -205,7 +211,7 @@ export default function GameMap3D({
       maxPitch={85}
       minPitch={20}
       maxBounds={[
-        [139.58, 35.62],
+        [139.58, 35.52],
         [139.85, 35.75],
       ]}
       style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}

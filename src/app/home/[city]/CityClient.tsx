@@ -57,12 +57,15 @@ function getFriendshipLevel(count: number): { label: string; color: string } {
 }
 
 const POI_META: Record<POIType, { label: string; color: string; icon: string }> = {
-  station:  { label: "Station",  color: "#0ea5e9", icon: "🚉" },
-  konbini:  { label: "Konbini",  color: "#22c55e", icon: "🏪" },
-  izakaya:  { label: "Izakaya",  color: "#f97316", icon: "🍶" },
-  temple:   { label: "Temple",   color: "#a855f7", icon: "⛩️" },
-  market:   { label: "Marché",   color: "#eab308", icon: "🛒" },
-  landmark: { label: "Lieu",     color: "#ef4444", icon: "📍" },
+  station:    { label: "Station",    color: "#0ea5e9", icon: "🚉" },
+  konbini:    { label: "Konbini",    color: "#22c55e", icon: "🏪" },
+  izakaya:    { label: "Izakaya",    color: "#f97316", icon: "🍶" },
+  temple:     { label: "Temple",     color: "#a855f7", icon: "⛩️" },
+  market:     { label: "Marché",     color: "#eab308", icon: "🛒" },
+  landmark:   { label: "Lieu",       color: "#ef4444", icon: "📍" },
+  shop:       { label: "Shop",       color: "#ec4899", icon: "🛍️" },
+  restaurant: { label: "Restaurant", color: "#f43f5e", icon: "🍔" },
+  cafe:       { label: "Café",       color: "#92400e", icon: "☕" },
 };
 
 function createMarkerIcon(name: string, type: POIType) {

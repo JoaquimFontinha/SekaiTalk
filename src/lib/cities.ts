@@ -1,4 +1,4 @@
-export type POIType = "station" | "konbini" | "izakaya" | "temple" | "market" | "landmark";
+export type POIType = "station" | "konbini" | "izakaya" | "temple" | "market" | "landmark" | "shop" | "restaurant" | "cafe";
 
 export type POI = {
   id: string;
@@ -95,6 +95,28 @@ const cities: Record<string, CityData> = {
         lat: 35.7101, lng: 139.8107,
         description: "La plus haute structure du Japon (634 m). Le chiffre 634 se lit \"Musashi\" en japonais — le nom de l'ancienne province qui couvrait Tokyo. Les deux plateformes d'observation à 350 m et 450 m offrent une vue à 360° sur l'agglomération de 37 millions d'habitants.",
       },
+      // ── Konbinis ───────────────────────────────────────────────────────────────
+      { id: "7eleven-shinjuku",    name: "7-Eleven Shinjuku",    type: "konbini", lat: 35.68811, lng: 139.69835 },
+      { id: "familymart-harajuku", name: "FamilyMart Harajuku",  type: "konbini", lat: 35.67163, lng: 139.70312 },
+      { id: "lawson-akihabara",    name: "Lawson Akihabara",     type: "konbini", lat: 35.69930, lng: 139.77340 },
+      { id: "ministop-asakusa",    name: "Ministop Asakusa",     type: "konbini", lat: 35.70800, lng: 139.79260 },
+      // ── Shops ──────────────────────────────────────────────────────────────────
+      { id: "donki-shinjuku",      name: "Don Quijote Shinjuku", type: "shop", lat: 35.69440, lng: 139.70180 },
+      { id: "daiso-shibuya",       name: "Daiso Shibuya",        type: "shop", lat: 35.66050, lng: 139.69900 },
+      { id: "matsukiyo-shibuya",   name: "Matsumoto Kiyoshi",    type: "shop", lat: 35.66080, lng: 139.69870 },
+      { id: "uniqlo-ginza",        name: "Uniqlo Ginza",         type: "shop", lat: 35.66570, lng: 139.76360 },
+      { id: "gu-shibuya",          name: "GU Shibuya",           type: "shop", lat: 35.66070, lng: 139.69750 },
+      { id: "loft-shibuya",        name: "Loft Shibuya",         type: "shop", lat: 35.66107, lng: 139.69949 },
+      { id: "muji-ginza",          name: "Muji Ginza",           type: "shop", lat: 35.66970, lng: 139.76570 },
+      { id: "biccamera-shinjuku",  name: "BicCamera Shinjuku",   type: "shop", lat: 35.68960, lng: 139.69920 },
+      // ── Restaurants ────────────────────────────────────────────────────────────
+      { id: "mosburger-shibuya",   name: "Mos Burger Shibuya",   type: "restaurant", lat: 35.66000, lng: 139.69940 },
+      { id: "mcdo-shibuya",        name: "McDonald's Shibuya",   type: "restaurant", lat: 35.65930, lng: 139.70050 },
+      // ── Cafés ──────────────────────────────────────────────────────────────────
+      { id: "starbucks-shibuya",   name: "Starbucks Shibuya",    type: "cafe", lat: 35.65950, lng: 139.70050 },
+      { id: "catcafe-shinjuku",    name: "Cat Café Calico",      type: "cafe", lat: 35.69410, lng: 139.70160 },
+      // ── Aéroport ───────────────────────────────────────────────────────────────
+      { id: "haneda-airport",      name: "Aéroport Haneda",      type: "landmark", lat: 35.55080, lng: 139.78830 },
     ],
   },
 
