@@ -27,6 +27,8 @@ model User {
   sessions          Session[]
   questProgress     UserQuestProgress[]
   characterMemories CharacterMemory[]
+  vocabProgress     UserVocabProgress[]
+  sessionRecords    SessionRecord[]
 }
 
 model Account {
@@ -136,8 +138,11 @@ model Quest {
   isActive     Boolean             @default(true)
   xpReward     Int                 @default(0)
   yenReward    Int                 @default(0)
+  vocab        Json                @default("[]")
   tasks        QuestTask[]
   userProgress UserQuestProgress[]
+  vocabProgress  UserVocabProgress[]
+  sessionRecords SessionRecord[]
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
 
@@ -196,6 +201,42 @@ model UserTaskProgress {
   completedAt         DateTime?
 
   @@unique([userQuestProgressId, taskId])
+}
+
+// ── Vocab progress (SRS per word per user) ───────────────────────────────────
+
+model UserVocabProgress {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questId      String
+  quest        Quest    @relation(fields: [questId], references: [id], onDelete: Cascade)
+  wordJp       String   // clé primaire du mot (champ `jp` de VocabEntry)
+  encounters   Int      @default(0)
+  correctCount Int      @default(0)
+  errorCount   Int      @default(0)
+  lastSeenAt   DateTime @default(now())
+
+  @@unique([userId, questId, wordJp])
+  @@index([userId])
+}
+
+// ── Session records (résumé de fin de session) ───────────────────────────────
+
+model SessionRecord {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questId          String
+  quest            Quest    @relation(fields: [questId], references: [id], onDelete: Cascade)
+  durationSeconds  Int
+  errorCount       Int      @default(0)
+  suggestionsUsed  Int      @default(0)
+  practicedWords   Json     @default("[]") // string[] — champs `jp` pratiqués
+  createdAt        DateTime @default(now())
+
+  @@index([userId])
+  @@index([questId])
 }
 
 enum QuestStatus {

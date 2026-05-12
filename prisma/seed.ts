@@ -261,6 +261,26 @@ async function main() {
     console.log("Quest 'Demander des informations 1' created for konbini-shinjuku.");
   }
 
+  // ── Quest vocab (upsert so re-running seed keeps it up to date) ──────────────
+  type VocabEntry = { jp: string; kana: string; romaji: string; fr: string; jlpt: number };
+  const konbiniVocab: VocabEntry[] = [
+    { jp: "すみません",         kana: "すみません",         romaji: "sumimasen",           fr: "excusez-moi",        jlpt: 5 },
+    { jp: "どこ",               kana: "どこ",               romaji: "doko",                fr: "où",                 jlpt: 5 },
+    { jp: "おにぎり",           kana: "おにぎり",           romaji: "onigiri",             fr: "boulette de riz",    jlpt: 5 },
+    { jp: "ありますか",         kana: "ありますか",         romaji: "arimasu ka",          fr: "est-ce qu'il y a ?", jlpt: 5 },
+    { jp: "いくら",             kana: "いくら",             romaji: "ikura",               fr: "combien",            jlpt: 5 },
+    { jp: "ありがとうございます", kana: "ありがとうございます", romaji: "arigatou gozaimasu", fr: "merci beaucoup",    jlpt: 5 },
+    { jp: "種類",               kana: "しゅるい",           romaji: "shurui",              fr: "type, variété",      jlpt: 4 },
+    { jp: "新鮮",               kana: "しんせん",           romaji: "shinsen",             fr: "frais",              jlpt: 4 },
+    { jp: "冷蔵庫",             kana: "れいぞうこ",         romaji: "reizouko",            fr: "réfrigérateur",      jlpt: 4 },
+    { jp: "今朝",               kana: "けさ",               romaji: "kesa",                fr: "ce matin",           jlpt: 4 },
+  ];
+  await prisma.quest.update({
+    where: { id: "quest-konbini-shinjuku-info-1" },
+    data: { vocab: konbiniVocab },
+  });
+  console.log("Quest vocab updated.");
+
   // ── Task suggestions (upsert so re-running seed keeps them up to date) ────────
   type SuggestionEntry = { fr: string; jp: string; romaji: string };
   const taskSuggestions: { id: string; suggestions: SuggestionEntry[] }[] = [

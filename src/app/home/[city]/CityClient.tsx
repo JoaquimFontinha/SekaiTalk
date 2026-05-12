@@ -8,6 +8,7 @@ import "leaflet/dist/leaflet.css";
 import { Bell, User, Flame, Menu, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle } from "lucide-react";
 import cities, { POI, POIType } from "@/lib/cities";
 import POI_LOGOS from "@/lib/poi-logos";
+import { type VocabEntry, JLPT_COLORS } from "@/lib/mastery";
 import { getNeighborhood } from "@/lib/tokyo-neighborhoods";
 import IllustratedMap from "./IllustratedMap";
 import { useMapCtx } from "../MapContext";
@@ -20,6 +21,7 @@ type PoiQuest = {
   description: string | null;
   xpReward: number;
   yenReward: number;
+  vocab: VocabEntry[];
   tasks: { id: string }[];
   userProgress: { id: string; status: string; firstCompletedAt: string | null; taskProgress: { taskId: string; status: string }[] }[];
 };
@@ -99,6 +101,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
   const [selectedPoi, setSelectedPoi]     = useState<POI | null>(null);
   const [poiQuests, setPoiQuests]         = useState<PoiQuest[]>([]);
   const [questsLoading, setQuestsLoading] = useState(false);
+  const [questPreview, setQuestPreview]   = useState<{ quest: PoiQuest; poi: POI } | null>(null);
 
   // Sidebar panel state
   const [sidebarPanel, setSidebarPanel]   = useState<SidebarPanel>(null);
@@ -811,7 +814,9 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                             <span className="ml-1 text-[10px] text-white/30">{quest.tasks.length} tâches</span>
                           </div>
                           <button
-                            onClick={() => { closeModal(); if (selectedPoi) router.push(`/home/${citySlug}/${selectedPoi.id}?quest=${quest.id}`); }}
+                            onClick={() => {
+                              if (selectedPoi) setQuestPreview({ quest, poi: selectedPoi });
+                            }}
                             className={`mt-3 w-full rounded-lg py-2.5 text-xs font-bold transition-all ${
                               isDone || isReplay ? "border border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60"
                               : isResume ? "border border-yellow-400/30 bg-yellow-400/15 text-yellow-400 hover:bg-yellow-400/25"
@@ -843,6 +848,140 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
           </div>
 
         </main>
+
+      {/* ── Quest preview modal ── */}
+      {questPreview && (() => {
+        const { quest, poi } = questPreview;
+        const jlptLabels: Record<number, string> = { 5: "N5", 4: "N4", 3: "N3", 2: "N2", 1: "N1" };
+        const jlptGroups = ([5, 4, 3, 2, 1] as const)
+          .map(jlpt => ({ jlpt, label: jlptLabels[jlpt], words: (quest.vocab ?? []).filter(v => v.jlpt === jlpt) }))
+          .filter(g => g.words.length > 0);
+
+        return (
+          <div
+            className="pointer-events-auto fixed inset-0 z-[1100] overflow-y-auto bg-black/70 backdrop-blur-sm"
+            onClick={() => setQuestPreview(null)}
+          >
+            <div className="flex min-h-full items-center justify-center px-4 py-8">
+              <div
+                className="w-full max-w-md rounded-2xl bg-white shadow-2xl"
+                onClick={e => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="px-6 pt-6 pb-5 border-b border-gray-100">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span>{POI_META[poi.type].icon}</span>
+                        <span className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: POI_META[poi.type].color }}>
+                          {poi.name}
+                        </span>
+                      </div>
+                      <h2 className="text-xl font-black text-gray-900 leading-tight">{quest.title}</h2>
+                      {quest.description && (
+                        <p className="mt-1.5 text-[12px] text-gray-500 leading-relaxed">{quest.description}</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setQuestPreview(null)}
+                      className="shrink-0 rounded-full p-1.5 text-gray-300 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Meta: rewards + task count */}
+                  <div className="flex items-center gap-2 mt-4 flex-wrap">
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-gray-300">
+                      {quest.tasks.length} tâche{quest.tasks.length > 1 ? "s" : ""}
+                    </span>
+                    {quest.xpReward > 0 && (
+                      <span className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-bold text-violet-600">
+                        +{quest.xpReward} XP
+                      </span>
+                    )}
+                    {quest.yenReward > 0 && (
+                      <span className="rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-xs font-bold text-yellow-600">
+                        +¥{quest.yenReward}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Vocab */}
+                <div className="px-6 py-5 flex flex-col gap-4">
+                  {jlptGroups.length > 0 ? (
+                    <>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-gray-300">
+                        Vocabulaire de cette quête
+                      </p>
+                      {jlptGroups.map(({ jlpt, label, words }) => (
+                        <div key={jlpt}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="rounded-full px-2.5 py-0.5 text-[10px] font-black text-white"
+                              style={{ background: JLPT_COLORS[jlpt] }}>
+                              {label}
+                            </span>
+                            <span className="text-[10px] text-gray-300">{words.length} mot{words.length > 1 ? "s" : ""}</span>
+                          </div>
+                          <div className="flex flex-col gap-1.5">
+                            {words.map(v => (
+                              <div key={v.jp} className="flex items-center gap-3 rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-baseline gap-2 flex-wrap">
+                                    <span className="text-lg font-bold text-gray-900 leading-none">{v.jp}</span>
+                                    {v.kana !== v.jp && <span className="text-xs text-gray-400">{v.kana}</span>}
+                                    <span className="text-xs text-gray-300 italic">{v.romaji}</span>
+                                  </div>
+                                  <p className="text-xs text-gray-500 mt-0.5">{v.fr}</p>
+                                </div>
+                                <span className="shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black text-white"
+                                  style={{ background: JLPT_COLORS[jlpt] }}>
+                                  {label}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                      <div className="rounded-xl bg-violet-50 border border-violet-100 px-4 py-3 text-center">
+                        <p className="text-xs text-violet-600 font-medium">
+                          Ces mots seront détectés dans ta prononciation 🎯
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3 py-4 text-center">
+                      <p className="text-3xl">📖</p>
+                      <p className="text-sm text-gray-400">Pas de vocabulaire prédéfini pour cette quête.</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* CTA */}
+                <div className="px-6 pb-6 flex gap-3">
+                  <button
+                    onClick={() => setQuestPreview(null)}
+                    className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-bold text-gray-500 hover:bg-gray-50 transition-colors"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={() => {
+                      setQuestPreview(null);
+                      closeModal();
+                      router.push(`/home/${citySlug}/${poi.id}?quest=${quest.id}`);
+                    }}
+                    className="flex-1 rounded-xl bg-violet-600 py-3 text-sm font-bold text-white hover:bg-violet-500 transition-colors"
+                  >
+                    Commencer →
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

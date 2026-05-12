@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Pause, Play } from "lucide-react";
 import cities from "@/lib/cities";
+import { type VocabEntry, type MasteryLevel, MASTERY_CONFIG, JLPT_COLORS, computeMastery } from "@/lib/mastery";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -31,6 +32,8 @@ type Suggestion  = { fr: string; jp: string; romaji: string };
 type QuestTask   = { id: string; order: number; instruction: string; aiContext: string | null; suggestions: Suggestion[]; choices: TaskChoice[] };
 type QuestData  = {
   id: string; title: string; description: string | null;
+  xpReward: number; yenReward: number;
+  vocab: VocabEntry[];
   tasks: QuestTask[];
   userProgress: { id: string; status: string; taskProgress: { taskId: string; status: string }[] }[];
 };
@@ -41,6 +44,18 @@ type ActiveQuest = {
   questTitle: string;
   tasks: QuestTask[];
   currentTaskIndex: number;
+  vocab: VocabEntry[];
+  xpReward: number;
+  yenReward: number;
+};
+
+type CompletedQuestInfo = {
+  xpGained: number; yensGained: number; leveledUp: boolean; newLevel: number;
+  isReplay: boolean; questId: string; vocab: VocabEntry[];
+};
+
+type VocabWithMastery = VocabEntry & {
+  mastery: MasteryLevel; encounters: number; correctCount: number; errorCount: number; practiced: boolean;
 };
 
 // ── Types affichage ───────────────────────────────────────────────────────────
@@ -128,10 +143,17 @@ export default function POIClient({
   // ── State ──
   const [character, setCharacter]       = useState<Character | null>(null);
   const [notFound, setNotFound]         = useState(false);
-  const [activeQuest, setActiveQuest]   = useState<ActiveQuest | null>(null);
-  const [showQuiz, setShowQuiz]         = useState(false);
-  const [choiceResult, setChoiceResult] = useState<{ id: string; correct: boolean } | null>(null);
-  const [questReward, setQuestReward]   = useState<{ xpGained: number; yensGained: number; leveledUp: boolean; newLevel: number; isReplay: boolean } | null>(null);
+  const [activeQuest, setActiveQuest]         = useState<ActiveQuest | null>(null);
+  const [showQuiz, setShowQuiz]               = useState(false);
+  const [choiceResult, setChoiceResult]       = useState<{ id: string; correct: boolean } | null>(null);
+  const [questReward, setQuestReward]         = useState<{ xpGained: number; yensGained: number; leveledUp: boolean; newLevel: number; isReplay: boolean } | null>(null);
+  const [completedQuestInfo, setCompletedQuestInfo] = useState<CompletedQuestInfo | null>(null);
+  const [showQuestComplete, setShowQuestComplete]   = useState(false);
+  const [showSessionSummary, setShowSessionSummary] = useState(false);
+  const [summaryVocabProgress, setSummaryVocabProgress] = useState<VocabWithMastery[]>([]);
+  const [sessionErrors, setSessionErrors]           = useState(0);
+  const [sessionSuggestionsUsed, setSessionSuggestionsUsed] = useState(0);
+  const [sessionPracticedVocab, setSessionPracticedVocab]   = useState<Set<string>>(new Set());
 
   const [messages, setMessages]           = useState<Message[]>([]);
   const [currentReply, setCurrentReply]   = useState<AIReply | null>(null);
@@ -172,6 +194,7 @@ export default function POIClient({
   const mountedRef         = useRef(true);
   const shouldListenRef    = useRef(false);
   const lastAudioBlobRef   = useRef<Blob | null>(null);
+  const sessionStartRef    = useRef<number>(Date.now());
 
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { activeQuestRef.current = activeQuest; }, [activeQuest]);
@@ -192,7 +215,7 @@ export default function POIClient({
 
   // ── Update shouldListen whenever speaking / loading / paused / modal changes ──
   useEffect(() => {
-    const canListen = !isPaused && !isSpeaking && !isLoading && !isTranscribing && !showSuggestions && !sessionExpired;
+    const canListen = !isPaused && !isSpeaking && !isLoading && !isTranscribing && !showSuggestions && !sessionExpired && !showQuestComplete && !showSessionSummary;
     shouldListenRef.current = canListen;
     // If we can no longer listen, abort any in-flight recording
     if (!canListen && isRecordingRef.current) {
@@ -201,7 +224,7 @@ export default function POIClient({
       isRecordingRef.current = false;
       setIsRecording(false);
     }
-  }, [isPaused, isSpeaking, isLoading, isTranscribing, showSuggestions, sessionExpired]);
+  }, [isPaused, isSpeaking, isLoading, isTranscribing, showSuggestions, sessionExpired, showQuestComplete, showSessionSummary]);
 
   // ── TTS ──
   const speak = useCallback(async (text: string) => {
@@ -336,7 +359,21 @@ export default function POIClient({
       const f = new FormData(); f.append("audio", blob, "audio.webm");
       const r = await fetch("/api/transcribe", { method: "POST", body: f });
       const d = await r.json();
-      if (d.text?.trim()) await sendMessage(d.text);
+      const text: string = d.text?.trim() ?? "";
+      if (text) {
+        // Detect vocab words from the quest spoken by the user
+        const aq = activeQuestRef.current;
+        if (aq?.vocab?.length) {
+          setSessionPracticedVocab(prev => {
+            const next = new Set(prev);
+            aq.vocab.forEach(v => {
+              if (text.includes(v.jp) || text.includes(v.kana)) next.add(v.jp);
+            });
+            return next;
+          });
+        }
+        await sendMessage(text);
+      }
     } catch { /* silent */ }
     finally { setIsTranscribing(false); }
   }, [sendMessage]);
@@ -402,6 +439,48 @@ export default function POIClient({
     }
   }, [transcribe]);
 
+  // ── End session — POST to API, show summary ──
+  const handleEndSession = useCallback(async (info: CompletedQuestInfo, practiced: Set<string>, errors: number, suggestions: number) => {
+    const duration = Math.round((Date.now() - sessionStartRef.current) / 1000);
+    const practicedArr = Array.from(practiced);
+    try {
+      const r = await fetch("/api/session/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          questId: info.questId,
+          durationSeconds: duration,
+          errorCount: errors,
+          suggestionsUsed: suggestions,
+          practicedWords: practicedArr,
+        }),
+      });
+      if (r.ok) {
+        const data = await r.json();
+        setSummaryVocabProgress(data.vocabWithMastery ?? []);
+      } else {
+        // Build local summary if API fails (guest / error)
+        setSummaryVocabProgress(info.vocab.map(v => ({
+          ...v,
+          mastery: computeMastery(practicedArr.includes(v.jp) ? 1 : 0, practicedArr.includes(v.jp) ? 1 : 0, 0),
+          encounters: practicedArr.includes(v.jp) ? 1 : 0,
+          correctCount: practicedArr.includes(v.jp) ? 1 : 0,
+          errorCount: 0,
+          practiced: practicedArr.includes(v.jp),
+        })));
+      }
+    } catch {
+      setSummaryVocabProgress(info.vocab.map(v => ({
+        ...v,
+        mastery: "never" as MasteryLevel,
+        encounters: 0, correctCount: 0, errorCount: 0,
+        practiced: practicedArr.includes(v.jp),
+      })));
+    }
+    setShowQuestComplete(false);
+    setShowSessionSummary(true);
+  }, []);
+
   // ── Complete task ──
   const handleCompleteTask = useCallback(async () => {
     const aq = activeQuestRef.current;
@@ -420,10 +499,15 @@ export default function POIClient({
         if (isLast && r.ok) {
           const data = await r.json();
           if (data.questCompleted) {
+            const info: CompletedQuestInfo = {
+              xpGained: data.xpGained, yensGained: data.yensGained,
+              leveledUp: data.leveledUp, newLevel: data.newLevel,
+              isReplay: data.isReplay, questId: aq.questId, vocab: aq.vocab,
+            };
             setActiveQuest(null);
             activeQuestRef.current = null;
-            setQuestReward({ xpGained: data.xpGained, yensGained: data.yensGained, leveledUp: data.leveledUp, newLevel: data.newLevel, isReplay: data.isReplay });
-            setTimeout(() => setQuestReward(null), 5000);
+            setCompletedQuestInfo(info);
+            setShowQuestComplete(true);
             return;
           }
         }
@@ -431,10 +515,14 @@ export default function POIClient({
     }
 
     if (isLast) {
+      const info: CompletedQuestInfo = {
+        xpGained: 0, yensGained: 0, leveledUp: false, newLevel: 1,
+        isReplay: false, questId: aq.questId, vocab: aq.vocab,
+      };
       setActiveQuest(null);
       activeQuestRef.current = null;
-      setQuestReward({ xpGained: 0, yensGained: 0, leveledUp: false, newLevel: 1, isReplay: false });
-      setTimeout(() => setQuestReward(null), 5000);
+      setCompletedQuestInfo(info);
+      setShowQuestComplete(true);
     } else {
       const updated: ActiveQuest = { ...aq, currentTaskIndex: aq.currentTaskIndex + 1 };
       setActiveQuest(updated);
@@ -505,12 +593,21 @@ export default function POIClient({
               ? (existing?.taskProgress?.filter((tp: { status: string }) => tp.status === "COMPLETED").length ?? 0)
               : 0;
 
+            // Reset session tracking for this quest
+            sessionStartRef.current = Date.now();
+            setSessionErrors(0);
+            setSessionSuggestionsUsed(0);
+            setSessionPracticedVocab(new Set());
+
             initQuest = {
               questId: quest.id,
               questProgressId: existing?.id ?? null,
               questTitle: quest.title,
               tasks: quest.tasks,
               currentTaskIndex,
+              vocab: (quest.vocab ?? []) as VocabEntry[],
+              xpReward: quest.xpReward ?? 0,
+              yenReward: quest.yenReward ?? 0,
             };
 
             if (!existing || isCompleted) {
@@ -730,20 +827,30 @@ export default function POIClient({
       )}
 
       {/* Session expired overlay */}
-      {sessionExpired && (
+      {sessionExpired && !showSessionSummary && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md">
           <div className="flex flex-col items-center gap-5 rounded-2xl border border-white/10 bg-gray-950/95 px-10 py-8 shadow-2xl">
             <p className="text-4xl">⏱</p>
             <div className="text-center">
-              <p className="text-xl font-black text-white">Fin de session</p>
-              <p className="text-sm text-white/40 mt-1.5">Ton temps de quête est écoulé.</p>
+              <p className="text-xl font-black text-white">Temps écoulé !</p>
+              <p className="text-sm text-white/40 mt-1.5">La session de 15 minutes est terminée.</p>
             </div>
-            <button
-              onClick={handleBack}
-              className="rounded-full bg-white/10 border border-white/20 px-8 py-3 text-sm font-bold text-white hover:bg-white/20 transition-colors"
-            >
-              Terminé
-            </button>
+            <div className="flex gap-3">
+              {completedQuestInfo && (
+                <button
+                  onClick={() => handleEndSession(completedQuestInfo, sessionPracticedVocab, sessionErrors, sessionSuggestionsUsed)}
+                  className="rounded-full bg-violet-600 px-6 py-3 text-sm font-bold text-white hover:bg-violet-500 transition-colors"
+                >
+                  Voir le résumé
+                </button>
+              )}
+              <button
+                onClick={handleBack}
+                className="rounded-full bg-white/10 border border-white/20 px-6 py-3 text-sm font-bold text-white hover:bg-white/20 transition-colors"
+              >
+                Quitter
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -860,7 +967,12 @@ export default function POIClient({
           )}
           {isBusy ? (
             <div className="flex items-center gap-3 text-white/40 py-2">
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <div className="flex gap-1.5">
+                {[0,1,2].map(i => (
+                  <div key={i} className="h-1.5 w-1.5 rounded-full bg-white/30"
+                       style={{ animation: `dot-pulse 1.3s ${i * 0.18}s ease-in-out infinite` }} />
+                ))}
+              </div>
               <span className="text-sm">{isTranscribing ? "Transcription…" : "Réflexion…"}</span>
             </div>
           ) : currentReply ? (
@@ -893,7 +1005,7 @@ export default function POIClient({
       <div className="absolute bottom-5 left-0 right-0 z-30 flex justify-center items-center gap-2 px-4">
         {activeQuest && (activeQuest.tasks[activeQuest.currentTaskIndex]?.suggestions?.length ?? 0) > 0 && (
           <button
-            onClick={() => setShowSuggestions(true)}
+            onClick={() => { setShowSuggestions(true); setSessionSuggestionsUsed(p => p + 1); }}
             className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/60 px-4 py-2.5 text-xs font-bold text-white/60 backdrop-blur-md transition-all hover:border-violet-500/40 hover:bg-violet-900/30 hover:text-white"
           >
             💬 Suggestions
@@ -960,6 +1072,184 @@ export default function POIClient({
         );
       })()}
 
+      {/* ── Quest complete modal ── */}
+      {showQuestComplete && completedQuestInfo && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md">
+          <div className="flex min-h-full items-center justify-center px-4 py-8">
+          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-gray-950/95 shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="flex flex-col items-center gap-3 px-8 pt-8 pb-6 border-b border-white/8">
+              <p className="text-4xl">{completedQuestInfo.isReplay ? "🔄" : "🎉"}</p>
+              <div className="text-center">
+                <p className="text-xl font-black text-white">
+                  {completedQuestInfo.isReplay ? "Quête refaite !" : "Quête terminée !"}
+                </p>
+                {!completedQuestInfo.isReplay && (completedQuestInfo.xpGained > 0 || completedQuestInfo.yensGained > 0) && (
+                  <div className="flex items-center justify-center gap-3 mt-3">
+                    {completedQuestInfo.xpGained > 0 && (
+                      <span className="rounded-full bg-violet-500/25 border border-violet-500/50 px-3 py-1 text-sm font-bold text-violet-300">
+                        +{completedQuestInfo.xpGained} XP
+                      </span>
+                    )}
+                    {completedQuestInfo.yensGained > 0 && (
+                      <span className="rounded-full bg-yellow-500/20 border border-yellow-500/40 px-3 py-1 text-sm font-bold text-yellow-300">
+                        +¥{completedQuestInfo.yensGained}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {completedQuestInfo.isReplay && (
+                  <p className="text-xs text-white/35 mt-2">Aucune récompense pour la reprise</p>
+                )}
+              </div>
+            </div>
+
+            {/* Vocab preview — top 3 words practiced */}
+            {completedQuestInfo.vocab.length > 0 && (
+              <div className="px-6 py-5 border-b border-white/8">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-white/30 mb-3">
+                  Vocabulaire de cette quête
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {completedQuestInfo.vocab.slice(0, 6).map(v => (
+                    <span key={v.jp}
+                      className="rounded-full px-2.5 py-1 text-xs font-bold text-white/70 border border-white/10 bg-white/5"
+                      style={{ borderColor: JLPT_COLORS[v.jlpt] + "40", color: JLPT_COLORS[v.jlpt] }}
+                    >
+                      {v.jp}
+                    </span>
+                  ))}
+                  {completedQuestInfo.vocab.length > 6 && (
+                    <span className="rounded-full px-2.5 py-1 text-xs text-white/30 border border-white/8">
+                      +{completedQuestInfo.vocab.length - 6}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex flex-col gap-2.5 px-6 py-5">
+              <button
+                onClick={() => setShowQuestComplete(false)}
+                className="w-full rounded-xl bg-white/8 border border-white/10 py-3 text-sm font-bold text-white/80 hover:bg-white/15 transition-colors"
+              >
+                Continuer la conversation
+              </button>
+              <button
+                onClick={() => handleEndSession(completedQuestInfo, sessionPracticedVocab, sessionErrors, sessionSuggestionsUsed)}
+                className="w-full rounded-xl bg-violet-600 py-3 text-sm font-bold text-white hover:bg-violet-500 transition-colors"
+              >
+                Terminer la session →
+              </button>
+            </div>
+          </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Session summary modal ── */}
+      {showSessionSummary && (
+        <div className="fixed inset-0 z-[60] overflow-y-auto bg-black/75 backdrop-blur-sm"
+             style={{ animation: "screen-fadein 0.3s ease-out" }}>
+          <div className="flex min-h-full items-center justify-center px-4 py-8">
+            <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                <div>
+                  <p className="text-[9px] font-bold uppercase tracking-[0.4em] text-gray-300">Session terminée</p>
+                  <h2 className="text-lg font-black text-gray-900 mt-0.5">Résumé de session</h2>
+                </div>
+                <button
+                  onClick={handleBack}
+                  className="rounded-full bg-gray-900 px-5 py-2.5 text-sm font-bold text-white hover:bg-gray-700 transition-colors"
+                >
+                  Terminer
+                </button>
+              </div>
+
+              <div className="px-6 py-5 flex flex-col gap-5">
+
+                {/* Stats row */}
+                <div className="grid grid-cols-3 gap-2.5">
+                  {[
+                    { label: "Erreurs",        value: sessionErrors,              icon: "❌", color: sessionErrors === 0 ? "text-emerald-600" : sessionErrors < 3 ? "text-orange-500" : "text-red-500" },
+                    { label: "Aides",          value: sessionSuggestionsUsed,     icon: "💬", color: "text-violet-600" },
+                    { label: "Mots pratiqués", value: sessionPracticedVocab.size, icon: "🗣️", color: "text-blue-600" },
+                  ].map(s => (
+                    <div key={s.label} className="rounded-xl bg-gray-50 border border-gray-100 p-3.5 flex flex-col items-center gap-1">
+                      <p className="text-lg">{s.icon}</p>
+                      <p className={`text-xl font-black tabular-nums ${s.color}`}>{s.value}</p>
+                      <p className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 text-center leading-tight">{s.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Vocab by JLPT level */}
+                {([5, 4, 3, 2, 1] as const).map(jlpt => {
+                  const words = summaryVocabProgress.filter(v => v.jlpt === jlpt);
+                  if (!words.length) return null;
+                  const jlptLabel = ({ 5: "N5", 4: "N4", 3: "N3", 2: "N2", 1: "N1" } as Record<number, string>)[jlpt];
+                  return (
+                    <div key={jlpt}>
+                      <div className="flex items-center gap-2 mb-2.5">
+                        <span className="rounded-full px-2.5 py-0.5 text-[10px] font-black text-white" style={{ background: JLPT_COLORS[jlpt] }}>
+                          {jlptLabel}
+                        </span>
+                        <p className="text-xs font-semibold text-gray-400">{words.length} mot{words.length > 1 ? "s" : ""}</p>
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        {words.map(v => {
+                          const cfg = MASTERY_CONFIG[v.mastery];
+                          return (
+                            <div key={v.jp} className={`rounded-xl border px-4 py-3 flex items-center gap-3 transition-opacity ${v.practiced ? "bg-gray-50 border-gray-100" : "border-gray-50 opacity-40"}`}>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-baseline gap-2 flex-wrap">
+                                  <span className="text-lg font-bold text-gray-900 leading-none">{v.jp}</span>
+                                  {v.kana !== v.jp && <span className="text-xs text-gray-400">{v.kana}</span>}
+                                  <span className="text-xs text-gray-300 italic">{v.romaji}</span>
+                                </div>
+                                <p className="text-xs text-gray-500 mt-0.5">{v.fr}</p>
+                              </div>
+                              <div className="flex flex-col items-end gap-0.5 shrink-0">
+                                <span className="text-sm leading-none">{cfg.icon}</span>
+                                <span className="text-[9px] font-bold whitespace-nowrap" style={{ color: cfg.color }}>{cfg.label}</span>
+                                {v.encounters > 0 && (
+                                  <span className="text-[9px] text-gray-300">{v.encounters}×</span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {summaryVocabProgress.length === 0 && (
+                  <div className="flex flex-col items-center gap-3 py-6 text-center">
+                    <p className="text-3xl">📖</p>
+                    <p className="text-sm text-gray-400">Aucun vocabulaire détecté pendant la session.</p>
+                  </div>
+                )}
+
+                {/* Encouragement */}
+                <div className="rounded-xl bg-violet-50 border border-violet-100 px-5 py-4 text-center">
+                  <p className="text-sm font-semibold text-violet-700">
+                    {sessionErrors === 0
+                      ? "Excellent ! Aucune erreur cette session 🌟"
+                      : sessionErrors < 3
+                      ? "Beau travail ! Continue à pratiquer 💪"
+                      : "Ne te décourage pas, chaque erreur est un progrès 🌱"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Quiz modal ── */}
       {showQuiz && activeQuest && (
         <div
@@ -999,6 +1289,7 @@ export default function POIClient({
                       if (correct) {
                         setTimeout(() => { setShowQuiz(false); setChoiceResult(null); handleCompleteTask(); }, 1400);
                       } else {
+                        setSessionErrors(p => p + 1);
                         setTimeout(() => setChoiceResult(null), 1200);
                       }
                     }}

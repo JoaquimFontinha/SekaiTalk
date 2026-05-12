@@ -4,12 +4,15 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import { CityData, POIType, POI } from "@/lib/cities";
 
 const POI_META: Record<POIType, { label: string; color: string; icon: string }> = {
-  station:  { label: "Station",  color: "#38bdf8", icon: "🚉" },
-  konbini:  { label: "Konbini",  color: "#4ade80", icon: "🏪" },
-  izakaya:  { label: "Izakaya",  color: "#fb923c", icon: "🍶" },
-  temple:   { label: "Temple",   color: "#c084fc", icon: "⛩️" },
-  market:   { label: "Marché",   color: "#fbbf24", icon: "🛒" },
-  landmark: { label: "Lieu",     color: "#f87171", icon: "📍" },
+  transport:  { label: "Transport",    color: "#0ea5e9", icon: "🚇" },
+  konbini:    { label: "Konbini",      color: "#10b981", icon: "🏪" },
+  izakaya:    { label: "Izakaya",      color: "#f97316", icon: "🍶" },
+  site:       { label: "Site iconique",color: "#8b5cf6", icon: "🏛️" },
+  market:     { label: "Marché",       color: "#f59e0b", icon: "🛒" },
+  loisir:     { label: "Loisir",       color: "#14b8a6", icon: "🎭" },
+  shop:       { label: "Boutique",     color: "#ec4899", icon: "🛍️" },
+  restaurant: { label: "Restaurant",   color: "#f43f5e", icon: "🍔" },
+  cafe:       { label: "Café",         color: "#92400e", icon: "☕" },
 };
 
 interface Props {
