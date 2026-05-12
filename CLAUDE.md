@@ -65,11 +65,13 @@ Deux fichiers d'env :
 - `CharacterAppearance` — table de jonction many-to-many `Character ↔ POI`. Champs : `characterId`, `poiId`, `locationContext?` (injection supplémentaire dans le system prompt pour contextualiser le lieu). Contrainte `@@unique([characterId, poiId])`
 - `Scene` — décor lié à un POI (`poiId @unique`). Champs : `backgroundImage?`, `entrySound?`, `ambientSound?`. Séparé du personnage car le même lieu peut avoir un autre personnage à l'avenir
 - `CharacterMemory` — mémoire persistante par `(characterId, userId, key)`. Valeur mise à jour via upsert. Activée uniquement si `character.isFriendable = true` + utilisateur connecté. Contrainte `@@unique([characterId, userId, key])`
-- `Quest` — quête liée à un POI (`poiId`). Plusieurs quêtes possibles par POI, ordonnées par `order`
+- `Quest` — quête liée à un POI (`poiId`). Plusieurs quêtes possibles par POI, ordonnées par `order`. Champ `vocab Json @default("[]")` — tableau de `VocabEntry[]` prédéfini pour la quête (voir `src/lib/mastery.ts`)
 - `QuestTask` — tâche ordonnée dans une quête. Contient `instruction` (affiché à l'utilisateur) et `aiContext` (injecté dans le system prompt pour guider l'IA)
 - `TaskChoice` — choix QCM d'une tâche (`isCorrect` pour la bonne réponse)
 - `UserQuestProgress` — progression d'un utilisateur sur une quête (`IN_PROGRESS` | `COMPLETED`)
 - `UserTaskProgress` — progression par tâche (`PENDING` | `COMPLETED`)
+- `UserVocabProgress` — progression SRS par mot par utilisateur par quête. Clé `@@unique([userId, questId, wordJp])`. Champs : `encounters`, `correctCount`, `errorCount`, `lastSeenAt`
+- `SessionRecord` — résumé d'une session complétée. Champs : `durationSeconds`, `errorCount`, `suggestionsUsed`, `practicedWords` (Json — string[] des `jp` prononcés)
 
 ### Seed
 
@@ -79,24 +81,30 @@ Deux fichiers d'env :
 - Scènes : upsert par `poiId` (konbini-shinjuku, konbini-shibuya, konbini-kyoto) avec `entrySound: "/sounds/konbini_enter.mp3"`
 - Apparitions : upsert par `@@unique([characterId, poiId])`
 - Quêtes : `findUnique` + `create` — idempotentes, non recréées si l'ID existe déjà
+- Vocab : `quest.update({ data: { vocab: VocabEntry[] } })` après le create — toujours upsertée pour rester à jour
+- Quête de test : `quest-konbini-shinjuku-info-1` avec 10 mots (N5 : すみません, どこ, おにぎり, ありますか, いくら, ありがとうございます / N4 : 種類, 新鮮, 冷蔵庫, 今朝)
 
 ### Navigation et routes
 
 ```
 /home                          → liste des villes (carte)
-/home/[city]                   → carte illustrée de la ville (CityClient)
+/home/[city]                   → carte 3D de la ville (CityClient)
 /home/[city]/[poi]             → conversation IA avec le personnage (POIClient)
-/home/[city]/[poi]?quest=<id>  → même page, mais démarre directement la quête
+/home/[city]/[poi]?quest=<id>  → même page, démarre directement la quête
 ```
 
-### Flux quête
+### Flux quête complet
 
-1. L'utilisateur clique un POI sur la carte → modale dans `CityClient` avec les quêtes disponibles
-2. Il clique "Faire la quête" → navigue vers `/home/[city]/[poi]?quest=<questId>`
-3. `POIClient` reçoit `questId` via `searchParams`, charge le personnage + les quêtes en parallèle
-4. Si `questId` présent : initialise `activeQuest` (état local), appelle `POST /api/quests/[questId]/start` en arrière-plan pour créer le `UserQuestProgress` en DB
-5. En conversation : le `aiContext` de la tâche courante est injecté dans le system prompt à chaque message
-6. L'utilisateur clique "🎯 Vérifier" → quiz QCM. Bonne réponse → `POST /api/quests/tasks/[taskId]/complete` → tâche suivante ou quête terminée
+1. L'utilisateur clique un POI sur la carte → **drawer POI** dans `CityClient` avec les quêtes disponibles
+2. Il clique "▶ Faire la quête" ou "🔄 Refaire" → **modale de prévisualisation** (`questPreview`) : titre, récompenses, vocabulaire groupé par JLPT
+3. Il clique "Commencer →" → navigue vers `/home/[city]/[poi]?quest=<questId>`
+4. `POIClient` charge personnage + quêtes en parallèle. `sessionStartRef` est initialisé à `Date.now()`
+5. Si `questId` présent : initialise `activeQuest` avec `vocab: VocabEntry[]`, appelle `POST /api/quests/[questId]/start`
+6. En conversation : `aiContext` de la tâche courante injecté dans le system prompt. Les transcriptions Whisper sont scannées pour détecter les mots du vocab (`jp`/`kana` substring match) → `sessionPracticedVocab (Set)`
+7. Clic "💬 Suggestions" → incrémente `sessionSuggestionsUsed`
+8. Clic "🎯 Vérifier" → quiz QCM. Mauvaise réponse → incrémente `sessionErrors`
+9. Dernière tâche validée → **modale quête terminée** (`showQuestComplete`) : récompenses + boutons "Continuer" / "Terminer la session →"
+10. "Terminer la session →" → `handleEndSession` : POST `/api/session/complete` → **modale résumé de session** (`showSessionSummary`) : stats (erreurs, aides, mots) + vocab par JLPT avec niveau de maîtrise
 
 ### API routes
 
@@ -109,27 +117,57 @@ Deux fichiers d'env :
 | `/api/tts` | POST | TTS ElevenLabs server-side (`{text, voiceId}`), retourne `audio/mpeg` |
 | `/api/user/stats` | GET | Stats XP/Yens/niveau de l'utilisateur connecté |
 | `/api/contacts` | GET | Liste tous les personnages `isFriendable + isActive` avec `memoryCount` (groupBy CharacterMemory) et `locations` (POIs résolus depuis cities.ts) |
-| `/api/quests/poi/[poiId]` | GET | Liste les quêtes d'un POI avec progression utilisateur |
+| `/api/quests/poi/[poiId]` | GET | Liste les quêtes d'un POI avec progression utilisateur (inclut `vocab`, `xpReward`, `yenReward`) |
 | `/api/quests/[questId]/start` | POST | Crée un `UserQuestProgress` (auth requise) |
 | `/api/quests/tasks/[taskId]/complete` | POST | Valide une tâche, débloque la suivante ou termine la quête |
+| `/api/session/complete` | POST | Sauvegarde `SessionRecord` + upsert `UserVocabProgress` pour chaque mot pratiqué. Retourne `{ vocabWithMastery }` — chaque mot enrichi de `mastery`, `encounters`, `practiced` |
+
+### Système de maîtrise du vocabulaire (`src/lib/mastery.ts`)
+
+Types et constantes partagés entre client et serveur :
+
+- `VocabEntry` — `{ jp, kana, romaji, fr, jlpt }`. `jlpt` : 5=N5 (plus facile) → 1=N1 (plus difficile)
+- `MasteryLevel` — `"never" | "new" | "learning" | "almost" | "acquired" | "perfect"`
+- `MASTERY_CONFIG` — label, couleur, icône, description par niveau
+- `JLPT_COLORS` — couleur hex par niveau JLPT (5=vert, 4=bleu, 3=ambre, 2=rouge, 1=violet)
+- `computeMastery(encounters, correctCount, errorCount)` — calcule le niveau SRS :
+  - 0 rencontre → `never` / 1 rencontre sans erreur → `new`
+  - ≥3 erreurs ou ratio <40% → `learning` / ratio <65% ou <4 rencontres → `almost`
+  - ratio <85% ou <8 rencontres → `acquired` / sinon → `perfect`
+
+### Catégories POI (`POIType`)
+
+`"transport" | "konbini" | "izakaya" | "site" | "market" | "loisir" | "shop" | "restaurant" | "cafe"`
+
+- `transport` (ex-`station`), `site` (ex-`temple`+`landmark`), `loisir` (nouveau) — ces renommages sont définitifs dans `cities.ts`, `GameMap3D.tsx`, `CityClient.tsx`, `IllustratedMap.tsx`
+- Logos de POI : `src/lib/poi-logos.ts` — `Record<poiId, string>` importé par `GameMap3D` et `CityClient`. Logos dans `public/images/pois/logos/`
 
 ### Sidebar CityClient (`src/app/home/[city]/CityClient.tsx`)
 
-La sidebar (72px) contient 3 boutons d'icône qui togglent des panneaux overlay sur la carte 3D (`z-[1000]`, positionnés `absolute left-0 top-0 h-full`). Seuls les panneaux actifs (`city.use3DMap`) sont rendus.
+La sidebar (88px collapsée, 208px étendue) contient des boutons qui togglent des panneaux overlay sur la carte 3D (`z-[1000]`).
 
 **Panneau Lieux** (`sidebarPanel === "lieux"`, 380px)
 - Colonne gauche (148px) : sélecteur de type POI (Tous + par type) avec compteur. Filtre `lieuxType`.
-- Colonne droite : liste scrollable des POIs du type sélectionné. Chaque ligne affiche nom + `done/total quêtes` (fetchés en parallèle via `/api/quests/poi/[poiId]` à l'ouverture du panneau, cachés dans `poiQuestData`).
-- Clic sur la ligne → `map.flyTo({ center, zoom:17, pitch:60, duration:1500 })` (prévisualisation caméra).
-- Bouton `→` au hover → ferme le panneau + ouvre la modale POI.
+- Colonne droite : liste scrollable des POIs. Chaque ligne affiche nom + `done/total quêtes` (fetchés en parallèle à l'ouverture du panneau, cachés dans `poiQuestData`).
+- Clic sur la ligne → `map.flyTo({ center, zoom:17, pitch:60, duration:1500 })`.
+- Bouton `→` au hover → ferme le panneau + ouvre le drawer POI.
 
 **Panneau Contacts** (`sidebarPanel === "contacts"`, 380px)
-- Fetche `GET /api/contacts` une seule fois (guard `contacts.length > 0`).
-- Carte par personnage `isFriendable` : avatar rond, nom + `nameJp`, rôle, badge niveau d'amitié, compteur souvenirs.
-- Niveau d'amitié calculé côté client depuis `memoryCount` : 0=Étranger (gris), 1-2=Connaissance (bleu), 3-5=Ami (vert), 6+=Proche (violet).
-- Bouton "📍 RDV" → toggle `rdvOpenId` → affiche la liste des lieux du personnage (bouton "Inviter →" désactivé, à implémenter).
+- Fetche `GET /api/contacts` une seule fois. Carte par personnage avec niveau d'amitié (0=Étranger, 1-2=Connaissance, 3-5=Ami, 6+=Proche).
+- Bouton "📍 RDV" → toggle `rdvOpenId` → liste des lieux (bouton "Inviter →" désactivé).
 
-**Panneau Révision** — bouton présent mais désactivé (`enabled: false`), à implémenter.
+**Panneau Révision** — désactivé (`enabled: false`), à implémenter.
+
+**Drawer POI** (420px, `right-0`, slide-in)
+- Hero image ou gradient par type. Titre, description, quêtes avec barre de progression.
+- Bouton "▶ Faire la quête" / "🔄 Refaire" → ouvre `questPreview` (état local) au lieu de naviguer directement.
+
+**Modale prévisualisation quête** (`questPreview` state)
+- Overlay `fixed inset-0 overflow-y-auto` (pattern scrollable-outer) → carte blanche centrée.
+- Affiche : nom du POI + titre + description + récompenses (XP/Yens) + nombre de tâches.
+- Vocabulaire groupé par JLPT : kanji, kana, romaji, traduction FR, badge couleur JLPT.
+- Boutons "Annuler" / "Commencer →" (navigue vers la quête).
+- **Important** : ne pas utiliser `flex flex-col max-height flex-1` pour les modales — utilise toujours le pattern `fixed inset-0 overflow-y-auto` + `flex min-h-full items-center justify-center` + carte en `block` naturel pour éviter le bug de collapse CSS.
 
 ### Carte 3D Tokyo (`GameMap3D`)
 
@@ -137,12 +175,39 @@ La sidebar (72px) contient 3 boutons d'icône qui togglent des panneaux overlay 
 - **Rendu** : Mapbox GL JS + react-map-gl v8 (`react-map-gl/mapbox`), style `mapbox://styles/mapbox/standard`
 - **Architecture persistante** : la map est montée une seule fois dans `src/app/home/layout.tsx` (jamais démontée) → 1 seul Map Load par session. CSS `visibility` toggle pour afficher/masquer. État partagé via `src/app/home/MapContext.tsx` (`mapRef`, `activeType`, `poiClickRef`)
 - **Import SSR** : `dynamic(() => import("./[city]/GameMap3D"), { ssr: false })` dans `home/layout.tsx`
-- **Style** : `setConfigProperty("basemap", "lightPreset", "dusk")` + tous les labels masqués (`showPointOfInterestLabels`, `showTransitLabels`, `showPlaceLabels`, `showRoadLabels` → false)
-- **Modèle Skytree + Tokyo Tower** : `public/models/tokyo_skytree.glb` + `public/models/tokyo_tower.glb` rendus via custom Three.js layer. Transform : `projMatrix × T(mercator) × Scale(1,−1,1) × RotX(+π/2)`. Scale model : `mpu = meterInMercatorCoordinateUnits()`. API : `args.defaultProjectionData.mainMatrix`
-- **Animations canvas** : eau (`fill-pattern` "water-anim" 128×128) et herbe (`fill-pattern` "grass-anim" 32×32) via `map.addImage()` avec `render()` + `triggerRepaint()`
-- **Contraintes caméra** : `minZoom=14`, `maxPitch=58`, `minPitch=35`, `maxBounds` Tokyo centre, bearing clampé ±25° autour de −20° via `map.on('rotate',...)`
-- **Changement de ville** : `map.flyTo()` déclenché par `useEffect([city.name])` sans recharger la map
-- **Pointer events** : `CityClient` root en `pointer-events-none`, `pointer-events-auto` sur header, aside, filtres HUD et modal
+- **Style** : `setConfigProperty("basemap", "lightPreset", "dusk")` + tous les labels masqués
+- **Modèle Skytree + Tokyo Tower** : `public/models/tokyo_skytree.glb` + `public/models/tokyo_tower.glb` rendus via custom Three.js layer
+- **Animations canvas** : eau ("water-anim" 128×128) et herbe ("grass-anim" 32×32) via `map.addImage()` avec `render()` + `triggerRepaint()`
+- **Contraintes caméra** : `minZoom=14`, `maxPitch=85`, `minPitch=20`, `maxBounds` Tokyo + Haneda (`[139.58, 35.52]` → `[139.85, 35.75]`), bearing clampé ±25° autour de −20°
+- **Pins** : classe CSS `gm3d-poi` avec `--pc` (couleur par type). Logo POI via `POI_LOGOS[poi.id]` → `<img>` sinon emoji. Hover expand via `max-width` transition
+
+### Écrans de chargement
+
+- **Chargement ville** (`CityClient`) : overlay blanc `z-[2000]`, fondu 400ms. Déclenché sur `map.once("idle", ...)` + fallback 3000ms. `mapLoading` / `mapFading` states.
+- **Chargement conversation** (`POIClient`) : affiché quand `!character` — fond blanc, nom du POI, 3 points animés (`dot-pulse`).
+- **Sortie conversation** (`POIClient`) : `leaving` state → overlay blanc `leaving-in 450ms`, puis `router.push`.
+- **Keyframes CSS** (`globals.css`) : `loadbar-slide`, `dot-pulse`, `leaving-in`, `screen-fadein`.
+
+### Session de quête (`POIClient`)
+
+**Timer** : 15 min par quête (`questTimeLeft`), décrémenté toutes les secondes hors pause. À 0 → `sessionExpired`.
+
+**Tracking session** (réinitialisé à chaque nouvelle quête) :
+- `sessionStartRef` — timestamp `Date.now()` au lancement
+- `sessionErrors` — incrémenté à chaque mauvaise réponse au quiz
+- `sessionSuggestionsUsed` — incrémenté à chaque ouverture du panneau suggestions
+- `sessionPracticedVocab (Set<string>)` — mots `jp` détectés dans les transcriptions Whisper
+
+**Modales post-quête** (toutes en `fixed inset-0 overflow-y-auto` — pattern scrollable-outer) :
+- `showQuestComplete` + `completedQuestInfo` → modale sombre (fond glassmorphism). Récompenses XP/Yens + aperçu vocab. Boutons : "Continuer la conversation" / "Terminer la session →"
+- `showSessionSummary` + `summaryVocabProgress` → modale blanche (fond noir/75). Stats (erreurs, aides, mots pratiqués) + vocab groupé par JLPT avec icône de maîtrise. Bouton "Terminer" → `handleBack`.
+
+**`handleEndSession(info, practiced, errors, suggestions)`** :
+- POST `/api/session/complete` → reçoit `vocabWithMastery[]`
+- En cas d'erreur réseau → calcul local avec `computeMastery`
+- `setSummaryVocabProgress` + `setShowSessionSummary(true)`
+
+**`shouldListenRef`** bloqué si : `isPaused || isSpeaking || isLoading || isTranscribing || showSuggestions || sessionExpired || showQuestComplete || showSessionSummary`
 
 ### Carte illustrée (`IllustratedMap`)
 
@@ -156,8 +221,8 @@ La sidebar (72px) contient 3 boutons d'icône qui togglent des panneaux overlay 
 
 - `User.xp` et `User.yens` en DB, incrémentés à la complétion de quête (`firstCompletedAt`)
 - `getLevelInfo(xp)` dans `src/lib/level.ts` — calcule `{level, xpInLevel, xpNeeded, percent}`
-- Les récompenses s'affichent dans la modale quête (`CityClient`) et en toast post-quête (`POIClient`)
 - Replay d'une quête : `isReplay = status === "IN_PROGRESS" && !!firstCompletedAt` → pas de récompense
+- Les récompenses s'affichent dans la modale `showQuestComplete` de `POIClient`
 
 ### Système de mémoire (`CharacterMemory`)
 
@@ -173,18 +238,18 @@ Remplace le push-to-talk. Le micro est ouvert en permanence après le chargement
 - **Démarrage** : `startVAD()` appelé dans le `useEffect` de chargement. Crée un `AudioContext` + `AnalyserNode` (fftSize 512). Stream micro gardé ouvert toute la session
 - **Détection** : boucle `requestAnimationFrame` calcule le RMS sur chaque frame. Si `rms > VAD_THRESHOLD (0.025)` et `shouldListenRef.current = true` → démarre un `MediaRecorder` frais
 - **Fin d'énoncé** : silence > `SILENCE_DELAY (1200ms)` → stoppe le recorder → envoie à `/api/transcribe`
-- **Filtre bruit court** : enregistrement ignoré si durée < `MIN_RECORD_MS (400ms)` (`recordingStartRef` tracke le timestamp de départ)
-- **shouldListenRef** : `false` si `isPaused || isSpeaking || isLoading || isTranscribing` — l'IA ne s'écoute pas elle-même. Mis à jour via `useEffect([isPaused, isSpeaking, isLoading, isTranscribing])`
-- **Mobile HTTP** : `navigator.mediaDevices` est `undefined` en contexte non sécurisé → guard `if (navigator.mediaDevices)` obligatoire
-- **Cleanup** : `audioCtxRef.current?.close()` + `streamRef.current?.getTracks().forEach(t => t.stop())` à l'unmount. `audioCtxRef.current = null` arrête la boucle RAF
+- **Détection vocab** : dans le callback `transcribe`, le texte Whisper est scanné par substring match contre `aq.vocab[].jp` et `aq.vocab[].kana` → `setSessionPracticedVocab`
+- **Filtre bruit court** : enregistrement ignoré si durée < `MIN_RECORD_MS (400ms)`
+- **shouldListenRef** : `false` si `isPaused || isSpeaking || isLoading || isTranscribing || showSuggestions || sessionExpired || showQuestComplete || showSessionSummary`
+- **Mobile HTTP** : guard `if (navigator.mediaDevices)` obligatoire
+- **Cleanup** : `audioCtxRef.current?.close()` + `streamRef.current?.getTracks().forEach(t => t.stop())` à l'unmount
 
 ### Bouton Pause (POIClient)
 
 - Bouton centré dans la top bar (`z-50`), icône `Pause` / `Play`
 - **Pause** : coupe ambient sound, TTS en cours (`audioRef`), `speechSynthesis`, force `isSpeaking = false`
-- **Reprise** : relance ambient, appelle `audioCtxRef.current?.resume()` (le browser peut suspendre l'AudioContext quand audio s'arrête)
+- **Reprise** : relance ambient, appelle `audioCtxRef.current?.resume()`
 - **Overlay** : z-40, cliquable (onClick = togglePause) pour reprendre en tapant n'importe où
-- Les effets de bord sont dans un `useEffect([isPaused])` séparé — ne jamais appeler `setState` inside un `setState` updater
 
 ### Système sonore (POIClient)
 
@@ -196,8 +261,13 @@ Remplace le push-to-talk. Le micro est ouvert en permanence après le chargement
 
 - `Character.voiceId` stocke l'ID de voix ElevenLabs (ex: `TX3LPaxmHKxFdv7VOQHJ`)
 - `speak()` dans `POIClient` : ElevenLabs si `voiceId` présent, fallback `speechSynthesis` browser
-- **Double-speak (React StrictMode)** : `speak()` crée un `AbortController` à chaque appel (`speakAbortRef`) et annule le précédent. La requête TTS est passée avec `signal: controller.signal`. Le cleanup du `useEffect` appelle `speakAbortRef.current?.abort()`
+- **Double-speak (React StrictMode)** : `speak()` crée un `AbortController` à chaque appel (`speakAbortRef`) et annule le précédent
 - Voix seed : Kenji=Liam (`TX3LPaxmHKxFdv7VOQHJ`), Hana=Matilda (`XrExE9yKIg1WjnnlVkGX`), Taro=Daniel (`onwK4e9ZLuTAKqWW03F9`)
 
 ### SessionProvider
 `src/app/providers.tsx` wrappe l'app avec le `SessionProvider` NextAuth, inclus dans `src/app/layout.tsx`.
+
+### Pièges CSS connus
+
+- **Modale flex collapse** : ne jamais utiliser `flex flex-col` + `max-height` + enfant `flex-1 overflow-y-auto` sans `min-h-0` — le contenu collapse et devient invisible. Utiliser le pattern "scrollable outer" : `fixed inset-0 overflow-y-auto` → `flex min-h-full items-center justify-center` → carte en bloc naturel.
+- **Fixed + overflow-hidden parent** : les éléments `fixed` ne sont pas clippés par `overflow-hidden` des parents (sauf si le parent a `transform`/`filter`/`perspective`). Le `pointer-events-none` du root CityClient est hérité CSS — toujours mettre `pointer-events-auto` sur les modales fixes.

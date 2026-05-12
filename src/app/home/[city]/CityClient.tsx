@@ -355,7 +355,10 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
       <main className="relative flex-1 overflow-hidden">
 
         {/* Floating top-right HUD — same as /home */}
-        <div className="pointer-events-auto absolute top-4 right-4 z-[1000] flex items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-3 shadow-sm">
+        <div
+          className="pointer-events-auto absolute top-4 z-[1000] flex items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-3 shadow-sm transition-all duration-300 ease-in-out"
+          style={{ right: selectedPoi ? 420 + 16 : 16 }}
+        >
           {userStats && (
             <>
               <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
@@ -705,6 +708,37 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
               </MapContainer>
             </>
           )}
+          {/* ── POI prev/next navigation ── */}
+          {(() => {
+            if (!selectedPoi) return null;
+            const list = filteredPois;
+            const idx  = list.findIndex(p => p.id === selectedPoi.id);
+            if (idx === -1 || list.length < 2) return null;
+            const prev = list[(idx - 1 + list.length) % list.length];
+            const next = list[(idx + 1) % list.length];
+            return (
+              <div
+                className="pointer-events-auto absolute bottom-6 z-[1001] flex items-center gap-3 transition-all duration-300 ease-in-out"
+                style={{ left: `calc(50% - ${selectedPoi ? 210 : 0}px)`, transform: "translateX(-50%)" }}
+              >
+                <button
+                  onClick={() => handlePoiClick(prev.id)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/50 backdrop-blur-md hover:bg-black/65 hover:text-white transition-all"
+                  title={prev.name}
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => handlePoiClick(next.id)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/50 backdrop-blur-md hover:bg-black/65 hover:text-white transition-all"
+                  title={next.name}
+                >
+                  <ArrowLeft className="h-4 w-4 rotate-180" />
+                </button>
+              </div>
+            );
+          })()}
+
           {/* ── POI Drawer ── */}
           <div
             className="absolute right-0 top-0 z-[1000] flex h-full w-[420px] flex-col border-l border-white/10 bg-gray-950/96 backdrop-blur-xl transition-transform duration-300 ease-in-out"
