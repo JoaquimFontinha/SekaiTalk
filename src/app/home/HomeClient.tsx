@@ -1,18 +1,31 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Bell, User, Flame, Menu, MapPin, Users, BookOpen, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, Settings, CheckCircle2, Circle } from "lucide-react";
 
 type UserStats = {
   xp: number; yens: number; level: number;
   xpInLevel: number; xpNeeded: number | null; percent: number;
 };
 
-const SIDEBAR_BUTTONS = [
+const NAV_ITEMS = [
   { Icon: MapPin,   label: "Lieux"      },
   { Icon: Users,    label: "Contacts"   },
   { Icon: Sparkles, label: "Évènements" },
   { Icon: BookOpen, label: "Révision"   },
+];
+
+const DAILY_GOALS = [
+  { label: "Lance une conversation",   done: false },
+  { label: "Apprends 5 nouveaux mots", done: false },
+  { label: "Complète une quête",       done: false },
+];
+
+
+const GLOBAL_STATS = [
+  { label: "Conversations", value: "—", icon: "💬" },
+  { label: "Mots maîtrisés", value: "—", icon: "✨" },
+  { label: "Quêtes terminées", value: "—", icon: "🎯" },
 ];
 
 function CompassRose() {
@@ -34,9 +47,7 @@ function CompassRose() {
 }
 
 export default function HomeClient() {
-  const [userStats, setUserStats]             = useState<UserStats | null>(null);
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
-  const sidebarRef = useRef<HTMLElement>(null);
+  const [userStats, setUserStats] = useState<UserStats | null>(null);
 
   useEffect(() => {
     fetch("/api/user/stats")
@@ -45,90 +56,131 @@ export default function HomeClient() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (!sidebarExpanded) return;
-    const handler = (e: MouseEvent) => {
-      if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
-        setSidebarExpanded(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [sidebarExpanded]);
-
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="h-screen overflow-hidden">
 
-      {/* Sidebar — same as /home/[city] */}
-      <aside
-        ref={sidebarRef}
-        className={`pointer-events-auto relative z-[1001] flex shrink-0 flex-col border-r border-gray-100 bg-white py-5 transition-all duration-200 ${
-          sidebarExpanded ? "w-52 items-start gap-1 px-3" : "w-[88px] items-center gap-7"
-        }`}
+      {/* ── Floating sidebar ── */}
+      <div
+        className="pointer-events-auto fixed left-5 top-1/2 -translate-y-1/2 z-[1001] flex flex-col rounded-2xl bg-white overflow-y-auto"
+        style={{
+          width: 448,
+          height: "calc(100vh - 40px)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1)",
+        }}
       >
-        {/* Hamburger */}
-        <button
-          onClick={() => setSidebarExpanded(e => !e)}
-          className={`flex items-center gap-3 rounded-lg transition-colors hover:bg-gray-100 ${
-            sidebarExpanded ? "w-full px-2 py-2" : "p-2.5"
-          }`}
-        >
-          <Menu className="h-5 w-5 shrink-0 text-gray-400" />
-          {sidebarExpanded && (
-            <span className="text-sm font-black tracking-tight text-gray-800">SekaiTalk</span>
-          )}
-        </button>
-
-        {/* Nav buttons — disabled on home, panels not available here */}
-        {SIDEBAR_BUTTONS.map(({ Icon, label }) => (
-          <div
-            key={label}
-            className={`flex cursor-default items-center opacity-35 ${
-              sidebarExpanded
-                ? "w-full gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-500"
-                : "flex-col gap-1"
-            }`}
-          >
-            {sidebarExpanded ? (
-              <Icon className="h-4 w-4 shrink-0 text-gray-400" />
-            ) : (
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-gray-200 text-gray-400">
-                <Icon className="h-5 w-5" />
-              </div>
-            )}
-            <span className={sidebarExpanded ? "" : "text-[9px] font-medium text-gray-400"}>{label}</span>
+        {/* ── Header ── */}
+        <div className="flex items-center gap-4 px-7 pt-8 pb-8 shrink-0">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-3xl">
+            🗾
           </div>
-        ))}
-      </aside>
+          <div className="flex flex-col min-w-0">
+            <span className="text-xl font-black tracking-tight text-gray-800 leading-none">SekaiTalk</span>
+          </div>
+        </div>
 
-      {/* Map area — transparent, Mapbox Japan map comes from layout */}
-      <main className="relative flex-1 overflow-hidden pointer-events-none">
-
-        {/* Stats HUD — top right */}
-        <div className="pointer-events-auto absolute top-4 right-4 z-20 flex items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-3 shadow-sm">
-          {userStats && (
-            <>
-              <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
-                Nv.{userStats.level}
-              </span>
-              <div className="flex flex-col gap-1">
-                <div className="h-2 w-20 rounded-full bg-gray-100 overflow-hidden">
-                  <div className="h-full rounded-full bg-violet-500 transition-all duration-700" style={{ width: `${userStats.percent}%` }} />
-                </div>
-                <span className="text-[9px] text-gray-400 text-right leading-none tabular-nums">
-                  {userStats.xpInLevel}/{userStats.xpNeeded ?? "MAX"} XP
+        {/* ── Objectifs du jour ── */}
+        <div className="px-7 pb-8 shrink-0">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Objectifs du jour</span>
+            <span className="text-xs font-semibold text-violet-500 bg-violet-50 px-2.5 py-1 rounded-full">
+              0 / {DAILY_GOALS.length}
+            </span>
+          </div>
+          <div className="flex flex-col gap-2.5">
+            {DAILY_GOALS.map((g, i) => (
+              <div key={i} className="flex items-center gap-3.5 rounded-xl bg-gray-50 px-4 py-3.5">
+                {g.done
+                  ? <CheckCircle2 className="h-5 w-5 shrink-0 text-violet-500" />
+                  : <Circle className="h-5 w-5 shrink-0 text-gray-300" />
+                }
+                <span className={`text-sm font-medium ${g.done ? "line-through text-gray-400" : "text-gray-600"}`}>
+                  {g.label}
                 </span>
               </div>
-              <div className="w-px h-5 bg-gray-200" />
+            ))}
+          </div>
+        </div>
+
+        <div className="mx-7 h-px bg-gray-100 shrink-0" />
+
+        {/* ── Navigation ── */}
+        <div className="px-5 pt-8 pb-8 flex-1">
+          <span className="px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Navigation</span>
+          <div className="mt-3 flex flex-col gap-1">
+            {NAV_ITEMS.map(({ Icon, label }) => (
+              <div
+                key={label}
+                className="flex cursor-default select-none items-center gap-4 rounded-xl px-4 py-4 opacity-40"
+              >
+                <Icon className="h-5 w-5 shrink-0 text-gray-500" />
+                <span className="text-base font-medium text-gray-600">{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mx-7 h-px bg-gray-100 shrink-0" />
+
+        {/* ── Stats globales ── */}
+        <div className="px-7 pt-8 pb-8 shrink-0">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Mes stats</span>
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            {GLOBAL_STATS.map(({ label, value, icon }) => (
+              <div key={label} className="flex flex-col items-center rounded-2xl bg-gray-50 px-3 py-5 gap-2">
+                <span className="text-2xl">{icon}</span>
+                <span className="text-lg font-black text-gray-700 tabular-nums">{value}</span>
+                <span className="text-[10px] text-gray-400 text-center leading-tight">{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mx-7 h-px bg-gray-100 shrink-0" />
+
+        {/* ── Footer ── */}
+        <div className="px-5 pt-5 pb-6 shrink-0">
+          <button className="flex w-full cursor-default items-center gap-4 rounded-xl px-4 py-4 opacity-40">
+            <Settings className="h-5 w-5 shrink-0 text-gray-500" />
+            <span className="text-base font-medium text-gray-600">Paramètres</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ── Transparent overlay (HUD, compass, vignette) ── */}
+      <main className="pointer-events-none relative h-screen overflow-hidden">
+
+        {/* Stats HUD — top right */}
+        <div className="pointer-events-auto absolute top-5 right-5 z-20 flex items-center gap-6 rounded-2xl border border-gray-200 bg-white px-7 py-4 shadow-md">
+          {userStats && (
+            <>
+              <div className="flex items-center gap-3">
+                <span className="rounded-full bg-violet-100 px-4 py-1.5 text-sm font-bold text-violet-700">
+                  Nv.{userStats.level}
+                </span>
+                <div className="flex flex-col gap-1.5">
+                  <div className="h-2.5 w-32 rounded-full bg-gray-100 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-violet-500 transition-all duration-700"
+                      style={{ width: `${userStats.percent}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-gray-400 text-right leading-none tabular-nums">
+                    {userStats.xpInLevel}/{userStats.xpNeeded ?? "MAX"} XP
+                  </span>
+                </div>
+              </div>
+              <div className="w-px h-7 bg-gray-200" />
             </>
           )}
-          <button className="flex items-center gap-1.5 text-gray-400 hover:text-orange-400 transition-colors">
-            <Flame className="h-5 w-5 text-orange-300" />
-            <span className="text-sm font-semibold text-gray-600">0</span>
+          <button className="flex items-center gap-2 text-gray-400 hover:text-orange-400 transition-colors">
+            <Flame className="h-6 w-6 text-orange-300" />
+            <span className="text-base font-semibold text-gray-600">0</span>
           </button>
-          <button className="text-gray-400 hover:text-gray-700 transition-colors"><Bell className="h-5 w-5" /></button>
-          <button className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-200 text-gray-400 hover:border-gray-400 hover:text-gray-700 transition-colors">
-            <User className="h-4 w-4" />
+          <button className="text-gray-400 hover:text-gray-700 transition-colors">
+            <Bell className="h-6 w-6" />
+          </button>
+          <button className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-gray-200 text-gray-400 hover:border-gray-400 hover:text-gray-700 transition-colors">
+            <User className="h-5 w-5" />
           </button>
         </div>
 
@@ -138,13 +190,10 @@ export default function HomeClient() {
           style={{ boxShadow: "inset 0 0 120px rgba(0,30,60,0.22), inset 0 0 40px rgba(0,30,60,0.1)" }}
         />
 
-
         {/* Compass rose */}
         <div className="absolute bottom-8 right-8 z-10">
           <CompassRose />
         </div>
-
-
 
       </main>
     </div>

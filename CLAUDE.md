@@ -31,7 +31,7 @@ net stop "postgresql-x64-17"
 - **@anthropic-ai/sdk** — Claude Haiku (`claude-haiku-4-5-20251001`) pour les conversations IA
 - **Groq API** — Whisper `whisper-large-v3-turbo` pour la transcription vocale (micro)
 - **ElevenLabs API** — TTS par personnage (`eleven_multilingual_v2`), proxié via `/api/tts`
-- **Mapbox GL JS** + **react-map-gl v8** — carte 3D Tokyo (`mapbox://styles/mapbox/standard`) ET carte Japon overview (`mapbox://styles/mapbox/dark-v11` base, token `NEXT_PUBLIC_MAPBOX_TOKEN`)
+- **Mapbox GL JS** + **react-map-gl v8** — carte 3D Tokyo (`mapbox://styles/mapbox/standard`) ET carte Japon overview (style JSON inline sans URL, token `NEXT_PUBLIC_MAPBOX_TOKEN`)
 - **Three.js v0.184** + **GLTFLoader** — modèle GLB Tokyo Skytree rendu en custom layer Mapbox
 
 ## Variables d'environnement
@@ -214,6 +214,26 @@ La sidebar (88px collapsée, 208px étendue) contient des boutons qui togglent d
 </div>
 ```
 Le wrapper `children` dans `HomeShell` a `pointerEvents: none` quand une map Mapbox est visible (`isOnCityPage || isOnHomePage`) — les éléments UI interactifs (sidebar, HUD) ont `pointer-events-auto` explicite.
+
+### Page `/home` — `HomeClient.tsx`
+
+`src/app/home/HomeClient.tsx` — UI overlay de la page d'accueil (carte Japon). Deux éléments principaux :
+
+**Sidebar flottante** (`position: fixed, left: 20px, top: 50%, translateY(-50%)`)
+- Toujours déployée (pas de toggle), largeur 448px, hauteur `calc(100vh - 40px)` — s'étire sur toute la hauteur disponible
+- `overflow-y: auto` pour les petits écrans
+- 5 sections séparées par des dividers `h-px bg-gray-100` avec `mx-7` :
+  1. **Header** — logo 🗾 violet 56px + "SekaiTalk" bold
+  2. **Objectifs du jour** — 3 tâches quotidiennes avec `CheckCircle2` / `Circle` (statiques pour l'instant, à brancher sur une API)
+  3. **Navigation** — 4 items (Lieux, Contacts, Évènements, Révision), `opacity-40 cursor-default` (désactivés sur `/home`). Section `flex-1` pour absorber l'espace libre et pousser stats + footer vers le bas
+  4. **Mes stats** — grille 3 colonnes : Conversations / Mots maîtrisés / Quêtes terminées (valeurs `"—"` à brancher)
+  5. **Paramètres** — footer, `opacity-40 cursor-default`
+- `pointer-events-auto` explicite — le wrapper `children` dans `HomeShell` est `pointer-events-none`
+
+**HUD top-right** (`position: absolute, top: 20px, right: 20px, z-20`)
+- Affiché seulement si `userStats` est chargé : badge niveau violet, barre XP (`w-32 h-2.5`), séparateur vertical
+- Toujours visible : bouton Flame + streak `0`, bouton Bell, bouton User (avatar 40px)
+- Taille : `px-7 py-4`, icônes `h-6 w-6`, gap `gap-6`
 
 ### Carte 3D Tokyo (`GameMap3D`)
 

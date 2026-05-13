@@ -86,7 +86,7 @@ export default function JapanMap() {
       mapboxAccessToken={MAPBOX_TOKEN}
       mapStyle={MAP_STYLE}
       initialViewState={{
-        longitude: 136.5,
+        longitude: 134.0,
         latitude: 36.8,
         zoom: 5.4,
         pitch: 30,
