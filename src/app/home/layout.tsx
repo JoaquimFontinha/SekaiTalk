@@ -6,7 +6,8 @@ import dynamic from "next/dynamic";
 import { MapProvider, useMapCtx } from "./MapContext";
 import cities from "@/lib/cities";
 
-const GameMap3D = dynamic(() => import("./[city]/GameMap3D"), { ssr: false });
+const GameMap3D  = dynamic(() => import("./[city]/GameMap3D"), { ssr: false });
+const JapanMap   = dynamic(() => import("./JapanMap"),         { ssr: false });
 
 const DEFAULT_CITY = cities["tokyo"];
 
@@ -63,19 +64,41 @@ function PersistentMap() {
   );
 }
 
+function PersistentJapanMap() {
+  const pathname = usePathname();
+  const parts = pathname.replace(/^\/home\/?/, "").split("/").filter(Boolean);
+  const isOnHomePage = parts.length === 0;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0, left: 0, right: 0, bottom: 0,
+        zIndex: 0,
+        visibility: isOnHomePage ? "visible" : "hidden",
+        pointerEvents: isOnHomePage ? "auto" : "none",
+      }}
+    >
+      <JapanMap />
+    </div>
+  );
+}
+
 function HomeShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const parts = pathname.replace(/^\/home\/?/, "").split("/").filter(Boolean);
   const citySlug = parts[0] ?? null;
   const city = citySlug ? cities[citySlug] : null;
   const isOnCityPage = !!city?.use3DMap && parts.length === 1;
+  const isOnHomePage = parts.length === 0;
 
   return (
     <>
+      <PersistentJapanMap />
       <PersistentMap />
-      {/* pointer-events:none uniquement quand la map est visible (city page) */}
-      {/* sur les autres pages (/home, /home/[city]/[poi]) tout doit être cliquable */}
-      <div style={{ position: "relative", zIndex: 1, pointerEvents: isOnCityPage ? "none" : "auto" }}>
+      {/* pointer-events:none quand une map Mapbox est visible en dessous (city page ou home page) */}
+      {/* les éléments UI interactifs (sidebar, HUD) ont pointer-events:auto explicite */}
+      <div style={{ position: "relative", zIndex: 1, pointerEvents: (isOnCityPage || isOnHomePage) ? "none" : "auto" }}>
         {children}
       </div>
     </>

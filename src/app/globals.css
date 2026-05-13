@@ -249,6 +249,40 @@ body {
   margin-left: -1.5px;
 }
 
+/* ── Japan Map — city label (always visible) ────────────────── */
+.gm3d-city-label {
+  margin-top: 5px;
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  color: rgba(255, 255, 255, 0.82);
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.gm3d-poi--locked .gm3d-city-label {
+  color: rgba(180, 180, 200, 0.45);
+}
+
+/* ── Japan Map — locked city variant ────────────────────────── */
+.gm3d-poi--locked {
+  cursor: default;
+}
+.gm3d-poi--locked .gm3d-badge {
+  opacity: 0.6;
+  filter: grayscale(0.35);
+}
+.gm3d-poi--locked:hover .gm3d-badge {
+  transform: none;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.22),
+    0 1px 3px rgba(0, 0, 0, 0.14);
+  border-color: rgba(255, 255, 255, 1);
+}
+
 /* ── Loading screens ─────────────────────────────────────────── */
 @keyframes loadbar-slide {
   0%   { transform: translateX(-100%); }
@@ -270,3 +304,12 @@ body {
 /* Masquer les contrôles MapLibre */
 .maplibregl-ctrl-logo { display: none !important; }
 .maplibregl-ctrl-attrib { display: none !important; }
+
+/* Canvas Mapbox transparent (Japan map — gradient must show through) */
+.mapboxgl-map,
+.mapboxgl-canvas-container,
+.mapboxgl-canvas { background: transparent !important; }
+
+/* Masquer logo et attribution Mapbox */
+.mapboxgl-ctrl-logo,
+.mapboxgl-ctrl-attrib { display: none !important; }

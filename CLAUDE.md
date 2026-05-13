@@ -31,7 +31,7 @@ net stop "postgresql-x64-17"
 - **@anthropic-ai/sdk** — Claude Haiku (`claude-haiku-4-5-20251001`) pour les conversations IA
 - **Groq API** — Whisper `whisper-large-v3-turbo` pour la transcription vocale (micro)
 - **ElevenLabs API** — TTS par personnage (`eleven_multilingual_v2`), proxié via `/api/tts`
-- **Mapbox GL JS** + **react-map-gl v8** — carte 3D Tokyo (style `mapbox://styles/mapbox/standard`, token `NEXT_PUBLIC_MAPBOX_TOKEN`)
+- **Mapbox GL JS** + **react-map-gl v8** — carte 3D Tokyo (`mapbox://styles/mapbox/standard`) ET carte Japon overview (`mapbox://styles/mapbox/dark-v11` base, token `NEXT_PUBLIC_MAPBOX_TOKEN`)
 - **Three.js v0.184** + **GLTFLoader** — modèle GLB Tokyo Skytree rendu en custom layer Mapbox
 
 ## Variables d'environnement
@@ -135,6 +135,14 @@ Types et constantes partagés entre client et serveur :
   - ≥3 erreurs ou ratio <40% → `learning` / ratio <65% ou <4 rencontres → `almost`
   - ratio <85% ou <8 rencontres → `acquired` / sinon → `perfect`
 
+### `src/lib/cities.ts` — structure
+
+`CityData` : `{ name, center: [lat, lng], zoom, pois: POI[], levelRequired, use3DMap?, mapImage?, mapBounds? }`
+
+**Villes actives** (avec POIs) : `tokyo` (nv.1), `osaka` (nv.2), `kyoto` (nv.3)
+
+**Villes coming soon** (`levelRequired: 99`, `pois: []`) : `nara`, `hiroshima`, `sapporo`, `nikko`, `nagoya`, `fukuoka`, `beppu` — affichées sur la carte Japon en état verrouillé, jamais navigables car `levelRequired > userStats.level` pour tout utilisateur réel.
+
 ### Catégories POI (`POIType`)
 
 `"transport" | "konbini" | "izakaya" | "site" | "market" | "loisir" | "shop" | "restaurant" | "cafe"`
@@ -168,6 +176,44 @@ La sidebar (88px collapsée, 208px étendue) contient des boutons qui togglent d
 - Vocabulaire groupé par JLPT : kanji, kana, romaji, traduction FR, badge couleur JLPT.
 - Boutons "Annuler" / "Commencer →" (navigue vers la quête).
 - **Important** : ne pas utiliser `flex flex-col max-height flex-1` pour les modales — utilise toujours le pattern `fixed inset-0 overflow-y-auto` + `flex min-h-full items-center justify-center` + carte en `block` naturel pour éviter le bug de collapse CSS.
+
+### Carte Japon (`/home`) — `JapanMap.tsx`
+
+`src/app/home/JapanMap.tsx` — carte overview statique du Japon, montée une seule fois dans `layout.tsx` (jamais démontée, `visibility` toggle).
+
+**Style Mapbox** : style JSON inline (pas d'URL Mapbox) avec 3 layers seulement :
+- `japan-fill` — polygone Japon (`mapbox://mapbox.country-boundaries-v1`, filtre `iso_3166_1 = JP`), couleur `#b8a07a`
+- `japan-hillshade` — relief (`mapbox://mapbox.mapbox-terrain-dem-v1`), exaggeration 0.45, lumière 335°
+- `non-japan-mask` — recouvre tous les autres pays en `#1e3d72` pour masquer le hillshade étranger
+
+**Canvas transparent** : pas de layer background → pixels WebGL transparents en dehors du Japon → le `background` CSS du container (gradient radial) est visible à travers. Overrides CSS obligatoires dans `globals.css` :
+```css
+.mapboxgl-map, .mapboxgl-canvas-container, .mapboxgl-canvas { background: transparent !important; }
+.mapboxgl-ctrl-logo, .mapboxgl-ctrl-attrib { display: none !important; }
+```
+
+**Vagues Hokusai** : SVG `position: absolute, z-index: 0` positionné AVANT le `<Map>` dans le DOM. Le canvas Mapbox (`z-index: 1`) est opaque sur la terre → masque les vagues là où il y a de la terre. Vagues visibles uniquement sur l'océan (pixels transparents du canvas).
+
+**Overflow crop** : `overflow: hidden` sur le container + `bottom: -80px` sur le Map → coupe le bas (Okinawa).
+
+**Gradient** : `background: radial-gradient(ellipse farthest-corner at 54% 50%, #3a5fa0, #1a3568)` sur le container.
+
+**Pins** : classe CSS `gm3d-poi` réutilisée depuis la city map. `gm3d-city-label` = label toujours visible sous chaque pin (blanc 8.5px, letter-spacing 0.22em). Villes verrouillées : `gm3d-poi--locked` (opacity 0.6, grayscale, pas d'hover lift).
+
+**Lock logic** : `city.levelRequired > (userStats?.level ?? 0)` — `?? 0` garantit que les villes `levelRequired: 99` restent verrouillées même sans session.
+
+**Cities coming soon** (`levelRequired: 99`) : Nara, Hiroshima, Sapporo, Nikkō, Nagoya, Fukuoka, Beppu — affichent `"Nv.99 requis"` ou `"Bientôt"` selon implémentation du moment.
+
+**Architecture persistante** — `PersistentJapanMap` dans `src/app/home/layout.tsx` :
+```tsx
+// Visible uniquement sur /home (parts.length === 0)
+<div style={{ position:"fixed", inset:0, zIndex:0,
+  visibility: isOnHomePage ? "visible" : "hidden",
+  pointerEvents: isOnHomePage ? "auto" : "none" }}>
+  <JapanMap />
+</div>
+```
+Le wrapper `children` dans `HomeShell` a `pointerEvents: none` quand une map Mapbox est visible (`isOnCityPage || isOnHomePage`) — les éléments UI interactifs (sidebar, HUD) ont `pointer-events-auto` explicite.
 
 ### Carte 3D Tokyo (`GameMap3D`)
 
@@ -271,3 +317,5 @@ Remplace le push-to-talk. Le micro est ouvert en permanence après le chargement
 
 - **Modale flex collapse** : ne jamais utiliser `flex flex-col` + `max-height` + enfant `flex-1 overflow-y-auto` sans `min-h-0` — le contenu collapse et devient invisible. Utiliser le pattern "scrollable outer" : `fixed inset-0 overflow-y-auto` → `flex min-h-full items-center justify-center` → carte en bloc naturel.
 - **Fixed + overflow-hidden parent** : les éléments `fixed` ne sont pas clippés par `overflow-hidden` des parents (sauf si le parent a `transform`/`filter`/`perspective`). Le `pointer-events-none` du root CityClient est hérité CSS — toujours mettre `pointer-events-auto` sur les modales fixes.
+- **Canvas Mapbox opaque** : `mapboxgl-map` a `background: #000` par défaut dans `mapbox-gl.css` — les coins non-rendus apparaissent noirs. Fix dans `globals.css` : `.mapboxgl-map, .mapboxgl-canvas-container, .mapboxgl-canvas { background: transparent !important; }`. Ne fonctionne QUE si le style Mapbox n'a pas de layer `background` opaque (utiliser un style JSON inline sans background layer, pas `dark-v11`).
+- **Gradient derrière le canvas Mapbox** : un `<div>` overlay CSS est toujours AU-DESSUS du canvas (y compris sur la terre). Pour qu'un gradient/pattern soit visible uniquement sur l'océan, le placer AVANT le `<Map>` dans le DOM avec `z-index` inférieur — le canvas opaque masquera le div sur la terre, le div sera visible à travers les pixels transparents (océan).

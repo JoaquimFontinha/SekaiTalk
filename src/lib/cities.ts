@@ -153,6 +153,15 @@ const cities: Record<string, CityData> = {
       { id: "nijo-castle",    name: "Château Nijō",     type: "site", lat: 35.0142, lng: 135.7481 },
     ],
   },
+
+  // ── Coming soon ────────────────────────────────────────────────────────────
+  nara:      { name: "Nara",      center: [34.6851, 135.8048], zoom: 14, levelRequired: 99, pois: [] },
+  hiroshima: { name: "Hiroshima", center: [34.3853, 132.4553], zoom: 14, levelRequired: 99, pois: [] },
+  sapporo:   { name: "Sapporo",   center: [43.0618, 141.3545], zoom: 14, levelRequired: 99, pois: [] },
+  nikko:     { name: "Nikkō",     center: [36.7198, 139.6982], zoom: 14, levelRequired: 99, pois: [] },
+  nagoya:    { name: "Nagoya",    center: [35.1815, 136.9066], zoom: 14, levelRequired: 99, pois: [] },
+  fukuoka:   { name: "Fukuoka",   center: [33.5904, 130.4017], zoom: 14, levelRequired: 99, pois: [] },
+  beppu:     { name: "Beppu",     center: [33.2840, 131.4914], zoom: 14, levelRequired: 99, pois: [] },
 };
 
 export default cities;
