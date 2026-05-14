@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Pause, Play } from "lucide-react";
+import { ArrowLeft, Pause, Play, Eye, EyeOff, Mic, MicOff, ChevronLeft, ChevronRight } from "lucide-react";
 import cities from "@/lib/cities";
 import { type VocabEntry, type MasteryLevel, MASTERY_CONFIG, JLPT_COLORS, computeMastery } from "@/lib/mastery";
 
@@ -64,7 +64,7 @@ type DisplayMode = "full" | "kanji" | "romaji";
 
 const DISPLAY_MODES: DisplayMode[] = ["full", "kanji", "romaji"];
 const MODE_CONFIG: Record<DisplayMode, { char: string; color: string; label: string }> = {
-  full:   { char: "全",   color: "bg-white/60",   label: "Complet" },
+  full:   { char: "全",   color: "bg-gray-300",   label: "Complet" },
   kanji:  { char: "漢",   color: "bg-yellow-400", label: "Kanji"   },
   romaji: { char: "abc",  color: "bg-violet-400", label: "Romaji"  },
 };
@@ -72,13 +72,120 @@ const MODE_CONFIG: Record<DisplayMode, { char: string; color: string; label: str
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const WORD_COLORS = [
-  "text-pink-400", "text-cyan-400", "text-violet-400", "text-yellow-400",
-  "text-emerald-400", "text-orange-400", "text-blue-400", "text-rose-400",
+  "text-pink-600", "text-cyan-600", "text-violet-600", "text-yellow-600",
+  "text-emerald-600", "text-orange-600", "text-blue-600", "text-rose-600",
 ];
 
-const VAD_THRESHOLD  = 0.025; // RMS volume to start recording
-const SILENCE_DELAY  = 1200;  // ms of silence before sending
-const MIN_RECORD_MS  = 400;   // discard recordings shorter than this (background noise)
+const VAD_THRESHOLD     = 0.042;  // RMS min pour considérer qu'il y a de la voix
+const VAD_TRIGGER_FRAMES = 5;     // frames consécutives au-dessus du seuil avant de lancer l'enregistrement
+const SILENCE_DELAY     = 1400;   // ms de silence avant d'arrêter l'enregistrement
+const MIN_RECORD_MS     = 600;    // durée minimale d'un enregistrement valide
+
+// ── SuggestionPlayButton ──────────────────────────────────────────────────────
+
+function SuggestionPlayButton({ text }: { text: string }) {
+  const [speed, setSpeed] = useState<1 | 0.7>(1);
+
+  const play = () => {
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "ja-JP";
+    utter.rate = speed * 0.85;
+    const jp = window.speechSynthesis.getVoices().find(v => v.lang.startsWith("ja"));
+    if (jp) utter.voice = jp;
+    window.speechSynthesis.speak(utter);
+  };
+
+  return (
+    <div className="flex items-center rounded-full bg-gray-100 border border-gray-200 overflow-hidden shrink-0">
+      <button
+        onClick={play}
+        className="flex items-center justify-center px-3 py-1.5 hover:bg-gray-200 transition-colors"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-gray-600">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+        </svg>
+      </button>
+      <div className="w-px h-4 bg-gray-200" />
+      <button
+        onClick={() => setSpeed(s => s === 1 ? 0.7 : 1)}
+        className="px-2.5 py-1.5 text-[11px] font-bold text-gray-500 hover:text-gray-800 hover:bg-gray-200 transition-colors tabular-nums"
+      >
+        {speed === 1 ? "x1" : ".7x"}
+      </button>
+    </div>
+  );
+}
+
+// ── AudioWave ─────────────────────────────────────────────────────────────────
+
+// Base heights ratio (0–1), scaled to maxH
+const WAVE_RATIOS = [0.18, 0.44, 0.88, 0.44, 0.18, 0.44, 0.88, 0.44, 0.18];
+
+function AudioWave({ analyserRef, isRecording, isSpeaking, isBusy, maxH = 20 }: {
+  analyserRef: React.RefObject<AnalyserNode | null>;
+  isRecording: boolean;
+  isSpeaking: boolean;
+  isBusy: boolean;
+  maxH?: number;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rafRef       = useRef<number>(0);
+  const freqBufRef   = useRef<Uint8Array | null>(null);
+  const baseH        = WAVE_RATIOS.map(r => Math.max(2, r * maxH));
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const bars = Array.from(container.children) as HTMLDivElement[];
+
+    const tick = () => {
+      const analyser = analyserRef.current;
+      const t = performance.now() / 1000;
+
+      if (analyser && isRecording) {
+        if (!freqBufRef.current || freqBufRef.current.length !== analyser.frequencyBinCount) {
+          freqBufRef.current = new Uint8Array(analyser.frequencyBinCount);
+        }
+        analyser.getByteFrequencyData(freqBufRef.current);
+        const data = freqBufRef.current;
+        const step = Math.floor(data.length / 9);
+        bars.forEach((bar, i) => {
+          let sum = 0;
+          for (let j = i * step; j < Math.min((i + 1) * step, data.length); j++) sum += data[j];
+          const amp = (sum / step) / 255;
+          const h = Math.min(maxH, baseH[i] + amp * maxH * 2.2);
+          bar.style.height          = `${Math.max(2, h)}px`;
+          bar.style.backgroundColor = "#94a3b8";
+        });
+      } else {
+        const speed     = isSpeaking ? 4.0 : isBusy ? 3.0 : 1.8;
+        const ampFactor = isSpeaking ? 0.5  : isBusy ? 0.35 : 0.22;
+        const color     = isSpeaking ? "#7c3aed" : "#cbd5e1";
+        bars.forEach((bar, i) => {
+          const h = baseH[i] * (1 + Math.sin(t * speed + i * 0.5) * ampFactor);
+          bar.style.height          = `${Math.max(2, h)}px`;
+          bar.style.backgroundColor = color;
+        });
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [analyserRef, isRecording, isSpeaking, isBusy, maxH]);
+
+  return (
+    <div ref={containerRef} style={{ display: "flex", alignItems: "center", gap: "3px", height: `${maxH}px` }}>
+      {baseH.map((h, i) => (
+        <div key={i} style={{ width: "3px", borderRadius: "2px", height: `${h}px`, backgroundColor: "#cbd5e1" }} />
+      ))}
+    </div>
+  );
+}
 
 // ── WordRow ───────────────────────────────────────────────────────────────────
 
@@ -88,8 +195,8 @@ function WordRow({ words, mode }: { words: Word[]; mode: DisplayMode }) {
       <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
         {words.map((w, i) => (
           <div key={i} className="flex flex-col items-center gap-[2px]">
-            <span className="text-[11px] font-medium text-white/60 min-h-[14px]">{w.furigana}</span>
-            <span className="text-[26px] font-bold text-white leading-none tracking-wide">{w.jp}</span>
+            <span className="text-[11px] font-medium text-gray-400 min-h-[14px]">{w.furigana}</span>
+            <span className="text-[26px] font-bold text-gray-900 leading-none tracking-wide">{w.jp}</span>
           </div>
         ))}
       </div>
@@ -104,7 +211,7 @@ function WordRow({ words, mode }: { words: Word[]; mode: DisplayMode }) {
           return (
             <div key={i} className="flex flex-col items-center gap-[3px]">
               <span className={`text-[11px] font-medium min-h-[16px] ${color} opacity-80`}>{w.furigana}</span>
-              <span className="text-[24px] font-bold leading-none text-white tracking-wide">{w.jp}</span>
+              <span className="text-[24px] font-bold leading-none text-gray-900 tracking-wide">{w.jp}</span>
               <span className={`text-[11px] font-semibold underline underline-offset-2 decoration-dotted ${color}`}>{w.romaji}</span>
             </div>
           );
@@ -121,9 +228,9 @@ function WordRow({ words, mode }: { words: Word[]; mode: DisplayMode }) {
         return (
           <div key={i} className="flex flex-col items-center gap-[3px]">
             <span className={`text-[11px] font-medium min-h-[16px] ${color} opacity-80`}>{w.furigana}</span>
-            <span className="text-[24px] font-bold leading-none text-white tracking-wide">{w.jp}</span>
+            <span className="text-[24px] font-bold leading-none text-gray-900 tracking-wide">{w.jp}</span>
             <span className={`text-[11px] font-semibold underline underline-offset-2 decoration-dotted ${color}`}>{w.romaji}</span>
-            <span className="text-[10px] text-white/45 mt-0.5">{w.fr}</span>
+            <span className="text-[10px] text-gray-500 mt-0.5">{w.fr}</span>
           </div>
         );
       })}
@@ -165,7 +272,7 @@ export default function POIClient({
   const [lastUserMsg, setLastUserMsg]     = useState("");
   const [isLoading, setIsLoading]         = useState(false);
   const [isSpeaking, setIsSpeaking]       = useState(false);
-  const [showTip, setShowTip]             = useState(true);
+
   const [isPaused, setIsPaused]           = useState(false);
   const [isRecording, setIsRecording]     = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -178,6 +285,12 @@ export default function POIClient({
   const [questTimeLeft, setQuestTimeLeft]     = useState<number | null>(null);
   const [sessionExpired, setSessionExpired]   = useState(false);
   const [leaving, setLeaving]                 = useState(false);
+  const [hideDialogue, setHideDialogue]       = useState(false);
+  const [micMuted, setMicMuted]               = useState(false);
+  const [speakKey, setSpeakKey]               = useState(0);
+  const [showMenu, setShowMenu]               = useState(false);
+  const [showBackConfirm, setShowBackConfirm] = useState(false);
+  const [historyIndex, setHistoryIndex]       = useState(0);
 
   // ── Refs ──
   const messagesRef     = useRef<Message[]>([]);
@@ -191,6 +304,7 @@ export default function POIClient({
   const ambientRef      = useRef<HTMLAudioElement | null>(null);
   const voiceIdRef      = useRef<string | null>(null);
   const audioCtxRef     = useRef<AudioContext | null>(null);
+  const analyserRef     = useRef<AnalyserNode | null>(null);
   const silenceTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recordingStartRef  = useRef<number>(0);
   const speakAbortRef      = useRef<AbortController | null>(null);
@@ -199,11 +313,13 @@ export default function POIClient({
   const mountedRef         = useRef(true);
   const shouldListenRef    = useRef(false);
   const lastAudioBlobRef   = useRef<Blob | null>(null);
+  const replyHistoryRef    = useRef<Array<{ reply: AIReply; userMsg: string }>>([]);
   const sessionStartRef    = useRef<number>(Date.now());
   const allPoiVocabRef     = useRef<VocabEntry[]>([]);
 
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { activeQuestRef.current = activeQuest; }, [activeQuest]);
+  useEffect(() => { if (isSpeaking) setSpeakKey(k => k + 1); }, [isSpeaking]);
 
   // ── Quest timer — 15 min per quest, paused when isPaused ──────────────────
   useEffect(() => {
@@ -221,20 +337,18 @@ export default function POIClient({
 
   // ── Update shouldListen whenever speaking / loading / paused / modal changes ──
   useEffect(() => {
-    const canListen = !isPaused && !isSpeaking && !isLoading && !isTranscribing && !showSuggestions && !sessionExpired && !showQuestComplete && !showSessionSummary;
+    const canListen = !micMuted && !isPaused && !isSpeaking && !isLoading && !isTranscribing && !showSuggestions && !sessionExpired && !showQuestComplete && !showSessionSummary;
     shouldListenRef.current = canListen;
-    // If we can no longer listen, abort any in-flight recording
     if (!canListen && isRecordingRef.current) {
       if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
       if (recorderRef.current?.state === "recording") recorderRef.current.stop();
       isRecordingRef.current = false;
       setIsRecording(false);
     }
-  }, [isPaused, isSpeaking, isLoading, isTranscribing, showSuggestions, sessionExpired, showQuestComplete, showSessionSummary]);
+  }, [micMuted, isPaused, isSpeaking, isLoading, isTranscribing, showSuggestions, sessionExpired, showQuestComplete, showSessionSummary]);
 
   // ── TTS ──
   const speak = useCallback(async (text: string) => {
-    // Annule tout speak précédent (fixes double-speak en StrictMode)
     speakAbortRef.current?.abort();
     const controller = new AbortController();
     speakAbortRef.current = controller;
@@ -321,14 +435,16 @@ export default function POIClient({
     const next: Message[] = [...messagesRef.current, { role: "user", content: t }];
     setMessages(next);
     setIsLoading(true);
-    setCurrentReply(null);
+    // Ne pas effacer currentReply ici — isBusy affiche "Réflexion…" par-dessus.
+    // Si la requête échoue, l'ancien message reste visible.
 
     const aq = activeQuestRef.current;
     let sysPrompt = systemRef.current;
     if (aq) {
       const task = aq.tasks[aq.currentTaskIndex];
       if (task?.aiContext) {
-        sysPrompt += `\n\n[TÂCHE EN COURS ${aq.currentTaskIndex + 1}/${aq.tasks.length}]\n${task.aiContext}`;
+        const isFirstMessage = messagesRef.current.length <= 1;
+        sysPrompt += `\n\n[CONTEXTE DE LA TÂCHE ${aq.currentTaskIndex + 1}/${aq.tasks.length} — information de fond, ne pas aborder directement${isFirstMessage ? ", répondre d'abord naturellement au message de l'utilisateur" : ""}]\n${task.aiContext}`;
       }
     }
 
@@ -347,14 +463,17 @@ export default function POIClient({
           characterId: characterIdRef.current,
         }),
       });
+      if (!r.ok) throw new Error(`API ${r.status}`);
       const d: AIReply = await r.json();
       if (!mountedRef.current) return;
       setMessages(p => [...p, { role: "assistant", content: d.reply }]);
       setCurrentReply(d);
+      replyHistoryRef.current = [...replyHistoryRef.current, { reply: d, userMsg: t }];
+      setHistoryIndex(replyHistoryRef.current.length - 1);
       speak(d.reply);
     } catch (err: any) {
-      if (err?.name === "AbortError") return;
-      if (mountedRef.current) setCurrentReply({ reply: "Erreur…", translation: "", words: [], suggestions: [] });
+      if (err?.name === "AbortError") { /* requête annulée — l'ancien message reste */ }
+      else if (mountedRef.current) setCurrentReply({ reply: "Erreur réseau…", translation: "", words: [], suggestions: [] });
     } finally { if (mountedRef.current) setIsLoading(false); }
   }, [speak]);
 
@@ -367,7 +486,6 @@ export default function POIClient({
       const d = await r.json();
       const text: string = d.text?.trim() ?? "";
       if (text) {
-        // Detect vocab from active quest (for session API)
         const aq = activeQuestRef.current;
         if (aq?.vocab?.length) {
           setSessionPracticedVocab(prev => {
@@ -378,7 +496,6 @@ export default function POIClient({
             return next;
           });
         }
-        // Detect vocab from all POI quests (for stats)
         if (allPoiVocabRef.current.length) {
           setSessionAllDetectedVocab(prev => {
             const next = new Set(prev);
@@ -406,19 +523,23 @@ export default function POIClient({
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 512;
       ctx.createMediaStreamSource(stream).connect(analyser);
+      analyserRef.current = analyser;
 
       const data = new Float32Array(analyser.fftSize);
       const mime = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
         ? "audio/webm;codecs=opus" : "audio/webm";
 
+      let triggerCount = 0;
+
       const tick = () => {
-        if (!audioCtxRef.current) return; // component unmounted
+        if (!audioCtxRef.current) return;
         analyser.getFloatTimeDomainData(data);
         const rms = Math.sqrt(data.reduce((s, v) => s + v * v, 0) / data.length);
 
         if (shouldListenRef.current && rms > VAD_THRESHOLD) {
-          if (!isRecordingRef.current) {
-            // Start a fresh recording for this utterance
+          triggerCount++;
+
+          if (!isRecordingRef.current && triggerCount >= VAD_TRIGGER_FRAMES) {
             chunksRef.current = [];
             const rec = new MediaRecorder(stream, { mimeType: mime });
             recorderRef.current = rec;
@@ -434,15 +555,20 @@ export default function POIClient({
             isRecordingRef.current = true;
             setIsRecording(true);
           }
-          // Reset silence countdown
-          if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-          silenceTimerRef.current = setTimeout(() => {
-            if (isRecordingRef.current && recorderRef.current?.state === "recording") {
-              recorderRef.current.stop();
-              isRecordingRef.current = false;
-              setIsRecording(false);
-            }
-          }, SILENCE_DELAY);
+
+          if (isRecordingRef.current) {
+            if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
+            silenceTimerRef.current = setTimeout(() => {
+              if (isRecordingRef.current && recorderRef.current?.state === "recording") {
+                recorderRef.current.stop();
+                isRecordingRef.current = false;
+                setIsRecording(false);
+              }
+            }, SILENCE_DELAY);
+          }
+        } else {
+          // En dessous du seuil : réinitialise le compteur pré-déclencheur
+          triggerCount = 0;
         }
 
         requestAnimationFrame(tick);
@@ -475,7 +601,6 @@ export default function POIClient({
         const data = await r.json();
         setSummaryVocabProgress(data.vocabWithMastery ?? []);
       } else {
-        // Build local summary if API fails (guest / error)
         setSummaryVocabProgress(info.vocab.map(v => ({
           ...v,
           mastery: computeMastery(practicedArr.includes(v.jp) ? 1 : 0, practicedArr.includes(v.jp) ? 1 : 0, 0),
@@ -555,7 +680,6 @@ export default function POIClient({
       setIsSpeaking(false);
     } else {
       ambientRef.current?.play().catch(() => {});
-      // Re-activate AudioContext if the browser suspended it
       audioCtxRef.current?.resume().catch(() => {});
     }
   }, [isPaused]);
@@ -565,6 +689,7 @@ export default function POIClient({
   // ── Load character + quests ──
   useEffect(() => {
     let cancelled = false;
+    mountedRef.current = true;
 
     Promise.all([
       fetch(`/api/characters/${poiId}`).then(r => r.ok ? r.json() : Promise.reject()),
@@ -580,7 +705,6 @@ export default function POIClient({
         voiceIdRef.current = c.voiceId ?? null;
         characterIdRef.current = c.id;
 
-        // ── Sounds ──
         if (c.scene?.entrySound) {
           const entry = new Audio(c.scene.entrySound);
           entry.volume = 0.7;
@@ -594,10 +718,8 @@ export default function POIClient({
           ambient.play().catch(() => {});
         }
 
-        // ── Start VAD ──
         startVAD();
 
-        // ── All POI vocab (deduped, for broad detection) ──
         const allVocabMap = new Map<string, VocabEntry>();
         q.forEach((qd: QuestData) => {
           ((qd.vocab ?? []) as VocabEntry[]).forEach(v => {
@@ -606,7 +728,6 @@ export default function POIClient({
         });
         allPoiVocabRef.current = Array.from(allVocabMap.values());
 
-        // ── Init quest ──
         let initQuest: ActiveQuest | null = null;
         if (questId) {
           const quest = q.find((qd: QuestData) => qd.id === questId);
@@ -618,7 +739,6 @@ export default function POIClient({
               ? (existing?.taskProgress?.filter((tp: { status: string }) => tp.status === "COMPLETED").length ?? 0)
               : 0;
 
-            // Reset session tracking for this quest
             sessionStartRef.current = Date.now();
             setSessionErrors(0);
             setSessionSuggestionsUsed(0);
@@ -659,13 +779,18 @@ export default function POIClient({
           ? ["Bonjour !", "Excusez-moi…", "Pouvez-vous m'aider ?"]
           : ["Bonjour !", "Comment ça va ?", "Qu'est-ce que vous recommandes ?"];
 
-        // Affichage immédiat avec breakdown stocké en DB (aucun appel API)
-        setCurrentReply({
+        setMessages([]);
+        messagesRef.current = [];
+
+        const greetingReply: AIReply = {
           reply: c.greetingMessage,
           translation: c.greetingTranslation ?? "",
           words: c.greetingWords ?? [],
           suggestions,
-        });
+        };
+        replyHistoryRef.current = [{ reply: greetingReply, userMsg: "" }];
+        setHistoryIndex(0);
+        setCurrentReply(greetingReply);
         speak(c.greetingMessage);
       })
       .catch(() => setNotFound(true));
@@ -675,23 +800,20 @@ export default function POIClient({
       mountedRef.current = false;
       shouldListenRef.current = false;
       isRecordingRef.current = false;
-      // Abort in-flight API calls
       speakAbortRef.current?.abort();
       chatAbortRef.current?.abort();
-      // Stop audio
       audioRef.current?.pause();
       ambientRef.current?.pause();
       window.speechSynthesis.cancel();
-      // Stop recorder without triggering transcription
       if (recorderRef.current) {
         recorderRef.current.onstop = null;
         if (recorderRef.current.state === "recording") recorderRef.current.stop();
         recorderRef.current = null;
       }
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-      // Close AudioContext — stops the VAD RAF loop
       audioCtxRef.current?.close();
       audioCtxRef.current = null;
+      analyserRef.current = null;
       streamRef.current?.getTracks().forEach(t => t.stop());
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -699,13 +821,21 @@ export default function POIClient({
 
   const isBusy = isLoading || isTranscribing;
 
+  // ── History navigation ──
+  const histEntry       = replyHistoryRef.current[historyIndex];
+  const displayedReply  = histEntry?.reply ?? currentReply;
+  const displayedUserMsg = histEntry?.userMsg ?? lastUserMsg;
+  const isViewingHistory = historyIndex < replyHistoryRef.current.length - 1;
+  const canGoBack       = historyIndex > 0;
+  const canGoForward    = isViewingHistory;
+
   const handleBack = useCallback(() => {
     window.speechSynthesis.cancel();
     speakAbortRef.current?.abort();
     chatAbortRef.current?.abort();
     setLeaving(true);
-    setTimeout(() => router.push(`/home/${citySlug}`), 450);
-  }, [router, citySlug]);
+    setTimeout(() => router.push(`/home/${citySlug}?poi=${poiId}`), 450);
+  }, [router, citySlug, poiId]);
 
   // ── Guards ──
   if (notFound) return <div className="flex h-screen items-center justify-center text-gray-400">Personnage introuvable.</div>;
@@ -748,37 +878,54 @@ export default function POIClient({
       )}
 
       {/* Background */}
-      <div className="absolute inset-0 bg-black">
+      <div className="absolute inset-0 bg-gray-100">
         <img
           src={bgSrc}
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
           onError={e => { (e.currentTarget as HTMLImageElement).src = "/background_placeholder.png"; }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-transparent" />
       </div>
 
       {/* Character sprite */}
       <div className="absolute bottom-0 right-0 z-10 h-full flex items-end pointer-events-none" style={{ width: "52%" }}>
-        <img src={character.image || "/character_placeholder.png"} alt={character.name}
+        <img
+          key={speakKey}
+          src={character.image || "/character_placeholder.png"} alt={character.name}
           onError={e => { (e.currentTarget as HTMLImageElement).src = "/character_placeholder.png"; }}
-          className="h-[92%] w-auto object-contain object-bottom"
-          style={{ filter: isSpeaking ? "drop-shadow(0 0 32px rgba(124,58,237,1))" : "drop-shadow(0 0 0px transparent)", transition: "filter .3s" }}
-          draggable={false} />
+          className={`h-[92%] w-auto object-contain object-bottom${speakKey > 0 ? " char-bounce" : ""}`}
+          draggable={false}
+        />
       </div>
+
+      {/* Speech bubble */}
+      {isSpeaking && (
+        <div
+          className="absolute z-20 pointer-events-none"
+          style={{ right: "49%", top: "16%", animation: "screen-fadein 0.15s ease-out" }}
+        >
+          <div className="relative bg-white rounded-2xl px-3 py-2 shadow-md border border-gray-100 flex items-center gap-1.5">
+            {[0, 1, 2].map(i => (
+              <div key={i} className="h-2 w-2 rounded-full bg-gray-400"
+                style={{ animation: `dot-pulse 1s ${i * 0.2}s ease-in-out infinite` }} />
+            ))}
+            <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-t border-r border-gray-100 rotate-45" />
+          </div>
+        </div>
+      )}
 
       {/* Top bar — left | center pause | right */}
       <div className="absolute top-0 left-0 right-0 z-50 flex items-start justify-between px-5 pt-4">
 
         {/* Left: quest info */}
         {activeQuest ? (
-          <div className="flex items-start gap-2 rounded-xl bg-black/65 px-3 py-2.5 backdrop-blur-sm border border-yellow-400/20" style={{ maxWidth: 260 }}>
+          <div className="flex items-start gap-2 rounded-xl bg-white/95 px-4 py-3 shadow-sm border border-yellow-400/30 backdrop-blur-sm" style={{ maxWidth: 420 }}>
             <span className="mt-0.5 shrink-0">🎯</span>
-            <div>
-              <p className="text-[9px] font-bold uppercase tracking-widest text-yellow-400/60">
+            <div className="flex-1 min-w-0">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-yellow-600">
                 {activeQuest.questTitle} — {activeQuest.currentTaskIndex + 1}/{activeQuest.tasks.length}
               </p>
-              <p className="text-[12px] font-semibold text-white/85 leading-snug mt-0.5">
+              <p className="text-[12px] font-semibold text-gray-800 leading-snug mt-0.5">
                 {activeQuest.tasks[activeQuest.currentTaskIndex]?.instruction}
               </p>
               <div className="mt-1.5 flex gap-1">
@@ -786,10 +933,18 @@ export default function POIClient({
                   <div key={i} className={`h-1 rounded-full transition-all duration-500 ${
                     i < activeQuest.currentTaskIndex ? "w-5 bg-emerald-400"
                     : i === activeQuest.currentTaskIndex ? "w-5 bg-yellow-400"
-                    : "w-3 bg-white/20"
+                    : "w-3 bg-gray-200"
                   }`} />
                 ))}
               </div>
+              {currentReply && !isBusy && !isPaused && (
+                <button
+                  onClick={() => setShowQuiz(true)}
+                  className="mt-2.5 w-full rounded-lg bg-emerald-500 hover:bg-emerald-400 active:scale-95 transition-all py-1.5 text-[11px] font-bold text-white tracking-wide"
+                >
+                  J&apos;ai compris ✓
+                </button>
+              )}
             </div>
           </div>
         ) : (
@@ -800,13 +955,13 @@ export default function POIClient({
         <div className="flex items-center gap-2">
           <button
             onClick={togglePause}
-            className="flex flex-col items-center gap-0.5 rounded-xl bg-black/60 px-5 py-2.5 backdrop-blur-sm hover:bg-black/80 transition-colors"
+            className="flex flex-col items-center gap-0.5 rounded-xl bg-white/95 px-5 py-2.5 shadow-sm backdrop-blur-sm hover:bg-white transition-colors"
           >
             {isPaused
-              ? <Play  className="h-5 w-5 text-white/80" />
-              : <Pause className="h-5 w-5 text-white/80" />
+              ? <Play  className="h-5 w-5 text-gray-700" />
+              : <Pause className="h-5 w-5 text-gray-700" />
             }
-            <span className="text-[9px] font-bold uppercase tracking-wider text-white/35">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400">
               {isPaused ? "Reprendre" : "Pause"}
             </span>
           </button>
@@ -817,32 +972,34 @@ export default function POIClient({
             const isWarn  = questTimeLeft <= 5 * 60;
             const isCrit  = questTimeLeft <= 60;
             return (
-              <div className={`rounded-xl bg-black/60 px-3 py-2.5 backdrop-blur-sm text-center min-w-[56px] ${isCrit ? "animate-pulse" : ""}`}>
+              <div className={`rounded-xl bg-white/95 px-3 py-2.5 shadow-sm backdrop-blur-sm text-center min-w-[56px] ${isCrit ? "animate-pulse" : ""}`}>
                 <p className={`text-base font-black tabular-nums leading-none ${
-                  isCrit ? "text-red-400" : isWarn ? "text-orange-400" : "text-white/70"
+                  isCrit ? "text-red-500" : isWarn ? "text-orange-500" : "text-gray-700"
                 }`}>{display}</p>
-                <p className="text-[8px] font-bold uppercase tracking-widest text-white/25 mt-0.5">Session</p>
+                <p className="text-[8px] font-bold uppercase tracking-widest text-gray-300 mt-0.5">Session</p>
               </div>
             );
           })()}
         </div>
 
-        {/* Right: back to map */}
+        {/* Right: menu button */}
         <button
-          onClick={handleBack}
-          className="flex items-center gap-2 rounded-xl bg-black/60 px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-white/70 backdrop-blur-sm hover:text-white transition-colors"
+          onClick={() => setShowMenu(true)}
+          className="flex flex-col items-center justify-center gap-[5px] rounded-xl bg-white/95 px-4 py-2.5 shadow-sm backdrop-blur-sm hover:bg-white transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" /> Carte
+          <span className="block w-5 h-[2px] rounded-full bg-gray-600" />
+          <span className="block w-5 h-[2px] rounded-full bg-gray-600" />
+          <span className="block w-5 h-[2px] rounded-full bg-gray-600" />
         </button>
       </div>
 
-      {/* Pause overlay — cliquable pour reprendre */}
+      {/* Pause overlay */}
       {isPaused && (
         <div
           className="absolute inset-0 z-40 flex items-center justify-center bg-black/55 backdrop-blur-sm cursor-pointer"
           onClick={togglePause}
         >
-          <div className="flex flex-col items-center gap-3 text-white/60">
+          <div className="flex flex-col items-center gap-3 text-white/80">
             <Play className="h-10 w-10" />
             <p className="text-sm font-bold uppercase tracking-widest">Appuyer pour reprendre</p>
           </div>
@@ -851,12 +1008,12 @@ export default function POIClient({
 
       {/* Session expired overlay */}
       {sessionExpired && !showSessionSummary && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md">
-          <div className="flex flex-col items-center gap-5 rounded-2xl border border-white/10 bg-gray-950/95 px-10 py-8 shadow-2xl">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md">
+          <div className="flex flex-col items-center gap-5 rounded-2xl border border-gray-200 bg-white px-10 py-8 shadow-2xl">
             <p className="text-4xl">⏱</p>
             <div className="text-center">
-              <p className="text-xl font-black text-white">Temps écoulé !</p>
-              <p className="text-sm text-white/40 mt-1.5">La session de 15 minutes est terminée.</p>
+              <p className="text-xl font-black text-gray-900">Temps écoulé !</p>
+              <p className="text-sm text-gray-500 mt-1.5">La session de 15 minutes est terminée.</p>
             </div>
             <div className="flex gap-3">
               {completedQuestInfo && (
@@ -869,7 +1026,7 @@ export default function POIClient({
               )}
               <button
                 onClick={handleBack}
-                className="rounded-full bg-white/10 border border-white/20 px-6 py-3 text-sm font-bold text-white hover:bg-white/20 transition-colors"
+                className="rounded-full bg-gray-100 border border-gray-200 px-6 py-3 text-sm font-bold text-gray-700 hover:bg-gray-200 transition-colors"
               >
                 Quitter
               </button>
@@ -880,213 +1037,256 @@ export default function POIClient({
 
       {/* Quest complete reward toast */}
       {questReward && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 rounded-2xl bg-gray-950/95 border border-white/10 px-6 py-4 shadow-2xl backdrop-blur-md"
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-1.5 rounded-2xl bg-white border border-gray-200 px-6 py-4 shadow-xl"
           style={{ minWidth: 260 }}>
-          <p className="text-base font-black text-white">
+          <p className="text-base font-black text-gray-900">
             {questReward.isReplay ? "🔄 Quête refaite !" : "🎉 Quête terminée !"}
           </p>
           {!questReward.isReplay && (questReward.xpGained > 0 || questReward.yensGained > 0) && (
             <div className="flex items-center gap-3 mt-0.5">
               {questReward.xpGained > 0 && (
-                <span className="rounded-full bg-violet-500/25 border border-violet-500/50 px-3 py-0.5 text-xs font-bold text-violet-300">
+                <span className="rounded-full bg-violet-500/25 border border-violet-500/50 px-3 py-0.5 text-xs font-bold text-violet-700">
                   +{questReward.xpGained} XP
                 </span>
               )}
               {questReward.yensGained > 0 && (
-                <span className="rounded-full bg-yellow-500/20 border border-yellow-500/40 px-3 py-0.5 text-xs font-bold text-yellow-300">
+                <span className="rounded-full bg-yellow-500/20 border border-yellow-500/40 px-3 py-0.5 text-xs font-bold text-yellow-700">
                   +¥{questReward.yensGained}
                 </span>
               )}
             </div>
           )}
           {questReward.leveledUp && (
-            <p className="text-xs font-bold text-violet-400 mt-0.5">✨ Niveau {questReward.newLevel} atteint !</p>
+            <p className="text-xs font-bold text-violet-600 mt-0.5">✨ Niveau {questReward.newLevel} atteint !</p>
           )}
           {questReward.isReplay && (
-            <p className="text-[11px] text-white/40 mt-0.5">Aucune récompense pour la reprise</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">Aucune récompense pour la reprise</p>
           )}
         </div>
       )}
 
       {/* Dialogue panel */}
+      {!hideDialogue && (
       <div className="absolute bottom-[72px] left-1/2 -translate-x-1/2 z-20 flex flex-col gap-2.5" style={{ width: "54%" }}>
 
-        {showTip && (
-          <div className="flex items-center justify-between rounded-lg bg-black/50 px-3 py-2 backdrop-blur-sm border border-white/8">
-            <p className="text-[10px] text-white/60">
-              💡 Parle en <span className="text-blue-400 font-semibold">français</span> pour obtenir des réponses en <span className="text-yellow-400 font-semibold">japonais</span>
-            </p>
-            <button onClick={() => setShowTip(false)} className="ml-3 text-[11px] text-white/30 hover:text-white/70 shrink-0">✕</button>
-          </div>
-        )}
-
         <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-full bg-violet-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
-            {character.name[0]}
+          <div className="h-14 w-14 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0 bg-violet-100">
+            <img
+              src={character.image || "/character_placeholder.png"}
+              alt={character.name}
+              className="h-full w-full object-cover object-top"
+              onError={e => { (e.currentTarget as HTMLImageElement).src = "/character_placeholder.png"; }}
+            />
           </div>
-          <span className="text-sm font-bold text-white">{character.name}</span>
-          <span className="text-[11px] text-white/35 font-medium">{character.nameJp}</span>
+          <span className="text-sm font-bold text-white drop-shadow-sm">{character.name}</span>
+          <span className="text-[11px] text-white/70 font-medium drop-shadow-sm">{character.nameJp}</span>
 
-          {/* Bouton cycle mode d'affichage */}
-          {currentReply && currentReply.words.length > 0 && (
-            <button
-              onClick={() => {
-                const idx = DISPLAY_MODES.indexOf(displayMode);
-                setDisplayMode(DISPLAY_MODES[(idx + 1) % DISPLAY_MODES.length]);
-              }}
-              title={MODE_CONFIG[displayMode].label}
-              className="flex flex-col items-center justify-center gap-[3px] h-8 w-8 rounded-full bg-black/75 border border-white/15 backdrop-blur-sm hover:border-white/35 active:scale-95 transition-all"
-            >
-              <span className="text-[11px] font-bold text-white leading-none">
-                {MODE_CONFIG[displayMode].char}
-              </span>
-              <span className={`h-[2px] w-3.5 rounded-full ${MODE_CONFIG[displayMode].color}`} />
-            </button>
-          )}
-
-          {/* VAD status indicator */}
-          {micReady && !isPaused && (
-            <span className={`ml-auto flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-wider ${
-              isRecording ? "text-red-400" : isSpeaking || isBusy ? "text-white/25" : "text-emerald-400/80"
-            }`}>
-              <span className={`inline-block h-1.5 w-1.5 rounded-full ${
-                isRecording    ? "bg-red-400 animate-pulse"
-                : isBusy      ? "bg-white/20"
-                : isSpeaking  ? "bg-violet-400/40"
-                : "bg-emerald-400/80 animate-pulse"
-              }`} />
-              {isRecording ? "Écoute" : isTranscribing ? "…" : isLoading ? "…" : isSpeaking ? "Parle" : "Prêt"}
+          {displayedUserMsg && (
+            <span className="ml-auto text-[11px] text-white/80 bg-black/30 backdrop-blur-sm rounded-full px-3 py-1 italic max-w-[45%] text-right leading-snug drop-shadow-sm truncate">
+              {displayedUserMsg}
             </span>
-          )}
-          {!micReady && !micError && !isPaused && (
-            <span className="ml-auto text-[9px] text-white/20">micro…</span>
           )}
         </div>
 
-        {lastUserMsg && <p className="text-xs text-white/40 italic pl-1">&gt; {lastUserMsg}</p>}
-
-        <div className="relative rounded-2xl bg-black/65 p-5 backdrop-blur-md border border-white/8 shadow-2xl">
-          {hasAudio && !isBusy && (
-            <div className="absolute top-3 right-3 flex items-center rounded-full bg-white/10 backdrop-blur-md border border-white/15 overflow-hidden">
+        <div className="relative rounded-2xl bg-white/95 p-5 backdrop-blur-md border border-gray-200 shadow-lg">
+          <div className="absolute top-3 right-3 flex items-center gap-2">
+            {/* Bouton masquer dialogue */}
+            <button
+              onClick={() => setHideDialogue(true)}
+              title="Mode immersion"
+              className="flex items-center justify-center h-8 w-8 rounded-full bg-gray-100 border border-gray-200 hover:border-gray-400 active:scale-95 transition-all"
+            >
+              <EyeOff className="h-3.5 w-3.5 text-gray-500" />
+            </button>
+            {/* Bouton cycle mode d'affichage */}
+            {displayedReply && (displayedReply.words?.length ?? 0) > 0 && (
               <button
-                onClick={() => replay(replaySpeed)}
-                className="flex items-center justify-center px-3 py-1.5 hover:bg-white/10 transition-colors"
-                title="Rejouer"
+                onClick={() => {
+                  const idx = DISPLAY_MODES.indexOf(displayMode);
+                  setDisplayMode(DISPLAY_MODES[(idx + 1) % DISPLAY_MODES.length]);
+                }}
+                title={MODE_CONFIG[displayMode].label}
+                className="flex flex-col items-center justify-center gap-[3px] h-8 w-8 rounded-full bg-gray-100 border border-gray-200 hover:border-gray-400 active:scale-95 transition-all"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-white/80">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                </svg>
+                <span className="text-[11px] font-bold text-gray-700 leading-none">
+                  {MODE_CONFIG[displayMode].char}
+                </span>
+                <span className={`h-[2px] w-3.5 rounded-full ${MODE_CONFIG[displayMode].color}`} />
               </button>
-              <div className="w-px h-4 bg-white/20" />
-              <button
-                onClick={() => setReplaySpeed(s => s === 1 ? 0.7 : 1)}
-                className="px-2.5 py-1.5 text-[11px] font-bold text-white/70 hover:text-white hover:bg-white/10 transition-colors tabular-nums"
-              >
-                {replaySpeed === 1 ? "x1" : ".7x"}
-              </button>
-            </div>
-          )}
+            )}
+            {/* Replay */}
+            {hasAudio && !isBusy && (
+              <div className="flex items-center rounded-full bg-gray-100 border border-gray-200 overflow-hidden">
+                <button
+                  onClick={() => replay(replaySpeed)}
+                  className="flex items-center justify-center px-3 py-1.5 hover:bg-gray-200 transition-colors"
+                  title="Rejouer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-gray-600">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                  </svg>
+                </button>
+                <div className="w-px h-4 bg-gray-200" />
+                <button
+                  onClick={() => setReplaySpeed(s => s === 1 ? 0.7 : 1)}
+                  className="px-2.5 py-1.5 text-[11px] font-bold text-gray-500 hover:text-gray-800 hover:bg-gray-200 transition-colors tabular-nums"
+                >
+                  {replaySpeed === 1 ? "x1" : ".7x"}
+                </button>
+              </div>
+            )}
+          </div>
           {isBusy ? (
-            <div className="flex items-center gap-3 text-white/40 py-2">
+            <div className="flex items-center gap-3 text-gray-400 pb-2">
               <div className="flex gap-1.5">
                 {[0,1,2].map(i => (
-                  <div key={i} className="h-1.5 w-1.5 rounded-full bg-white/30"
+                  <div key={i} className="h-1.5 w-1.5 rounded-full bg-gray-300"
                        style={{ animation: `dot-pulse 1.3s ${i * 0.18}s ease-in-out infinite` }} />
                 ))}
               </div>
               <span className="text-sm">{isTranscribing ? "Transcription…" : "Réflexion…"}</span>
             </div>
-          ) : currentReply ? (
-            <div className="flex flex-col gap-4">
-              {currentReply.words.length > 0 ? (
+          ) : displayedReply ? (
+            <div className={`flex flex-col gap-4 pr-36 transition-opacity duration-200 ${isViewingHistory ? "opacity-60" : ""}`}>
+              {(displayedReply.words?.length ?? 0) > 0 ? (
                 <>
-                  <WordRow words={currentReply.words} mode={displayMode} />
-                  {currentReply.translation && displayMode !== "romaji" && (
-                    <p className="text-xs text-white/40 border-t border-white/10 pt-3 mt-1 italic">
-                      {currentReply.translation}
+                  <WordRow words={displayedReply.words} mode={displayMode} />
+                  {displayedReply.translation && displayMode !== "romaji" && (
+                    <p className="text-xs text-gray-400 border-t border-gray-200 pt-3 mt-1 italic">
+                      {displayedReply.translation}
                     </p>
                   )}
                 </>
               ) : (
                 <>
-                  <p className="text-xl font-bold text-white leading-relaxed">{currentReply.reply}</p>
-                  {currentReply.translation && (
-                    <p className="text-xs text-white/40 border-t border-white/10 pt-3 italic">{currentReply.translation}</p>
+                  <p className="text-xl font-bold text-gray-900 leading-relaxed">{displayedReply.reply}</p>
+                  {displayedReply.translation && (
+                    <p className="text-xs text-gray-400 border-t border-gray-200 pt-3 italic">{displayedReply.translation}</p>
                   )}
                 </>
               )}
+
+              {/* Navigation historique */}
+              {replyHistoryRef.current.length > 1 && (
+                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                  <button
+                    onClick={() => setHistoryIndex(i => Math.max(0, i - 1))}
+                    disabled={!canGoBack}
+                    className={`flex items-center gap-1 text-[10px] font-semibold rounded-full px-2.5 py-1 transition-all ${
+                      canGoBack ? "text-gray-500 hover:bg-gray-100 cursor-pointer" : "text-gray-200 cursor-default"
+                    }`}
+                  >
+                    <ChevronLeft className="h-3 w-3" /> Précédent
+                  </button>
+                  <span className="text-[10px] text-gray-300 tabular-nums">
+                    {historyIndex + 1} / {replyHistoryRef.current.length}
+                  </span>
+                  <button
+                    onClick={() => setHistoryIndex(i => Math.min(replyHistoryRef.current.length - 1, i + 1))}
+                    disabled={!canGoForward}
+                    className={`flex items-center gap-1 text-[10px] font-semibold rounded-full px-2.5 py-1 transition-all ${
+                      canGoForward ? "text-gray-500 hover:bg-gray-100 cursor-pointer" : "text-gray-200 cursor-default"
+                    }`}
+                  >
+                    Suivant <ChevronRight className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
             </div>
           ) : null}
+
         </div>
 
-        {micError && <p className="text-[10px] text-red-400 pl-1">{micError}</p>}
+        {micError && <p className="text-[10px] text-red-500 pl-1">{micError}</p>}
       </div>
+      )}
 
-      {/* Bottom: suggestions button + quest verify */}
+      {/* Bottom: suggestions button + mic wave pill */}
       <div className="absolute bottom-5 left-0 right-0 z-30 flex justify-center items-center gap-2 px-4">
         {activeQuest && (activeQuest.tasks[activeQuest.currentTaskIndex]?.suggestions?.length ?? 0) > 0 && (
           <button
             onClick={() => { setShowSuggestions(true); setSessionSuggestionsUsed(p => p + 1); }}
-            className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/60 px-4 py-2.5 text-xs font-bold text-white/60 backdrop-blur-md transition-all hover:border-violet-500/40 hover:bg-violet-900/30 hover:text-white"
+            className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/95 px-4 py-2.5 text-xs font-bold text-gray-600 shadow-sm backdrop-blur-md transition-all hover:border-violet-400 hover:bg-violet-50 hover:text-violet-700"
           >
             💬 Suggestions
           </button>
         )}
-        {activeQuest && currentReply && !isBusy && (
+
+        {/* Mic wave pill — always visible, clic pour mute/unmute */}
+        <button
+          onClick={() => setMicMuted(m => !m)}
+          className={`flex items-center gap-2 rounded-full border px-4 py-2.5 shadow-sm backdrop-blur-md transition-colors ${
+            micMuted
+              ? "border-red-200 bg-red-50 hover:bg-red-100"
+              : "border-gray-200 bg-white/95 hover:bg-gray-50"
+          }`}
+          title={micMuted ? "Réactiver le micro" : "Couper le micro"}
+        >
+          {micMuted
+            ? <MicOff className="h-3.5 w-3.5 shrink-0 text-red-400" />
+            : <Mic    className={`h-3.5 w-3.5 shrink-0 transition-colors duration-300 ${isSpeaking ? "text-violet-500" : "text-gray-400"}`} />
+          }
+          <AudioWave analyserRef={analyserRef} isRecording={isRecording && !micMuted} isSpeaking={isSpeaking} isBusy={isBusy} />
+        </button>
+
+        {hideDialogue && (
           <button
-            onClick={() => setShowQuiz(true)}
-            className="flex items-center gap-1.5 rounded-full border border-yellow-400/50 bg-yellow-400/10 px-4 py-2.5 text-xs font-bold text-yellow-400 backdrop-blur-md hover:bg-yellow-400/20 transition-all shrink-0"
+            onClick={() => setHideDialogue(false)}
+            className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/95 px-4 py-2.5 text-xs font-bold text-gray-500 shadow-sm backdrop-blur-md hover:text-gray-800 transition-all"
           >
-            🎯 Vérifier
+            <Eye className="h-3.5 w-3.5" /> Afficher le texte
           </button>
         )}
       </div>
 
-      {/* Suggestions modal — pauses mic while open */}
+      {/* Suggestions modal */}
       {showSuggestions && activeQuest && (() => {
         const task = activeQuest.tasks[activeQuest.currentTaskIndex];
         const suggestions = task?.suggestions ?? [];
         return (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
             onClick={() => setShowSuggestions(false)}
           >
             <div
-              className="w-full max-w-sm rounded-2xl border border-white/10 bg-gray-950/95 shadow-2xl overflow-hidden"
+              className="w-full max-w-sm rounded-2xl border border-gray-100 bg-white shadow-2xl overflow-hidden"
               onClick={e => e.stopPropagation()}
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-white/8">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-violet-400/70">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-violet-600">
                     💬 Phrases utiles — Tâche {activeQuest.currentTaskIndex + 1}
                   </p>
-                  <p className="text-sm font-semibold text-white mt-0.5">{task?.instruction}</p>
+                  <p className="text-sm font-semibold text-gray-900 mt-0.5">{task?.instruction}</p>
                 </div>
                 <button
                   onClick={() => setShowSuggestions(false)}
-                  className="ml-3 shrink-0 rounded-full p-1.5 text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                  className="ml-3 shrink-0 rounded-full p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
                 >
                   ✕
                 </button>
               </div>
 
               {/* Phrase list */}
-              <div className="flex flex-col divide-y divide-white/6 max-h-[60vh] overflow-y-auto">
+              <div className="flex flex-col divide-y divide-gray-100 max-h-[60vh] overflow-y-auto">
                 {suggestions.map((s, i) => (
                   <div key={i} className="px-5 py-4 flex flex-col gap-1">
-                    <p className="text-[11px] font-medium text-white/40 uppercase tracking-wide">{s.fr}</p>
-                    <p className="text-2xl font-bold text-white leading-snug">{s.jp}</p>
-                    <p className="text-xs text-violet-300/70 italic">{s.romaji}</p>
+                    <p className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">{s.fr}</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-2xl font-bold text-gray-900 leading-snug">{s.jp}</p>
+                      <SuggestionPlayButton text={s.jp} />
+                    </div>
+                    <p className="text-xs text-violet-600 italic">{s.romaji}</p>
                   </div>
                 ))}
               </div>
 
               {/* Footer hint */}
-              <div className="px-5 py-3 border-t border-white/8 bg-white/3">
-                <p className="text-[10px] text-white/30 text-center">
+              <div className="px-5 py-3 border-t border-gray-100 bg-gray-50">
+                <p className="text-[10px] text-gray-400 text-center">
                   Mémorise les phrases, puis dis-les à voix haute 🎤
                 </p>
               </div>
@@ -1097,53 +1297,53 @@ export default function POIClient({
 
       {/* ── Quest complete modal ── */}
       {showQuestComplete && completedQuestInfo && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-md">
           <div className="flex min-h-full items-center justify-center px-4 py-8">
-          <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-gray-950/95 shadow-2xl overflow-hidden">
+          <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white shadow-2xl overflow-hidden">
             {/* Header */}
-            <div className="flex flex-col items-center gap-3 px-8 pt-8 pb-6 border-b border-white/8">
+            <div className="flex flex-col items-center gap-3 px-8 pt-8 pb-6 border-b border-gray-100">
               <p className="text-4xl">{completedQuestInfo.isReplay ? "🔄" : "🎉"}</p>
               <div className="text-center">
-                <p className="text-xl font-black text-white">
+                <p className="text-xl font-black text-gray-900">
                   {completedQuestInfo.isReplay ? "Quête refaite !" : "Quête terminée !"}
                 </p>
                 {!completedQuestInfo.isReplay && (completedQuestInfo.xpGained > 0 || completedQuestInfo.yensGained > 0) && (
                   <div className="flex items-center justify-center gap-3 mt-3">
                     {completedQuestInfo.xpGained > 0 && (
-                      <span className="rounded-full bg-violet-500/25 border border-violet-500/50 px-3 py-1 text-sm font-bold text-violet-300">
+                      <span className="rounded-full bg-violet-500/25 border border-violet-500/50 px-3 py-1 text-sm font-bold text-violet-700">
                         +{completedQuestInfo.xpGained} XP
                       </span>
                     )}
                     {completedQuestInfo.yensGained > 0 && (
-                      <span className="rounded-full bg-yellow-500/20 border border-yellow-500/40 px-3 py-1 text-sm font-bold text-yellow-300">
+                      <span className="rounded-full bg-yellow-500/20 border border-yellow-500/40 px-3 py-1 text-sm font-bold text-yellow-700">
                         +¥{completedQuestInfo.yensGained}
                       </span>
                     )}
                   </div>
                 )}
                 {completedQuestInfo.isReplay && (
-                  <p className="text-xs text-white/35 mt-2">Aucune récompense pour la reprise</p>
+                  <p className="text-xs text-gray-400 mt-2">Aucune récompense pour la reprise</p>
                 )}
               </div>
             </div>
 
-            {/* Vocab preview — top 3 words practiced */}
+            {/* Vocab preview */}
             {completedQuestInfo.vocab.length > 0 && (
-              <div className="px-6 py-5 border-b border-white/8">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-white/30 mb-3">
+              <div className="px-6 py-5 border-b border-gray-100">
+                <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400 mb-3">
                   Vocabulaire de cette quête
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {completedQuestInfo.vocab.slice(0, 6).map(v => (
                     <span key={v.jp}
-                      className="rounded-full px-2.5 py-1 text-xs font-bold text-white/70 border border-white/10 bg-white/5"
+                      className="rounded-full px-2.5 py-1 text-xs font-bold border bg-white"
                       style={{ borderColor: JLPT_COLORS[v.jlpt] + "40", color: JLPT_COLORS[v.jlpt] }}
                     >
                       {v.jp}
                     </span>
                   ))}
                   {completedQuestInfo.vocab.length > 6 && (
-                    <span className="rounded-full px-2.5 py-1 text-xs text-white/30 border border-white/8">
+                    <span className="rounded-full px-2.5 py-1 text-xs text-gray-400 border border-gray-200">
                       +{completedQuestInfo.vocab.length - 6}
                     </span>
                   )}
@@ -1270,17 +1470,17 @@ export default function POIClient({
       {/* ── Quiz modal ── */}
       {showQuiz && activeQuest && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
           onClick={e => { if (e.target === e.currentTarget) { setShowQuiz(false); setChoiceResult(null); } }}
         >
-          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-gray-950/95 p-6 shadow-2xl">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-yellow-400/70 mb-1">
+          <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-yellow-600 mb-1">
               🎯 Tâche {activeQuest.currentTaskIndex + 1}/{activeQuest.tasks.length}
             </p>
-            <h3 className="text-base font-bold text-white mb-1">
+            <h3 className="text-base font-bold text-gray-900 mb-1">
               {activeQuest.tasks[activeQuest.currentTaskIndex]?.instruction}
             </h3>
-            <p className="text-xs text-white/40 mb-5">Que t&apos;a dit {character.name} ?</p>
+            <p className="text-xs text-gray-400 mb-5">Que t&apos;a dit {character.name} ?</p>
 
             <div className="flex flex-col gap-2.5">
               {activeQuest.tasks[activeQuest.currentTaskIndex]?.choices.map(choice => {
@@ -1288,14 +1488,14 @@ export default function POIClient({
                 const showCorrect = !!choiceResult && choiceResult.correct && choice.isCorrect;
 
                 const style = !choiceResult
-                  ? "border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/25 cursor-pointer"
+                  ? "border-gray-200 bg-gray-50 hover:bg-gray-100 hover:border-gray-300 cursor-pointer"
                   : isSelected && choiceResult.correct
-                  ? "border-emerald-500 bg-emerald-500/20"
+                  ? "border-emerald-500 bg-emerald-50"
                   : isSelected && !choiceResult.correct
-                  ? "border-red-500 bg-red-500/15"
+                  ? "border-red-500 bg-red-50"
                   : showCorrect
-                  ? "border-emerald-500/50 bg-emerald-500/10"
-                  : "border-white/5 bg-white/3 opacity-40";
+                  ? "border-emerald-500/50 bg-emerald-50"
+                  : "border-gray-100 bg-gray-50/50 opacity-40";
 
                 return (
                   <button key={choice.id} disabled={!!choiceResult}
@@ -1310,7 +1510,7 @@ export default function POIClient({
                         setTimeout(() => setChoiceResult(null), 1200);
                       }
                     }}
-                    className={`w-full rounded-xl border px-4 py-3 text-left text-sm font-medium text-white transition-all ${style}`}
+                    className={`w-full rounded-xl border px-4 py-3 text-left text-sm font-medium text-gray-900 transition-all ${style}`}
                   >
                     <span className="flex items-center gap-2">
                       {isSelected && choiceResult?.correct  && <span>✅</span>}
@@ -1321,6 +1521,109 @@ export default function POIClient({
                   </button>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Menu modal ── */}
+      {showMenu && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+          onClick={() => setShowMenu(false)}
+        >
+          <div
+            className="w-full max-w-xs rounded-2xl bg-white shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">Menu</h3>
+              <button
+                onClick={() => setShowMenu(false)}
+                className="rounded-full p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-col p-3 gap-1.5">
+
+              {/* Volume — non fonctionnel */}
+              <div className="flex items-center gap-3 rounded-xl px-4 py-3 bg-gray-50 border border-gray-100">
+                <span className="text-lg">🔊</span>
+                <div className="flex-1">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Volume voix</p>
+                  <input
+                    type="range" min={0} max={100} defaultValue={80} disabled
+                    className="w-full mt-1 accent-violet-500 opacity-40 cursor-not-allowed"
+                  />
+                </div>
+                <span className="text-[10px] text-gray-300 font-medium">Bientôt</span>
+              </div>
+
+              <div className="flex items-center gap-3 rounded-xl px-4 py-3 bg-gray-50 border border-gray-100">
+                <span className="text-lg">🎵</span>
+                <div className="flex-1">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Volume ambiance</p>
+                  <input
+                    type="range" min={0} max={100} defaultValue={30} disabled
+                    className="w-full mt-1 accent-violet-500 opacity-40 cursor-not-allowed"
+                  />
+                </div>
+                <span className="text-[10px] text-gray-300 font-medium">Bientôt</span>
+              </div>
+
+              <div className="h-px bg-gray-100 my-1" />
+
+              {/* Retour à la carte */}
+              <button
+                onClick={() => { setShowMenu(false); setShowBackConfirm(true); }}
+                className="flex items-center gap-3 rounded-xl px-4 py-3 text-left hover:bg-red-50 hover:border-red-200 border border-transparent transition-all group"
+              >
+                <ArrowLeft className="h-4 w-4 text-gray-400 group-hover:text-red-500 transition-colors" />
+                <div>
+                  <p className="text-sm font-semibold text-gray-700 group-hover:text-red-600 transition-colors">Retourner à la carte</p>
+                  <p className="text-[10px] text-gray-400">Quitter la session en cours</p>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Confirmation retour carte ── */}
+      {showBackConfirm && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+          onClick={() => setShowBackConfirm(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="px-6 pt-7 pb-5 flex flex-col items-center gap-3 text-center">
+              <div className="h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center text-2xl">⚠️</div>
+              <div>
+                <p className="text-base font-black text-gray-900">Êtes-vous sûr ?</p>
+                <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">
+                  Votre ticket sera quand même consommé et la progression de la quête ne sera pas sauvegardée.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2.5 px-6 pb-6">
+              <button
+                onClick={() => setShowBackConfirm(false)}
+                className="flex-1 rounded-xl border border-gray-200 bg-gray-50 py-3 text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleBack}
+                className="flex-1 rounded-xl bg-red-500 py-3 text-sm font-bold text-white hover:bg-red-400 transition-colors"
+              >
+                Quitter quand même
+              </button>
             </div>
           </div>
         </div>

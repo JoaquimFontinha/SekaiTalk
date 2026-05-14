@@ -137,19 +137,32 @@ export async function POST(req: NextRequest) {
     break;
   }
 
-  const cleaned = finalText
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/```\s*$/i, "")
+  // Try 1: strip markdown fences
+  const stripped = finalText
+    .replace(/^```(?:json)?\s*/im, "")
+    .replace(/```\s*$/im, "")
     .trim();
 
   try {
-    return NextResponse.json(JSON.parse(cleaned));
-  } catch {
-    return NextResponse.json({
-      reply: cleaned,
-      translation: "",
-      words: [],
-      suggestions: [],
-    });
+    return NextResponse.json(JSON.parse(stripped));
+  } catch {}
+
+  // Try 2: extract first JSON object anywhere in the text
+  const jsonMatch = finalText.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      return NextResponse.json(JSON.parse(jsonMatch[0]));
+    } catch {}
   }
+
+  // Try 3: extract Japanese text before any JSON/code block, use as plain reply
+  const preJsonMatch = finalText.match(/^([\s\S]*?)(?=\n?```|\n?\{)/);
+  const fallbackReply = (preJsonMatch?.[1] ?? stripped).trim();
+
+  return NextResponse.json({
+    reply: fallbackReply || "…",
+    translation: "",
+    words: [],
+    suggestions: [],
+  });
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -111,7 +111,8 @@ function MapClickBlocker() { useMapEvents({}); return null; }
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function CityClient({ citySlug }: { citySlug: string }) {
-  const router = useRouter();
+  const router       = useRouter();
+  const searchParams = useSearchParams();
   const { activeType, setActiveType, poiClickRef, mapBgClickRef, mapRef } = useMapCtx();
 
   // Modal state
@@ -189,6 +190,14 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
   const closeModal = useCallback(() => {
     setSelectedPoi(null);
     setPoiQuests([]);
+  }, []);
+
+  // Retour depuis une conversation — repositionne la map sur le POI visité
+  useEffect(() => {
+    const returnPoiId = searchParams.get("poi");
+    if (!returnPoiId) return;
+    handlePoiClick(returnPoiId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // City loading screen — hide once map has finished flying in

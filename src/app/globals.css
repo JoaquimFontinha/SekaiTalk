@@ -283,6 +283,20 @@ body {
   border-color: rgba(255, 255, 255, 1);
 }
 
+/* ── Character speaking animation ───────────────────────────── */
+@keyframes char-bounce {
+  0%   { transform: translateY(0);     }
+  28%  { transform: translateY(-22px); }
+  52%  { transform: translateY(-8px);  }
+  70%  { transform: translateY(-16px); }
+  86%  { transform: translateY(-3px);  }
+  100% { transform: translateY(0);     }
+}
+.char-bounce {
+  animation: char-bounce 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  transform-origin: bottom center;
+}
+
 /* ── Loading screens ─────────────────────────────────────────── */
 @keyframes loadbar-slide {
   0%   { transform: translateX(-100%); }

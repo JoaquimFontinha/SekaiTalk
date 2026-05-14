@@ -111,9 +111,9 @@ Deux fichiers d'env :
 | Route | Méthode | Description |
 |-------|---------|-------------|
 | `/api/characters/[poiId]` | GET | Récupère le personnage via `CharacterAppearance` + `Scene` du POI ; retourne `{...character, locationContext, scene}` |
-| `/api/chat` | POST | Envoie un message à Claude Haiku. Body : `{messages, systemPrompt, characterId}`. Retourne `{reply, translation, words, suggestions}`. Agentic loop (max 5 tours) avec outil `remember_fact` si personnage `isFriendable` |
+| `/api/chat` | POST | Envoie un message à Claude Haiku. Body : `{messages, systemPrompt, characterId}`. Retourne `{reply, translation, words, suggestions}`. Agentic loop (max 5 tours) avec outil `remember_fact` si personnage `isFriendable`. Parsing JSON en 3 niveaux (strip fences → regex extract → fallback texte brut) |
 | `/api/analyze` | POST | Analyse un texte japonais, retourne `{translation, words}`. Usage ponctuel (admin/seed) — ne pas appeler au runtime |
-| `/api/transcribe` | POST | Transcrit un audio via Groq Whisper (`language: "ja"`, prompt japonais) |
+| `/api/transcribe` | POST | Transcrit un audio via Groq Whisper (`language: "ja"`, prompt court `"日本語"`, filtres qualité segments + filtre hallucination) |
 | `/api/tts` | POST | TTS ElevenLabs server-side (`{text, voiceId}`), retourne `audio/mpeg` |
 | `/api/user/stats` | GET | Stats XP/Yens/niveau de l'utilisateur connecté |
 | `/api/contacts` | GET | Liste tous les personnages `isFriendable + isActive` avec `memoryCount` (groupBy CharacterMemory) et `locations` (POIs résolus depuis cities.ts) |
@@ -336,7 +336,71 @@ Modal plein-écran simulant un iPhone japonais. Déclenché via le bouton **Tél
 - En cas d'erreur réseau → calcul local avec `computeMastery`
 - `setSummaryVocabProgress` + `setShowSessionSummary(true)`
 
-**`shouldListenRef`** bloqué si : `isPaused || isSpeaking || isLoading || isTranscribing || showSuggestions || sessionExpired || showQuestComplete || showSessionSummary`
+**`shouldListenRef`** bloqué si : `isPaused || isSpeaking || isLoading || isTranscribing || showSuggestions || sessionExpired || showQuestComplete || showSessionSummary || micMuted`
+
+### POIClient — UI et architecture de la boîte de dialogue
+
+`src/app/home/[city]/[poi]/POIClient.tsx` — page de conversation IA. Interface en **light mode** (fond blanc/gris clair).
+
+**Header personnage** (haut de la boîte de dialogue) :
+- Photo ronde du personnage (48px) + nom blanc en gras + titre en petit
+- Bulle utilisateur inline avec le header : `ml-auto`, texte italique tronqué 45% max-width, `bg-black/30 backdrop-blur-sm rounded-full`. Positionnée dans la même ligne que le nom/photo, jamais derrière les boutons.
+
+**Boîte de dialogue** :
+- Fond blanc/95, blur, ombre violette. Pas de `pt-10` — le padding top est nul, seul `pr-36` est appliqué côté droit (pour ne pas chevaucher les boutons flottants droits).
+- Affiche `displayedReply.reply` (kanji + furigana) + traduction française + mots découpés
+- Les boutons flottants (replay TTS, romaji toggle, display toggle) sont positionnés `absolute right-3 top-3`
+
+**Navigation historique** :
+- `replyHistoryRef` (ref, pas state) accumule `{ reply: AIReply, userMsg: string }` à chaque réponse IA
+- `historyIndex` (state) pointe sur l'entrée courante. Défaut : `0` (salutation)
+- Variables calculées avant le `return` : `displayedReply`, `displayedUserMsg`, `isViewingHistory`, `canGoBack`, `canGoForward`
+- Boutons ← Précédent / Suivant → affichés uniquement si `replyHistoryRef.current.length > 1`, avec compteur `n / total`
+- Quand l'IA répond : `historyIndex` avance automatiquement au dernier item
+- `sendMessage` ne réinitialise PAS `currentReply` (évite l'écran vide si annulation). L'état de chargement est géré par `isBusy`.
+
+**Historique de messages** :
+- Initialisé vide `[]` — la salutation du personnage n'est pas dans les messages envoyés à l'API
+- La salutation est dans `replyHistoryRef.current[0]` uniquement (navigation historique client-side)
+- Évite le bug "pre-fill" de l'API Anthropic (réponse avec `assistant` en premier message vide les `words`)
+
+**Injection aiContext** :
+- Labelisé `[CONTEXTE DE LA TÂCHE N/N — information de fond, ne pas aborder directement]`
+- Si premier message : ajoute `, répondre d'abord naturellement au message de l'utilisateur`
+- Empêche l'IA de répondre directement avec le contenu de la quête sur un simple bonjour
+
+**Bouton Menu** (remplace le bouton Carte) :
+- 3 traits hamburger + label "Menu" en dessous (`text-[9px]`), `rounded-xl bg-white/95`
+- Ouvre `showMenu` → modale avec : réglages volume (placeholder non fonctionnel) + "Retourner à la carte"
+- "Retourner à la carte" → ouvre `showBackConfirm` → modale de confirmation : "votre ticket sera consommé et la progression non sauvegardée" → bouton confirmer → `handleBack`
+- `handleBack` navigue vers `/home/${citySlug}?poi=${poiId}` (rouvre le drawer du POI dans CityClient)
+
+**Retour vers CityClient** :
+- `handleBack` ajoute `?poi=${poiId}` dans l'URL de retour
+- `CityClient` lit le param `?poi=` au mount → ouvre automatiquement le drawer du POI correspondant
+
+**Quest box** (haut gauche) :
+- `maxWidth: 420px` (anciennement 320px)
+- Bouton "J'ai compris ✓" désactivé (`opacity-50 pointer-events-none`) quand `isPaused`
+
+**`SuggestionPlayButton`** (composant dans `POIClient.tsx`) :
+- Bouton lecture Web Speech API gratuit, dans chaque ligne du panneau Suggestions
+- Même UI pill que le bouton replay de la boîte de dialogue : fond `bg-gray-100 border border-gray-200`, `rounded-full`
+- Icône haut-parleur SVG + séparateur + bouton vitesse `x1` / `.7x` (toggle)
+- `utter.lang = "ja-JP"`, `utter.rate = speed * 0.85`. Cherche une voix japonaise via `getVoices().find(v => v.lang.startsWith("ja"))`
+- Un seul bouton replay par suggestion (pas de doublon)
+
+### Whisper — filtres anti-hallucination (`/api/transcribe`)
+
+Whisper hallucine le contenu du prompt quand il n'y a pas de vraie parole.
+
+- **Prompt court** : `"日本語"` uniquement (l'ancien prompt long était reproduit tel quel)
+- **Filtre segments** : garde uniquement les segments avec `no_speech_prob < 0.4` et `avg_logprob > -1.0`. Si aucun segment valide → retourne `{ text: "" }`
+- **Filtre hallucination** `isHallucination(text)` :
+  - Longueur < 3 caractères
+  - Texte exact dans `HALLUCINATIONS` : `["日本語", "ご視聴", "字幕", "翻訳", "ありがとうございました", "お願いします。", "です。", "ます。"]`
+  - Uniquement ponctuation/espaces : `/^[。、．，\s]+$/`
+- Appliqué sur le texte reconstruit des segments ET sur `data.text` (fallback sans segments)
 
 ### Carte illustrée (`IllustratedMap`)
 
@@ -365,15 +429,17 @@ Modal plein-écran simulant un iPhone japonais. Déclenché via le bouton **Tél
 Remplace le push-to-talk. Le micro est ouvert en permanence après le chargement du personnage.
 
 - **Démarrage** : `startVAD()` appelé dans le `useEffect` de chargement. Crée un `AudioContext` + `AnalyserNode` (fftSize 512). Stream micro gardé ouvert toute la session
-- **Détection** : boucle `requestAnimationFrame` calcule le RMS sur chaque frame. Si `rms > VAD_THRESHOLD (0.025)` et `shouldListenRef.current = true` → démarre un `MediaRecorder` frais
-- **Fin d'énoncé** : silence > `SILENCE_DELAY (1200ms)` → stoppe le recorder → envoie à `/api/transcribe`
+- **Constantes** : `VAD_THRESHOLD = 0.042`, `VAD_TRIGGER_FRAMES = 5`, `SILENCE_DELAY = 1400ms`, `MIN_RECORD_MS = 600ms`
+- **Détection** : boucle `requestAnimationFrame` calcule le RMS sur chaque frame. Le déclenchement nécessite `VAD_TRIGGER_FRAMES` (5) frames consécutives au-dessus du seuil — évite les faux déclenchements (frappe clavier, bruit bref). `triggerCount` est remis à 0 dès qu'une frame est sous le seuil.
+- **Fin d'énoncé** : silence > `SILENCE_DELAY (1400ms)` → stoppe le recorder → envoie à `/api/transcribe`
 - **Détection vocab** : dans le callback `transcribe`, double scan :
   1. contre `aq.vocab[].jp/kana` → `setSessionPracticedVocab` (quête courante, envoyé à l'API)
   2. contre `allPoiVocabRef.current[].jp/kana` → `setSessionAllDetectedVocab` (toutes quêtes, stats uniquement)
-- **Filtre bruit court** : enregistrement ignoré si durée < `MIN_RECORD_MS (400ms)`
-- **shouldListenRef** : `false` si `isPaused || isSpeaking || isLoading || isTranscribing || showSuggestions || sessionExpired || showQuestComplete || showSessionSummary`
+- **Filtre bruit court** : enregistrement ignoré si durée < `MIN_RECORD_MS (600ms)`
+- **shouldListenRef** : `false` si `isPaused || isSpeaking || isLoading || isTranscribing || showSuggestions || sessionExpired || showQuestComplete || showSessionSummary || micMuted`
 - **Mobile HTTP** : guard `if (navigator.mediaDevices)` obligatoire
 - **Cleanup** : `audioCtxRef.current?.close()` + `streamRef.current?.getTracks().forEach(t => t.stop())` à l'unmount
+- **Pas d'indicateur VAD** : aucun texte "PRÊT"/"ÉCOUTE" dans l'UI — la détection est silencieuse
 
 ### Bouton Pause (POIClient)
 
