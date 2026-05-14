@@ -145,9 +145,11 @@ Types et constantes partagés entre client et serveur :
 
 ### Catégories POI (`POIType`)
 
-`"transport" | "konbini" | "izakaya" | "site" | "market" | "loisir" | "shop" | "restaurant" | "cafe"`
+`"transport" | "konbini" | "izakaya" | "site" | "market" | "loisir" | "shop" | "restaurant" | "cafe" | "hotel" | "pharmacie" | "medecin" | "poste"`
 
-- `transport` (ex-`station`), `site` (ex-`temple`+`landmark`), `loisir` (nouveau) — ces renommages sont définitifs dans `cities.ts`, `GameMap3D.tsx`, `CityClient.tsx`, `IllustratedMap.tsx`
+- `transport`, `site`, `loisir`, `shop`, `restaurant`, `cafe`, `konbini`, `izakaya`, `market` — types historiques
+- `hotel` (#0891b2 cyan), `pharmacie` (#059669 vert), `medecin` (#ef4444 rouge), `poste` (#d97706 ambre) — ajoutés pour Tokyo v2
+- Chaque nouveau type a ses entrées dans `POI_COLORS` + `POI_ICONS` (GameMap3D) et `POI_META` (CityClient)
 - Logos de POI : `src/lib/poi-logos.ts` — `Record<poiId, string>` importé par `GameMap3D` et `CityClient`. Logos dans `public/images/pois/logos/`
 
 ### Sidebar CityClient (`src/app/home/[city]/CityClient.tsx`)
@@ -157,13 +159,14 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 **État étendu (448px)** — contenu identique à `HomeClient` :
 - Header : logo 🗾 violet + "SekaiTalk" + bouton `ChevronLeft` (collapse + `setSidebarPanel(null)`)
 - Objectifs du jour : 3 tâches avec `CheckCircle2`/`Circle`
-- Navigation : 4 boutons fonctionnels (Lieux, Contacts, Évènements, Révision `disabled`). Section `flex-1`.
+- Navigation : 4 boutons (Lieux, Contacts, Évènements, Révision `disabled`) + bouton **Téléphone** inséré après Évènements (`i === 2` dans `.map()`). Section `flex-1`.
 - Mes stats : grille 3 colonnes (statiques)
 - Paramètres : footer `opacity-40`
 
 **État collapsé (60px)** :
 - Logo 🗾 violet (clic → expand)
 - 4 icônes nav (clic → `setSidebarExpanded(true)` + `setSidebarPanel(panel)`)
+- Icône `Smartphone` (clic → `setShowPhone(true)`) avant `ChevronRight`
 - `ChevronRight` en bas (expand)
 
 **Panneaux flottants** (`z-[1000]`, `left: 484`, `top: 20`, `height: calc(100vh - 40px)`, `rounded-2xl bg-white`, même shadow que la sidebar). Toujours affichés avec la sidebar étendue (collapse ferme le panneau).
@@ -218,7 +221,7 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 
 **Gradient** : `background: radial-gradient(ellipse farthest-corner at 54% 50%, #3a5fa0, #1a3568)` sur le container.
 
-**Centrage** : `initialViewState` → `longitude: 134.0, latitude: 36.8, zoom: 5.4, pitch: 30` — recentré vers l'ouest pour laisser la sidebar visible sans occulter le Japon.
+**Centrage** : `initialViewState` → `longitude: 134.0, latitude: 34.5, zoom: 5.2, pitch: 55, bearing: -12` — vue isométrique légèrement de côté, latitude abaissée pour compenser la perspective.
 
 **Pins** : classe CSS `gm3d-poi` réutilisée depuis la city map. `gm3d-city-label` = label toujours visible sous chaque pin (blanc 8.5px, letter-spacing 0.22em). Villes verrouillées : `gm3d-poi--locked` (opacity 0.6, grayscale, pas d'hover lift).
 
@@ -247,7 +250,7 @@ Le wrapper `children` dans `HomeShell` a `pointerEvents: none` quand une map Map
 - 5 sections séparées par des dividers `h-px bg-gray-100` avec `mx-7` :
   1. **Header** — logo 🗾 violet 56px + "SekaiTalk" bold
   2. **Objectifs du jour** — 3 tâches quotidiennes avec `CheckCircle2` / `Circle` (statiques pour l'instant, à brancher sur une API)
-  3. **Navigation** — 4 items (Lieux, Contacts, Évènements, Révision), `opacity-40 cursor-default` (désactivés sur `/home`). Section `flex-1` pour absorber l'espace libre et pousser stats + footer vers le bas
+  3. **Navigation** — 4 items `opacity-40 cursor-default` (Lieux, Contacts, Évènements, Révision) + bouton **Téléphone** inséré après Évènements (actif, `onClick={() => setShowPhone(true)}`). Section `flex-1`.
   4. **Mes stats** — grille 3 colonnes : Conversations / Mots maîtrisés / Quêtes terminées (valeurs `"—"` à brancher)
   5. **Paramètres** — footer, `opacity-40 cursor-default`
 - `pointer-events-auto` explicite — le wrapper `children` dans `HomeShell` est `pointer-events-none`
@@ -259,6 +262,34 @@ Le wrapper `children` dans `HomeShell` a `pointerEvents: none` quand une map Map
 - **Bell** `h-6 w-6`
 - **Avatar XP ring** (style Pokémon GO) : SVG 64px avec `strokeDashoffset` calculé sur `userStats.percent`, rotated `-90deg`. Avatar intérieur `h-11 w-11 bg-gray-100`. Label `Lv. {level}` en dessous.
 - Taille globale : `px-6 py-4`, gap `gap-5`
+
+### PhoneOverlay (`src/components/PhoneOverlay.tsx`)
+
+Modal plein-écran simulant un iPhone japonais. Déclenché via le bouton **Téléphone** dans la sidebar de `HomeClient` et `CityClient`.
+
+**Dimensions** : 292×600px (ratio 37:76), `BR=50`, `HUE=284` (violet profond).
+
+**Frame** :
+- Fond `#040404`, anneau métallique via `boxShadow` multicouche
+- Bande centrale métallique : div absolu `borderTop/Bottom: "3px solid hsl(284,14%,26%)"`
+- 3 boutons gauche + 1 bouton droit via helper `btnStyle(flip?)` — inset shadows 3D
+
+**Écran** :
+- Background deux sections (`sectionBg(bottom)`) : top 62% + bottom 45% `scaleY(-1)`, gradients radiaux superposés
+- Dynamic island : pill statique `44% width × 34px`, dot caméra inclus
+- Status bar : heure Tokyo (`Asia/Tokyo`, mise à jour chaque seconde) + icônes signal/wifi/batterie SVG
+- Horloge : grande police `fontWeight: 200`, sous-titre "Tokyo · 東京"
+- Grille apps : 4 colonnes, 12 apps avec gradients uniques (`AppIcon` — squircles purs, pas de texte dans l'icône)
+- Dock glass : `backdropFilter: blur(28px)`, 4 apps
+- Home indicator : pill `130×5px rgba(255,255,255,0.28)`
+
+**`AppIcon`** : `borderRadius: "22%"` + gradient `170deg` + highlight spéculaire + inset box-shadow. Hover `scale-110`, active `scale-95`.
+
+**Animation d'entrée** : état `visible` déclenché via `requestAnimationFrame` après le mount. `transform: scale(0.88) translateY(32px) → scale(1) translateY(0)`, easing spring `cubic-bezier(0.34,1.56,0.64,1)` 0.55s. Backdrop opacity 0→1 en 0.3s.
+
+**Fermeture** : clic sur le fond noir ou bouton `X` en haut à droite.
+
+**Usage futur** : les apps (LINE, Amazon, Rakuten, Maps, PayPay, Suica…) serviront de points d'entrée vers des fonctionnalités d'immersion Japon.
 
 ### Carte 3D Tokyo (`GameMap3D`)
 

@@ -84,6 +84,10 @@ const POI_META: Record<POIType, { label: string; color: string; icon: string }> 
   shop:       { label: "Shop",       color: "#ec4899", icon: "🛍️" },
   restaurant: { label: "Restaurant", color: "#f43f5e", icon: "🍔" },
   cafe:       { label: "Café",       color: "#92400e", icon: "☕" },
+  hotel:      { label: "Hôtel",      color: "#0891b2", icon: "🏨" },
+  pharmacie:  { label: "Pharmacie",  color: "#059669", icon: "💊" },
+  medecin:    { label: "Médecin",    color: "#ef4444", icon: "🏥" },
+  poste:      { label: "Poste",      color: "#d97706", icon: "📮" },
 };
 
 function createMarkerIcon(name: string, type: POIType) {
@@ -108,7 +112,7 @@ function MapClickBlocker() { useMapEvents({}); return null; }
 
 export default function CityClient({ citySlug }: { citySlug: string }) {
   const router = useRouter();
-  const { activeType, setActiveType, poiClickRef, mapRef } = useMapCtx();
+  const { activeType, setActiveType, poiClickRef, mapBgClickRef, mapRef } = useMapCtx();
 
   // Modal state
   const [selectedPoi, setSelectedPoi]     = useState<POI | null>(null);
@@ -165,7 +169,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
   // Camera fly-to for panel preview
   const flyToPoi = useCallback((poi: POI) => {
     const map = (mapRef as React.RefObject<any>).current?.getMap?.();
-    if (map) map.flyTo({ center: [poi.lng, poi.lat], zoom: 17, pitch: 60, duration: 1500 });
+    if (map) map.flyTo({ center: [poi.lng, poi.lat], zoom: 19, pitch: 75, duration: 1800 });
   }, [mapRef]);
 
   const handlePoiClick = useCallback((poiId: string) => {
@@ -235,11 +239,16 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [city.use3DMap]);
 
-  // Register click handler into shared ref so the persistent map can call it
+  // Register click handlers into shared refs so the persistent map can call them
   useEffect(() => {
     poiClickRef.current = handlePoiClick;
     return () => { poiClickRef.current = null; };
   }, [handlePoiClick, poiClickRef]);
+
+  useEffect(() => {
+    mapBgClickRef.current = () => setSidebarPanel(null);
+    return () => { mapBgClickRef.current = null; };
+  }, [mapBgClickRef]);
 
   // Fetch quest counts for all POIs when Lieux panel opens
   useEffect(() => {
@@ -941,16 +950,6 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                 ) : (
                   <p className="py-3 text-center text-[11px] text-white/25">Aucune quête disponible ici pour l&apos;instant.</p>
                 )}
-              </div>
-
-              {/* Free conversation */}
-              <div className="pb-2">
-                <button
-                  onClick={() => { closeModal(); if (selectedPoi) router.push(`/home/${citySlug}/${selectedPoi.id}`); }}
-                  className="w-full rounded-xl border border-white/12 bg-white/5 px-4 py-3 text-xs font-bold text-white/60 transition-all hover:border-white/20 hover:bg-white/10 hover:text-white"
-                >
-                  Conversation libre →
-                </button>
               </div>
 
             </div>

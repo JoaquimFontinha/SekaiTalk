@@ -13,7 +13,7 @@ const DEFAULT_CITY = cities["tokyo"];
 
 function PersistentMap() {
   const pathname = usePathname();
-  const { mapRef, activeType, poiClickRef } = useMapCtx();
+  const { mapRef, activeType, poiClickRef, mapBgClickRef } = useMapCtx();
 
   const parts = pathname.replace(/^\/home\/?/, "").split("/").filter(Boolean);
   const citySlug = parts[0] ?? null;
@@ -59,6 +59,7 @@ function PersistentMap() {
         city={displayCity}
         activeType={activeType}
         onPoiClick={(id) => poiClickRef.current?.(id)}
+        onMapBgClick={() => mapBgClickRef.current?.()}
       />
     </div>
   );

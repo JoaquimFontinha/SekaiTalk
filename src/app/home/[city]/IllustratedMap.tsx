@@ -13,6 +13,10 @@ const POI_META: Record<POIType, { label: string; color: string; icon: string }> 
   shop:       { label: "Boutique",     color: "#ec4899", icon: "🛍️" },
   restaurant: { label: "Restaurant",   color: "#f43f5e", icon: "🍔" },
   cafe:       { label: "Café",         color: "#92400e", icon: "☕" },
+  hotel:      { label: "Hôtel",        color: "#0891b2", icon: "🏨" },
+  pharmacie:  { label: "Pharmacie",    color: "#059669", icon: "💊" },
+  medecin:    { label: "Médecin",      color: "#ef4444", icon: "🏥" },
+  poste:      { label: "Poste",        color: "#d97706", icon: "📮" },
 };
 
 interface Props {

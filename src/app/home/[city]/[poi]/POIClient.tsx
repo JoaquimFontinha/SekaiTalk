@@ -140,6 +140,10 @@ export default function POIClient({
 }) {
   const router = useRouter();
 
+  useEffect(() => {
+    if (!questId) router.replace(`/home/${citySlug}`);
+  }, [questId, citySlug, router]);
+
   // ── State ──
   const [character, setCharacter]       = useState<Character | null>(null);
   const [notFound, setNotFound]         = useState(false);
@@ -744,7 +748,7 @@ export default function POIClient({
       {/* Top bar — left | center pause | right */}
       <div className="absolute top-0 left-0 right-0 z-50 flex items-start justify-between px-5 pt-4">
 
-        {/* Left: quest info or free conversation */}
+        {/* Left: quest info */}
         {activeQuest ? (
           <div className="flex items-start gap-2 rounded-xl bg-black/65 px-3 py-2.5 backdrop-blur-sm border border-yellow-400/20" style={{ maxWidth: 260 }}>
             <span className="mt-0.5 shrink-0">🎯</span>
@@ -767,10 +771,7 @@ export default function POIClient({
             </div>
           </div>
         ) : (
-          <div className="rounded-xl bg-black/60 px-3 py-2.5 backdrop-blur-sm">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-white/30">Conversation libre</p>
-            <p className="text-[11px] text-white/50 mt-0.5">{character.name}</p>
-          </div>
+          <div />
         )}
 
         {/* Center: pause button + timer */}
@@ -1130,12 +1131,6 @@ export default function POIClient({
 
             {/* Actions */}
             <div className="flex flex-col gap-2.5 px-6 py-5">
-              <button
-                onClick={() => setShowQuestComplete(false)}
-                className="w-full rounded-xl bg-white/8 border border-white/10 py-3 text-sm font-bold text-white/80 hover:bg-white/15 transition-colors"
-              >
-                Continuer la conversation
-              </button>
               <button
                 onClick={() => handleEndSession(completedQuestInfo, sessionPracticedVocab, sessionErrors, sessionSuggestionsUsed)}
                 className="w-full rounded-xl bg-violet-600 py-3 text-sm font-bold text-white hover:bg-violet-500 transition-colors"

@@ -19,6 +19,10 @@ const POI_COLORS: Record<POIType, string> = {
   shop:       "#ec4899",
   restaurant: "#f43f5e",
   cafe:       "#92400e",
+  hotel:      "#0891b2",
+  pharmacie:  "#059669",
+  medecin:    "#ef4444",
+  poste:      "#d97706",
 };
 
 const POI_ICONS: Record<POIType, string> = {
@@ -31,6 +35,10 @@ const POI_ICONS: Record<POIType, string> = {
   shop:       "🛍️",
   restaurant: "🍔",
   cafe:       "☕",
+  hotel:      "🏨",
+  pharmacie:  "💊",
+  medecin:    "🏥",
+  poste:      "📮",
 };
 
 
@@ -38,11 +46,13 @@ export default function GameMap3D({
   city,
   activeType,
   onPoiClick,
+  onMapBgClick,
   mapRef: externalRef,
 }: {
   city: CityData;
   activeType: POIType | null;
   onPoiClick: (poiId: string) => void;
+  onMapBgClick?: () => void;
   mapRef?: React.RefObject<any>;
 }) {
   const internalRef = useRef<MapRef>(null);
@@ -202,6 +212,7 @@ export default function GameMap3D({
       ref={mapRef}
       mapboxAccessToken={MAPBOX_TOKEN}
       mapStyle={STYLE_URL}
+      onClick={() => onMapBgClick?.()}
       initialViewState={{
         longitude: city.center[1],
         latitude:  city.center[0],

@@ -8,6 +8,7 @@ type MapCtx = {
   activeType: POIType | null;
   setActiveType: (t: POIType | null) => void;
   poiClickRef: React.MutableRefObject<((id: string) => void) | null>;
+  mapBgClickRef: React.MutableRefObject<(() => void) | null>;
 };
 
 const Ctx = createContext<MapCtx | null>(null);
@@ -16,8 +17,9 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
   const mapRef = useRef<any>(null);
   const [activeType, setActiveType] = useState<POIType | null>(null);
   const poiClickRef = useRef<((id: string) => void) | null>(null);
+  const mapBgClickRef = useRef<(() => void) | null>(null);
   return (
-    <Ctx.Provider value={{ mapRef, activeType, setActiveType, poiClickRef }}>
+    <Ctx.Provider value={{ mapRef, activeType, setActiveType, poiClickRef, mapBgClickRef }}>
       {children}
     </Ctx.Provider>
   );
