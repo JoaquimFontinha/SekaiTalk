@@ -158,6 +158,7 @@ export default function POIClient({
   const [sessionErrors, setSessionErrors]           = useState(0);
   const [sessionSuggestionsUsed, setSessionSuggestionsUsed] = useState(0);
   const [sessionPracticedVocab, setSessionPracticedVocab]   = useState<Set<string>>(new Set());
+  const [sessionAllDetectedVocab, setSessionAllDetectedVocab] = useState<Set<string>>(new Set());
 
   const [messages, setMessages]           = useState<Message[]>([]);
   const [currentReply, setCurrentReply]   = useState<AIReply | null>(null);
@@ -199,6 +200,7 @@ export default function POIClient({
   const shouldListenRef    = useRef(false);
   const lastAudioBlobRef   = useRef<Blob | null>(null);
   const sessionStartRef    = useRef<number>(Date.now());
+  const allPoiVocabRef     = useRef<VocabEntry[]>([]);
 
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   useEffect(() => { activeQuestRef.current = activeQuest; }, [activeQuest]);
@@ -365,12 +367,22 @@ export default function POIClient({
       const d = await r.json();
       const text: string = d.text?.trim() ?? "";
       if (text) {
-        // Detect vocab words from the quest spoken by the user
+        // Detect vocab from active quest (for session API)
         const aq = activeQuestRef.current;
         if (aq?.vocab?.length) {
           setSessionPracticedVocab(prev => {
             const next = new Set(prev);
             aq.vocab.forEach(v => {
+              if (text.includes(v.jp) || text.includes(v.kana)) next.add(v.jp);
+            });
+            return next;
+          });
+        }
+        // Detect vocab from all POI quests (for stats)
+        if (allPoiVocabRef.current.length) {
+          setSessionAllDetectedVocab(prev => {
+            const next = new Set(prev);
+            allPoiVocabRef.current.forEach(v => {
               if (text.includes(v.jp) || text.includes(v.kana)) next.add(v.jp);
             });
             return next;
@@ -585,6 +597,15 @@ export default function POIClient({
         // ── Start VAD ──
         startVAD();
 
+        // ── All POI vocab (deduped, for broad detection) ──
+        const allVocabMap = new Map<string, VocabEntry>();
+        q.forEach((qd: QuestData) => {
+          ((qd.vocab ?? []) as VocabEntry[]).forEach(v => {
+            if (!allVocabMap.has(v.jp)) allVocabMap.set(v.jp, v);
+          });
+        });
+        allPoiVocabRef.current = Array.from(allVocabMap.values());
+
         // ── Init quest ──
         let initQuest: ActiveQuest | null = null;
         if (questId) {
@@ -602,6 +623,7 @@ export default function POIClient({
             setSessionErrors(0);
             setSessionSuggestionsUsed(0);
             setSessionPracticedVocab(new Set());
+            setSessionAllDetectedVocab(new Set());
 
             initQuest = {
               questId: quest.id,
@@ -1171,7 +1193,7 @@ export default function POIClient({
                   {[
                     { label: "Erreurs",        value: sessionErrors,              icon: "❌", color: sessionErrors === 0 ? "text-emerald-600" : sessionErrors < 3 ? "text-orange-500" : "text-red-500" },
                     { label: "Aides",          value: sessionSuggestionsUsed,     icon: "💬", color: "text-violet-600" },
-                    { label: "Mots pratiqués", value: sessionPracticedVocab.size, icon: "🗣️", color: "text-blue-600" },
+                    { label: "Mots pratiqués", value: sessionAllDetectedVocab.size, icon: "🗣️", color: "text-blue-600" },
                   ].map(s => (
                     <div key={s.label} className="rounded-xl bg-gray-50 border border-gray-100 p-3.5 flex flex-col items-center gap-1">
                       <p className="text-lg">{s.icon}</p>

@@ -174,7 +174,7 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 **Panneau Lieux** (`sidebarPanel === "lieux"`, 380px)
 - Colonne gauche (148px) : sélecteur de type POI (Tous + par type) avec compteur. Filtre `lieuxType`.
 - Colonne droite : liste scrollable des POIs. Chaque ligne affiche nom + `done/total quêtes` (fetchés en parallèle à l'ouverture du panneau, cachés dans `poiQuestData`).
-- Clic sur la ligne → `map.flyTo({ center, zoom:17, pitch:60, duration:1500 })`.
+- Clic sur la ligne → `map.flyTo({ center, zoom:19, pitch:75, duration:1800 })` — zoom très proche au sol.
 - Bouton `→` au hover → ferme le panneau + ouvre le drawer POI.
 
 **Panneau Contacts** (`sidebarPanel === "contacts"`, 380px)
@@ -191,12 +191,14 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 
 **Drawer POI** (420px, `right-0`, slide-in, fond `bg-gray-950/96`)
 - Hero image ou gradient par type. Titre, description, quêtes avec barre de progression.
-- Bouton "▶ Faire la quête" / "🔄 Refaire" → ouvre `questPreview` (état local) au lieu de naviguer directement.
+- Bouton "▶ Faire la quête" / "🔄 Refaire" → ouvre `questPreview` (état local).
+- Pas de bouton "Conversation libre" — toute navigation vers un POI requiert un `questId`.
 
 **Modale prévisualisation quête** (`questPreview` state)
-- Overlay `fixed inset-0 overflow-y-auto` (pattern scrollable-outer) → carte blanche centrée.
+- Overlay `fixed inset-0 overflow-y-auto` (pattern scrollable-outer) → carte `max-w-2xl` centrée.
 - Affiche : nom du POI + titre + description + récompenses (XP/Yens) + nombre de tâches.
-- Vocabulaire groupé par JLPT : kanji, kana, romaji, traduction FR, badge couleur JLPT.
+- Vocabulaire groupé par JLPT en **grille 2 colonnes** : kanji + kana inline, romaji en petit, traduction. Section scrollable `max-h-[52vh] overflow-y-auto` — header et CTA toujours visibles.
+- Uniquement le vocab de la quête affichée (pas de mélange inter-quêtes).
 - Boutons "Annuler" / "Commencer →" (navigue vers la quête).
 - **Important** : ne pas utiliser `flex flex-col max-height flex-1` pour les modales — utilise toujours le pattern `fixed inset-0 overflow-y-auto` + `flex min-h-full items-center justify-center` + carte en `block` naturel pour éviter le bug de collapse CSS.
 
@@ -295,7 +297,8 @@ Modal plein-écran simulant un iPhone japonais. Déclenché via le bouton **Tél
 
 `src/app/home/[city]/GameMap3D.tsx` — carte 3D interactive pour les villes avec `use3DMap: true` dans `cities.ts`.
 - **Rendu** : Mapbox GL JS + react-map-gl v8 (`react-map-gl/mapbox`), style `mapbox://styles/mapbox/standard`
-- **Architecture persistante** : la map est montée une seule fois dans `src/app/home/layout.tsx` (jamais démontée) → 1 seul Map Load par session. CSS `visibility` toggle pour afficher/masquer. État partagé via `src/app/home/MapContext.tsx` (`mapRef`, `activeType`, `poiClickRef`)
+- **Architecture persistante** : la map est montée une seule fois dans `src/app/home/layout.tsx` (jamais démontée) → 1 seul Map Load par session. CSS `visibility` toggle pour afficher/masquer. État partagé via `src/app/home/MapContext.tsx` (`mapRef`, `activeType`, `poiClickRef`, `mapBgClickRef`)
+- **Clic fond de carte** : `onMapBgClick` prop sur `GameMap3D` → `onClick` sur `<Map>` (les markers ont `stopPropagation`). Enregistré par `CityClient` via `mapBgClickRef` → ferme le panneau sidebar actif (`setSidebarPanel(null)`)
 - **Import SSR** : `dynamic(() => import("./[city]/GameMap3D"), { ssr: false })` dans `home/layout.tsx`
 - **Style** : `setConfigProperty("basemap", "lightPreset", "dusk")` + tous les labels masqués
 - **Modèle Skytree + Tokyo Tower** : `public/models/tokyo_skytree.glb` + `public/models/tokyo_tower.glb` rendus via custom Three.js layer
@@ -314,15 +317,19 @@ Modal plein-écran simulant un iPhone japonais. Déclenché via le bouton **Tél
 
 **Timer** : 15 min par quête (`questTimeLeft`), décrémenté toutes les secondes hors pause. À 0 → `sessionExpired`.
 
+**Accès restreint** : `POIClient` redirige vers `/home/[city]` si aucun `questId` dans les params URL — pas de conversation libre possible.
+
 **Tracking session** (réinitialisé à chaque nouvelle quête) :
 - `sessionStartRef` — timestamp `Date.now()` au lancement
 - `sessionErrors` — incrémenté à chaque mauvaise réponse au quiz
 - `sessionSuggestionsUsed` — incrémenté à chaque ouverture du panneau suggestions
-- `sessionPracticedVocab (Set<string>)` — mots `jp` détectés dans les transcriptions Whisper
+- `sessionPracticedVocab (Set<string>)` — mots `jp` de la **quête courante** détectés (envoyés à `/api/session/complete`)
+- `sessionAllDetectedVocab (Set<string>)` — mots `jp` détectés dans **toutes les quêtes du POI** (pour le compteur stats uniquement)
+- `allPoiVocabRef` — vocab dédupliqué de toutes les quêtes du POI, peuplé au chargement depuis `GET /api/quests/poi/[poiId]`
 
 **Modales post-quête** (toutes en `fixed inset-0 overflow-y-auto` — pattern scrollable-outer) :
-- `showQuestComplete` + `completedQuestInfo` → modale sombre (fond glassmorphism). Récompenses XP/Yens + aperçu vocab. Boutons : "Continuer la conversation" / "Terminer la session →"
-- `showSessionSummary` + `summaryVocabProgress` → modale blanche (fond noir/75). Stats (erreurs, aides, mots pratiqués) + vocab groupé par JLPT avec icône de maîtrise. Bouton "Terminer" → `handleBack`.
+- `showQuestComplete` + `completedQuestInfo` → modale sombre (fond glassmorphism). Récompenses XP/Yens + aperçu vocab. Bouton unique : "Terminer la session →" (pas de "Continuer la conversation")
+- `showSessionSummary` + `summaryVocabProgress` → modale blanche (fond noir/75). Stats (erreurs, aides, `sessionAllDetectedVocab.size`) + vocab quête groupé par JLPT avec icône de maîtrise. Bouton "Terminer" → `handleBack`.
 
 **`handleEndSession(info, practiced, errors, suggestions)`** :
 - POST `/api/session/complete` → reçoit `vocabWithMastery[]`
@@ -360,7 +367,9 @@ Remplace le push-to-talk. Le micro est ouvert en permanence après le chargement
 - **Démarrage** : `startVAD()` appelé dans le `useEffect` de chargement. Crée un `AudioContext` + `AnalyserNode` (fftSize 512). Stream micro gardé ouvert toute la session
 - **Détection** : boucle `requestAnimationFrame` calcule le RMS sur chaque frame. Si `rms > VAD_THRESHOLD (0.025)` et `shouldListenRef.current = true` → démarre un `MediaRecorder` frais
 - **Fin d'énoncé** : silence > `SILENCE_DELAY (1200ms)` → stoppe le recorder → envoie à `/api/transcribe`
-- **Détection vocab** : dans le callback `transcribe`, le texte Whisper est scanné par substring match contre `aq.vocab[].jp` et `aq.vocab[].kana` → `setSessionPracticedVocab`
+- **Détection vocab** : dans le callback `transcribe`, double scan :
+  1. contre `aq.vocab[].jp/kana` → `setSessionPracticedVocab` (quête courante, envoyé à l'API)
+  2. contre `allPoiVocabRef.current[].jp/kana` → `setSessionAllDetectedVocab` (toutes quêtes, stats uniquement)
 - **Filtre bruit court** : enregistrement ignoré si durée < `MIN_RECORD_MS (400ms)`
 - **shouldListenRef** : `false` si `isPaused || isSpeaking || isLoading || isTranscribing || showSuggestions || sessionExpired || showQuestComplete || showSessionSummary`
 - **Mobile HTTP** : guard `if (navigator.mediaDevices)` obligatoire

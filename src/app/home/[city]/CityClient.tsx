@@ -974,14 +974,14 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
           >
             <div className="flex min-h-full items-center justify-center px-4 py-8">
               <div
-                className="w-full max-w-md rounded-2xl bg-white shadow-2xl"
+                className="w-full max-w-2xl rounded-2xl bg-white shadow-2xl"
                 onClick={e => e.stopPropagation()}
               >
                 {/* Header */}
-                <div className="px-6 pt-6 pb-5 border-b border-gray-100">
+                <div className="px-6 pt-6 pb-4 border-b border-gray-100">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5">
+                      <div className="flex items-center gap-2 mb-1">
                         <span>{POI_META[poi.type].icon}</span>
                         <span className="text-[9px] font-bold uppercase tracking-[0.2em]" style={{ color: POI_META[poi.type].color }}>
                           {poi.name}
@@ -989,7 +989,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                       </div>
                       <h2 className="text-xl font-black text-gray-900 leading-tight">{quest.title}</h2>
                       {quest.description && (
-                        <p className="mt-1.5 text-[12px] text-gray-500 leading-relaxed">{quest.description}</p>
+                        <p className="mt-1 text-[12px] text-gray-500 leading-relaxed">{quest.description}</p>
                       )}
                     </div>
                     <button
@@ -999,9 +999,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                       <X className="h-4 w-4" />
                     </button>
                   </div>
-
-                  {/* Meta: rewards + task count */}
-                  <div className="flex items-center gap-2 mt-4 flex-wrap">
+                  <div className="flex items-center gap-2 mt-3 flex-wrap">
                     <span className="text-[9px] font-bold uppercase tracking-widest text-gray-300">
                       {quest.tasks.length} tâche{quest.tasks.length > 1 ? "s" : ""}
                     </span>
@@ -1019,47 +1017,45 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                 </div>
 
                 {/* Vocab */}
-                <div className="px-6 py-5 flex flex-col gap-4">
+                <div className="px-6 pt-4 pb-2">
                   {jlptGroups.length > 0 ? (
-                    <>
+                    <div className="flex flex-col gap-4">
                       <p className="text-[9px] font-bold uppercase tracking-[0.3em] text-gray-300">
-                        Vocabulaire de cette quête
+                        Vocabulaire de cette quête — {(quest.vocab ?? []).length} mots
                       </p>
-                      {jlptGroups.map(({ jlpt, label, words }) => (
-                        <div key={jlpt}>
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="rounded-full px-2.5 py-0.5 text-[10px] font-black text-white"
-                              style={{ background: JLPT_COLORS[jlpt] }}>
-                              {label}
-                            </span>
-                            <span className="text-[10px] text-gray-300">{words.length} mot{words.length > 1 ? "s" : ""}</span>
-                          </div>
-                          <div className="flex flex-col gap-1.5">
-                            {words.map(v => (
-                              <div key={v.jp} className="flex items-center gap-3 rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-baseline gap-2 flex-wrap">
-                                    <span className="text-lg font-bold text-gray-900 leading-none">{v.jp}</span>
-                                    {v.kana !== v.jp && <span className="text-xs text-gray-400">{v.kana}</span>}
-                                    <span className="text-xs text-gray-300 italic">{v.romaji}</span>
+                      <div className="max-h-[52vh] overflow-y-auto pr-1 flex flex-col gap-4">
+                        {jlptGroups.map(({ jlpt, label, words }) => (
+                          <div key={jlpt}>
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="rounded-full px-2.5 py-0.5 text-[10px] font-black text-white"
+                                style={{ background: JLPT_COLORS[jlpt] }}>
+                                {label}
+                              </span>
+                              <span className="text-[10px] text-gray-400">{words.length} mot{words.length > 1 ? "s" : ""}</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-1.5">
+                              {words.map(v => (
+                                <div key={v.jp} className="rounded-xl bg-gray-50 border border-gray-100 px-3 py-2.5">
+                                  <div className="flex items-baseline gap-1.5 min-w-0">
+                                    <span className="text-base font-bold text-gray-900 leading-none shrink-0">{v.jp}</span>
+                                    {v.kana !== v.jp && (
+                                      <span className="text-[10px] text-gray-400 truncate">{v.kana}</span>
+                                    )}
                                   </div>
-                                  <p className="text-xs text-gray-500 mt-0.5">{v.fr}</p>
+                                  <p className="text-[10px] text-gray-400 italic mt-0.5">{v.romaji}</p>
+                                  <p className="text-[11px] text-gray-600 font-medium mt-0.5 leading-tight">{v.fr}</p>
                                 </div>
-                                <span className="shrink-0 rounded-full px-2 py-0.5 text-[9px] font-black text-white"
-                                  style={{ background: JLPT_COLORS[jlpt] }}>
-                                  {label}
-                                </span>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                      <div className="rounded-xl bg-violet-50 border border-violet-100 px-4 py-3 text-center">
+                        ))}
+                      </div>
+                      <div className="rounded-xl bg-violet-50 border border-violet-100 px-4 py-2.5 text-center">
                         <p className="text-xs text-violet-600 font-medium">
                           Ces mots seront détectés dans ta prononciation 🎯
                         </p>
                       </div>
-                    </>
+                    </div>
                   ) : (
                     <div className="flex flex-col items-center gap-3 py-4 text-center">
                       <p className="text-3xl">📖</p>
@@ -1069,7 +1065,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                 </div>
 
                 {/* CTA */}
-                <div className="px-6 pb-6 flex gap-3">
+                <div className="px-6 py-5 flex gap-3">
                   <button
                     onClick={() => setQuestPreview(null)}
                     className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-bold text-gray-500 hover:bg-gray-50 transition-colors"
