@@ -152,7 +152,21 @@ Types et constantes partagés entre client et serveur :
 
 ### Sidebar CityClient (`src/app/home/[city]/CityClient.tsx`)
 
-La sidebar (88px collapsée, 208px étendue) contient des boutons qui togglent des panneaux overlay sur la carte 3D (`z-[1000]`).
+La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), largeur 448px étendue / 60px collapsée. Transition CSS `transition-all duration-200`. `position: fixed, left: 20px, top: 50%, translateY(-50%)`, hauteur `calc(100vh - 40px)`, `rounded-2xl bg-white`.
+
+**État étendu (448px)** — contenu identique à `HomeClient` :
+- Header : logo 🗾 violet + "SekaiTalk" + bouton `ChevronLeft` (collapse + `setSidebarPanel(null)`)
+- Objectifs du jour : 3 tâches avec `CheckCircle2`/`Circle`
+- Navigation : 4 boutons fonctionnels (Lieux, Contacts, Évènements, Révision `disabled`). Section `flex-1`.
+- Mes stats : grille 3 colonnes (statiques)
+- Paramètres : footer `opacity-40`
+
+**État collapsé (60px)** :
+- Logo 🗾 violet (clic → expand)
+- 4 icônes nav (clic → `setSidebarExpanded(true)` + `setSidebarPanel(panel)`)
+- `ChevronRight` en bas (expand)
+
+**Panneaux flottants** (`z-[1000]`, `left: 484`, `top: 20`, `height: calc(100vh - 40px)`, `rounded-2xl bg-white`, même shadow que la sidebar). Toujours affichés avec la sidebar étendue (collapse ferme le panneau).
 
 **Panneau Lieux** (`sidebarPanel === "lieux"`, 380px)
 - Colonne gauche (148px) : sélecteur de type POI (Tous + par type) avec compteur. Filtre `lieuxType`.
@@ -164,9 +178,15 @@ La sidebar (88px collapsée, 208px étendue) contient des boutons qui togglent d
 - Fetche `GET /api/contacts` une seule fois. Carte par personnage avec niveau d'amitié (0=Étranger, 1-2=Connaissance, 3-5=Ami, 6+=Proche).
 - Bouton "📍 RDV" → toggle `rdvOpenId` → liste des lieux (bouton "Inviter →" désactivé).
 
+**Panneau Évènements** (`sidebarPanel === "evenements"`, 380px) — placeholder vide.
+
 **Panneau Révision** — désactivé (`enabled: false`), à implémenter.
 
-**Drawer POI** (420px, `right-0`, slide-in)
+**HUD top-right** — identique à `HomeClient` : tickets 🎫×5 + timer + flame + bell + avatar SVG XP ring. Positionnement : `right: selectedPoi ? 440 : 20`.
+
+**Titre ville** : `position: absolute, top: 20`, `left: sidebarPanel ? 864 : sidebarExpanded ? 488 : 96` — se décale dynamiquement selon l'état sidebar/panneau.
+
+**Drawer POI** (420px, `right-0`, slide-in, fond `bg-gray-950/96`)
 - Hero image ou gradient par type. Titre, description, quêtes avec barre de progression.
 - Bouton "▶ Faire la quête" / "🔄 Refaire" → ouvre `questPreview` (état local) au lieu de naviguer directement.
 
@@ -197,6 +217,8 @@ La sidebar (88px collapsée, 208px étendue) contient des boutons qui togglent d
 **Overflow crop** : `overflow: hidden` sur le container + `bottom: -80px` sur le Map → coupe le bas (Okinawa).
 
 **Gradient** : `background: radial-gradient(ellipse farthest-corner at 54% 50%, #3a5fa0, #1a3568)` sur le container.
+
+**Centrage** : `initialViewState` → `longitude: 134.0, latitude: 36.8, zoom: 5.4, pitch: 30` — recentré vers l'ouest pour laisser la sidebar visible sans occulter le Japon.
 
 **Pins** : classe CSS `gm3d-poi` réutilisée depuis la city map. `gm3d-city-label` = label toujours visible sous chaque pin (blanc 8.5px, letter-spacing 0.22em). Villes verrouillées : `gm3d-poi--locked` (opacity 0.6, grayscale, pas d'hover lift).
 
@@ -230,10 +252,13 @@ Le wrapper `children` dans `HomeShell` a `pointerEvents: none` quand une map Map
   5. **Paramètres** — footer, `opacity-40 cursor-default`
 - `pointer-events-auto` explicite — le wrapper `children` dans `HomeShell` est `pointer-events-none`
 
-**HUD top-right** (`position: absolute, top: 20px, right: 20px, z-20`)
-- Affiché seulement si `userStats` est chargé : badge niveau violet, barre XP (`w-32 h-2.5`), séparateur vertical
-- Toujours visible : bouton Flame + streak `0`, bouton Bell, bouton User (avatar 40px)
-- Taille : `px-7 py-4`, icônes `h-6 w-6`, gap `gap-6`
+**HUD top-right** (`position: absolute, top: 20px, right: 20px, z-20`) — toujours visible :
+- **Tickets journaliers** : 5 icônes 🎫 (bg amber-50, 32×32px) + bouton `+` arrondi pointillé + timer `⏱ 10h 28min` (visuels uniquement, à brancher sur une API de quota)
+- Séparateur vertical `h-9 w-px bg-gray-100`
+- **Flame** `h-6 w-6 text-orange-300` + streak `0`
+- **Bell** `h-6 w-6`
+- **Avatar XP ring** (style Pokémon GO) : SVG 64px avec `strokeDashoffset` calculé sur `userStats.percent`, rotated `-90deg`. Avatar intérieur `h-11 w-11 bg-gray-100`. Label `Lv. {level}` en dessous.
+- Taille globale : `px-6 py-4`, gap `gap-5`
 
 ### Carte 3D Tokyo (`GameMap3D`)
 

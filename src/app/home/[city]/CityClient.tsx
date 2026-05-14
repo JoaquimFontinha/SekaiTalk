@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle, CheckCircle2, Circle, Settings, ChevronLeft, ChevronRight } from "lucide-react";
+import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle, CheckCircle2, Circle, Settings, ChevronLeft, ChevronRight, Smartphone } from "lucide-react";
+import PhoneOverlay from "@/components/PhoneOverlay";
 import cities, { POI, POIType } from "@/lib/cities";
 import POI_LOGOS from "@/lib/poi-logos";
 import { type VocabEntry, JLPT_COLORS } from "@/lib/mastery";
@@ -117,6 +118,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
 
   // Sidebar state
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
+  const [showPhone, setShowPhone] = useState(false);
   const [sidebarPanel, setSidebarPanel]   = useState<SidebarPanel>(null);
   const [lieuxType, setLieuxType]         = useState<POIType | null>(null);
   const [poiQuestData, setPoiQuestData]   = useState<Record<string, { done: number; total: number }>>({});
@@ -341,19 +343,31 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
             <div className="px-5 pt-8 pb-8 flex-1">
               <span className="px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Navigation</span>
               <div className="mt-3 flex flex-col gap-1">
-                {SIDEBAR_BUTTONS.map(({ panel, Icon, label, enabled }) => (
-                  <button
-                    key={panel}
-                    onClick={() => { if (enabled) setSidebarPanel(prev => prev === panel ? null : panel); }}
-                    className={`flex items-center gap-4 rounded-xl px-4 py-4 text-left transition-colors ${
-                      !enabled ? "cursor-default opacity-40"
-                      : sidebarPanel === panel ? "bg-violet-50"
-                      : "hover:bg-gray-50"
-                    }`}
-                  >
-                    <Icon className={`h-5 w-5 shrink-0 ${sidebarPanel === panel && enabled ? "text-violet-500" : "text-gray-500"}`} />
-                    <span className={`text-base font-medium ${sidebarPanel === panel && enabled ? "text-violet-600" : "text-gray-600"}`}>{label}</span>
-                  </button>
+                {SIDEBAR_BUTTONS.map(({ panel, Icon, label, enabled }, i) => (
+                  <>
+                    <button
+                      key={panel}
+                      onClick={() => { if (enabled) setSidebarPanel(prev => prev === panel ? null : panel); }}
+                      className={`flex items-center gap-4 rounded-xl px-4 py-4 text-left transition-colors ${
+                        !enabled ? "cursor-default opacity-40"
+                        : sidebarPanel === panel ? "bg-violet-50"
+                        : "hover:bg-gray-50"
+                      }`}
+                    >
+                      <Icon className={`h-5 w-5 shrink-0 ${sidebarPanel === panel && enabled ? "text-violet-500" : "text-gray-500"}`} />
+                      <span className={`text-base font-medium ${sidebarPanel === panel && enabled ? "text-violet-600" : "text-gray-600"}`}>{label}</span>
+                    </button>
+                    {i === 2 && (
+                      <button
+                        key="phone"
+                        onClick={() => setShowPhone(true)}
+                        className="flex items-center gap-4 rounded-xl px-4 py-4 text-left hover:bg-gray-50 transition-colors"
+                      >
+                        <Smartphone className="h-5 w-5 shrink-0 text-gray-500" />
+                        <span className="text-base font-medium text-gray-600">Téléphone</span>
+                      </button>
+                    )}
+                  </>
                 ))}
               </div>
             </div>
@@ -408,6 +422,13 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
               </button>
             ))}
             <div className="flex-1" />
+            <button
+              title="Téléphone"
+              onClick={() => setShowPhone(true)}
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            >
+              <Smartphone className="h-5 w-5" />
+            </button>
             <button
               onClick={() => setSidebarExpanded(true)}
               className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-300 hover:bg-gray-100 hover:text-gray-500 transition-colors"
@@ -936,6 +957,8 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
           </div>
 
         </main>
+
+      {showPhone && <PhoneOverlay onClose={() => setShowPhone(false)} />}
 
       {/* ── Quest preview modal ── */}
       {questPreview && (() => {
