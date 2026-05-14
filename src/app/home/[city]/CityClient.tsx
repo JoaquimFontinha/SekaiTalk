@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Bell, User, Flame, Menu, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle } from "lucide-react";
+import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle, CheckCircle2, Circle, Settings, ChevronLeft, ChevronRight } from "lucide-react";
 import cities, { POI, POIType } from "@/lib/cities";
 import POI_LOGOS from "@/lib/poi-logos";
 import { type VocabEntry, JLPT_COLORS } from "@/lib/mastery";
@@ -52,6 +52,18 @@ const SIDEBAR_BUTTONS: { panel: Exclude<SidebarPanel, null>; Icon: React.Element
   { panel: "contacts",   Icon: Users,     label: "Contacts",   enabled: true  },
   { panel: "evenements", Icon: Sparkles,  label: "Évènements", enabled: true  },
   { panel: "revision",   Icon: BookOpen,  label: "Révision",   enabled: false },
+];
+
+const DAILY_GOALS = [
+  { label: "Lance une conversation",   done: false },
+  { label: "Apprends 5 nouveaux mots", done: false },
+  { label: "Complète une quête",       done: false },
+];
+
+const GLOBAL_STATS = [
+  { label: "Conversations",   value: "—", icon: "💬" },
+  { label: "Mots maîtrisés",  value: "—", icon: "✨" },
+  { label: "Quêtes terminées",value: "—", icon: "🎯" },
 ];
 
 function getFriendshipLevel(count: number): { label: string; color: string } {
@@ -103,7 +115,8 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
   const [questsLoading, setQuestsLoading] = useState(false);
   const [questPreview, setQuestPreview]   = useState<{ quest: PoiQuest; poi: POI } | null>(null);
 
-  // Sidebar panel state
+  // Sidebar state
+  const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [sidebarPanel, setSidebarPanel]   = useState<SidebarPanel>(null);
   const [lieuxType, setLieuxType]         = useState<POIType | null>(null);
   const [poiQuestData, setPoiQuestData]   = useState<Record<string, { done: number; total: number }>>({});
@@ -116,8 +129,6 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
   const [tokyoTime, setTokyoTime]         = useState("");
   const [neighborhood, setNeighborhood]   = useState("");
   const [userStats, setUserStats]         = useState<UserStats | null>(null);
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
-  const sidebarRef = useRef<HTMLElement>(null);
   const [mapLoading, setMapLoading] = useState(!!cities[citySlug]?.use3DMap);
   const [mapFading,  setMapFading]  = useState(false);
 
@@ -137,16 +148,6 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
       .catch(() => {});
   }, []);
 
-  useEffect(() => {
-    if (!sidebarExpanded) return;
-    const handler = (e: MouseEvent) => {
-      if (sidebarRef.current && !sidebarRef.current.contains(e.target as Node)) {
-        setSidebarExpanded(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [sidebarExpanded]);
 
   const city = cities[citySlug];
 
@@ -292,103 +293,185 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
         </div>
       )}
 
-      {/* Sidebar */}
+      {/* ── Sidebar flottante (rétractable) ── */}
       <aside
-        ref={sidebarRef}
-        className={`pointer-events-auto relative z-[1001] flex shrink-0 flex-col border-r border-gray-100 bg-white py-5 transition-all duration-200 ${
-          sidebarExpanded ? "w-52 items-start gap-1 px-3" : "w-[88px] items-center gap-7"
-        }`}
+        className="pointer-events-auto fixed left-5 top-1/2 -translate-y-1/2 z-[1001] flex flex-col overflow-hidden rounded-2xl bg-white transition-all duration-200"
+        style={{
+          width: sidebarExpanded ? 448 : 60,
+          height: "calc(100vh - 40px)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1)",
+        }}
       >
-        {/* Hamburger */}
-        <button
-          onClick={() => setSidebarExpanded(e => !e)}
-          className={`flex items-center gap-3 rounded-lg transition-colors hover:bg-gray-100 ${
-            sidebarExpanded ? "w-full px-2 py-2" : "p-2.5"
-          }`}
-        >
-          <Menu className="h-5 w-5 shrink-0 text-gray-400" />
-          {sidebarExpanded && (
-            <span className="text-sm font-black tracking-tight text-gray-800">SekaiTalk</span>
-          )}
-        </button>
-
-        {/* Nav buttons */}
-        {SIDEBAR_BUTTONS.map(({ panel, Icon, label, enabled }) => (
-          <button
-            key={panel}
-            onClick={() => {
-              if (!enabled) return;
-              setSidebarPanel(prev => prev === panel ? null : panel);
-              setSidebarExpanded(false);
-            }}
-            className={`group flex items-center transition-all ${!enabled ? "cursor-default opacity-35" : ""} ${
-              sidebarExpanded
-                ? `w-full gap-3 rounded-lg px-3 py-2.5 text-sm font-medium ${
-                    sidebarPanel === panel
-                      ? "bg-violet-50 text-violet-600"
-                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-                  }`
-                : "flex-col gap-1"
-            }`}
-          >
-            {sidebarExpanded ? (
-              <Icon className={`h-4 w-4 shrink-0 ${sidebarPanel === panel ? "text-violet-500" : "text-gray-400 group-hover:text-gray-700"}`} />
-            ) : (
-              <div className={`flex h-12 w-12 items-center justify-center rounded-full border-2 transition-all ${
-                sidebarPanel === panel
-                  ? "border-violet-500 bg-violet-50 text-violet-600"
-                  : "border-gray-200 text-gray-400 group-hover:border-violet-400 group-hover:bg-violet-50 group-hover:text-violet-500"
-              }`}>
-                <Icon className="h-5 w-5" />
+        {sidebarExpanded ? (
+          /* ── État déployé ── */
+          <div className="flex flex-col h-full overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 pt-7 pb-7 shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-3xl">🗾</div>
+                <span className="text-xl font-black tracking-tight text-gray-800 leading-none">SekaiTalk</span>
               </div>
-            )}
-            <span className={sidebarExpanded ? "" : `text-[9px] font-medium transition-colors ${
-              sidebarPanel === panel ? "text-violet-500" : "text-gray-400 group-hover:text-violet-500"
-            }`}>
-              {label}
-            </span>
-          </button>
-        ))}
+              <button
+                onClick={() => { setSidebarExpanded(false); setSidebarPanel(null); }}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Objectifs du jour */}
+            <div className="px-7 pb-8 shrink-0">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Objectifs du jour</span>
+                <span className="text-xs font-semibold text-violet-500 bg-violet-50 px-2.5 py-1 rounded-full">0 / {DAILY_GOALS.length}</span>
+              </div>
+              <div className="flex flex-col gap-2.5">
+                {DAILY_GOALS.map((g, i) => (
+                  <div key={i} className="flex items-center gap-3.5 rounded-xl bg-gray-50 px-4 py-3.5">
+                    {g.done ? <CheckCircle2 className="h-5 w-5 shrink-0 text-violet-500" /> : <Circle className="h-5 w-5 shrink-0 text-gray-300" />}
+                    <span className={`text-sm font-medium ${g.done ? "line-through text-gray-400" : "text-gray-600"}`}>{g.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mx-7 h-px bg-gray-100 shrink-0" />
+
+            {/* Navigation */}
+            <div className="px-5 pt-8 pb-8 flex-1">
+              <span className="px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Navigation</span>
+              <div className="mt-3 flex flex-col gap-1">
+                {SIDEBAR_BUTTONS.map(({ panel, Icon, label, enabled }) => (
+                  <button
+                    key={panel}
+                    onClick={() => { if (enabled) setSidebarPanel(prev => prev === panel ? null : panel); }}
+                    className={`flex items-center gap-4 rounded-xl px-4 py-4 text-left transition-colors ${
+                      !enabled ? "cursor-default opacity-40"
+                      : sidebarPanel === panel ? "bg-violet-50"
+                      : "hover:bg-gray-50"
+                    }`}
+                  >
+                    <Icon className={`h-5 w-5 shrink-0 ${sidebarPanel === panel && enabled ? "text-violet-500" : "text-gray-500"}`} />
+                    <span className={`text-base font-medium ${sidebarPanel === panel && enabled ? "text-violet-600" : "text-gray-600"}`}>{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mx-7 h-px bg-gray-100 shrink-0" />
+
+            {/* Mes stats */}
+            <div className="px-7 pt-8 pb-8 shrink-0">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Mes stats</span>
+              <div className="mt-4 grid grid-cols-3 gap-3">
+                {GLOBAL_STATS.map(({ label, value, icon }) => (
+                  <div key={label} className="flex flex-col items-center rounded-2xl bg-gray-50 px-3 py-5 gap-2">
+                    <span className="text-2xl">{icon}</span>
+                    <span className="text-lg font-black text-gray-700 tabular-nums">{value}</span>
+                    <span className="text-[10px] text-gray-400 text-center leading-tight">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mx-7 h-px bg-gray-100 shrink-0" />
+
+            {/* Paramètres */}
+            <div className="px-5 pt-5 pb-6 shrink-0">
+              <button className="flex w-full cursor-default items-center gap-4 rounded-xl px-4 py-4 opacity-40">
+                <Settings className="h-5 w-5 shrink-0 text-gray-500" />
+                <span className="text-base font-medium text-gray-600">Paramètres</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* ── État rétracté ── */
+          <div className="flex flex-col items-center h-full py-4 gap-1">
+            <button
+              onClick={() => setSidebarExpanded(true)}
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600 text-lg mb-2"
+            >
+              🗾
+            </button>
+            {SIDEBAR_BUTTONS.map(({ panel, Icon, label, enabled }) => (
+              <button
+                key={panel}
+                title={label}
+                onClick={() => { if (enabled) { setSidebarExpanded(true); setSidebarPanel(panel); } }}
+                className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${
+                  !enabled ? "opacity-40 cursor-default"
+                  : sidebarPanel === panel ? "bg-violet-50 text-violet-500"
+                  : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+              </button>
+            ))}
+            <div className="flex-1" />
+            <button
+              onClick={() => setSidebarExpanded(true)}
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-300 hover:bg-gray-100 hover:text-gray-500 transition-colors"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
       </aside>
 
       {/* Map zone */}
       <main className="relative flex-1 overflow-hidden">
 
-        {/* Floating top-right HUD — same as /home */}
+        {/* ── HUD top-right (même visuel que /home) ── */}
         <div
-          className="pointer-events-auto absolute top-4 z-[1000] flex items-center gap-4 rounded-2xl border border-gray-200 bg-white px-5 py-3 shadow-sm transition-all duration-300 ease-in-out"
-          style={{ right: selectedPoi ? 420 + 16 : 16 }}
+          className="pointer-events-auto absolute top-5 z-[1000] flex items-center gap-5 rounded-2xl border border-gray-200 bg-white px-6 py-4 shadow-md transition-all duration-300 ease-in-out"
+          style={{ right: selectedPoi ? 420 + 20 : 20 }}
         >
-          {userStats && (
-            <>
-              <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
-                Nv.{userStats.level}
-              </span>
-              <div className="flex flex-col gap-1">
-                <div className="h-2 w-20 rounded-full bg-gray-100 overflow-hidden">
-                  <div className="h-full rounded-full bg-violet-500 transition-all duration-700" style={{ width: `${userStats.percent}%` }} />
+          {/* Tickets journaliers */}
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-1">
+              {[0,1,2,3,4].map(i => (
+                <div key={i} className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-lg">🎫</div>
+              ))}
+              <button className="ml-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-gray-200 text-gray-400 hover:border-violet-400 hover:text-violet-500 transition-colors text-sm font-bold">+</button>
+            </div>
+            <span className="flex items-center gap-1 text-[10px] text-gray-400 leading-none">
+              <span>⏱</span><span className="tabular-nums">10h 28min</span>
+            </span>
+          </div>
+          <div className="w-px h-9 bg-gray-100" />
+          <button className="flex items-center gap-2 text-gray-400 hover:text-orange-400 transition-colors">
+            <Flame className="h-6 w-6 text-orange-300" />
+            <span className="text-base font-semibold text-gray-600">0</span>
+          </button>
+          <button className="text-gray-400 hover:text-gray-700 transition-colors">
+            <Bell className="h-6 w-6" />
+          </button>
+          {/* Avatar + XP ring */}
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="relative" style={{ width: 64, height: 64 }}>
+              <svg width={64} height={64} style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }}>
+                <circle cx={32} cy={32} r={28} fill="none" stroke="#e5e7eb" strokeWidth={4.5} />
+                <circle cx={32} cy={32} r={28} fill="none" stroke="#7c3aed" strokeWidth={4.5}
+                  strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 28}
+                  strokeDashoffset={2 * Math.PI * 28 * (1 - (userStats?.percent ?? 0) / 100)}
+                  style={{ transition: "stroke-dashoffset 0.7s ease" }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                  <User className="h-5 w-5" />
                 </div>
-                <span className="text-[9px] text-gray-400 text-right leading-none tabular-nums">
-                  {userStats.xpInLevel}/{userStats.xpNeeded ?? "MAX"} XP
-                </span>
               </div>
-              <div className="w-px h-5 bg-gray-200" />
-            </>
-          )}
-          <button className="flex items-center gap-1.5 text-gray-400 hover:text-orange-400 transition-colors">
-            <Flame className="h-5 w-5 text-orange-300" />
-            <span className="text-sm font-semibold text-gray-600">0</span>
-          </button>
-          <button className="text-gray-400 hover:text-gray-700 transition-colors"><Bell className="h-5 w-5" /></button>
-          <button className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-200 text-gray-400 hover:border-gray-400 hover:text-gray-700 transition-colors">
-            <User className="h-4 w-4" />
-          </button>
+            </div>
+            <span className="text-xs font-bold text-gray-700 tabular-nums">Lv. {userStats?.level ?? "—"}</span>
+          </div>
         </div>
 
           {/* HUD title */}
           <div
             className="pointer-events-none absolute top-5 z-[999] flex flex-col gap-2 transition-all duration-300"
-            style={{ left: sidebarPanel ? 396 : 20 }}
+            style={{ left: sidebarPanel ? 864 : sidebarExpanded ? 488 : 96 }}
           >
 
             {/* Back pill */}
@@ -422,29 +505,29 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
 
           {/* Lieux panel — overlay on 3D map */}
           {city.use3DMap && sidebarPanel === "lieux" && (
-            <div className="pointer-events-auto absolute left-0 top-0 z-[1000] flex h-full" style={{ width: 380 }}>
+            <div className="pointer-events-auto absolute z-[1000] flex overflow-hidden rounded-2xl bg-white"
+              style={{ left: 484, top: 20, width: 380, height: "calc(100vh - 40px)", boxShadow: "0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1)" }}>
 
               {/* Type selector column */}
-              <div className="flex w-[148px] shrink-0 flex-col overflow-y-auto border-r border-white/10 bg-gray-950/93 backdrop-blur-xl">
+              <div className="flex w-[148px] shrink-0 flex-col overflow-y-auto border-r border-gray-100 bg-white">
                 <div className="flex items-center justify-between px-4 py-4">
-                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">Lieux</span>
-                  <button onClick={() => setSidebarPanel(null)} className="text-white/30 transition-colors hover:text-white/70">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">Lieux</span>
+                  <button onClick={() => setSidebarPanel(null)} className="text-gray-400 transition-colors hover:text-gray-600">
                     <X className="h-3.5 w-3.5" />
                   </button>
                 </div>
 
                 <div className="flex flex-col gap-0.5 px-2 pb-4">
-                  {/* Tous */}
                   <button
                     onClick={() => setLieuxType(null)}
                     className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-semibold transition-all ${
                       lieuxType === null
-                        ? "bg-white/15 text-white"
-                        : "text-white/50 hover:bg-white/8 hover:text-white/80"
+                        ? "bg-violet-50 text-violet-600"
+                        : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
                     }`}
                   >
                     <span>Tous</span>
-                    <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[9px] font-bold">
+                    <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-bold text-gray-500">
                       {city.pois.length}
                     </span>
                   </button>
@@ -460,10 +543,10 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                         onClick={() => setLieuxType(type)}
                         className="flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-semibold transition-all"
                         style={{
-                          background: isActive ? `${meta.color}18` : undefined,
-                          color:      isActive ? meta.color : "rgba(255,255,255,0.5)",
+                          background: isActive ? `${meta.color}14` : undefined,
+                          color:      isActive ? meta.color : "#6b7280",
                         }}
-                        onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.06)"; }}
+                        onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.04)"; }}
                         onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = ""; }}
                       >
                         <span className="flex items-center gap-1.5">
@@ -472,7 +555,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                         </span>
                         <span
                           className="rounded-full px-1.5 py-0.5 text-[9px] font-bold"
-                          style={{ background: isActive ? `${meta.color}28` : "rgba(255,255,255,0.08)" }}
+                          style={{ background: isActive ? `${meta.color}20` : "rgba(0,0,0,0.06)", color: isActive ? meta.color : "#9ca3af" }}
                         >
                           {count}
                         </span>
@@ -483,9 +566,9 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
               </div>
 
               {/* POI list column */}
-              <div className="flex flex-1 flex-col overflow-hidden bg-gray-950/82 backdrop-blur-xl">
+              <div className="flex flex-1 flex-col overflow-hidden bg-gray-50">
                 <div className="shrink-0 px-4 py-4">
-                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/30">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">
                     {lieuxType ? POI_META[lieuxType].label : "Tous les lieux"}
                   </p>
                 </div>
@@ -496,9 +579,8 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                     return (
                       <div
                         key={poi.id}
-                        className="group flex items-center gap-2 rounded-xl border border-white/6 bg-white/4 px-3 py-3 transition-all hover:border-white/12 hover:bg-white/8"
+                        className="group flex items-center gap-2 rounded-xl border border-gray-100 bg-white px-3 py-3 transition-all hover:border-gray-200 hover:bg-gray-50"
                       >
-                        {/* Preview click (fly-to + open drawer) */}
                         <button className="min-w-0 flex-1 text-left" onClick={() => { flyToPoi(poi); handlePoiClick(poi.id); }}>
                           <div className="flex items-center gap-2.5">
                             {POI_LOGOS[poi.id]
@@ -506,29 +588,26 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                               : <span className="text-lg leading-none">{POI_META[poi.type].icon}</span>
                             }
                             <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-white/85 transition-colors group-hover:text-white">
+                              <p className="truncate text-sm font-semibold text-gray-700 transition-colors group-hover:text-gray-900">
                                 {poi.name}
                               </p>
                               {qd !== undefined && qd.total > 0 ? (
-                                <p className="mt-0.5 text-[10px] text-white/35">
+                                <p className="mt-0.5 text-[10px] text-gray-400">
                                   {qd.done}/{qd.total} quête{qd.total > 1 ? "s" : ""}
-                                  {qd.done === qd.total && (
-                                    <span className="ml-1 text-emerald-400">✓</span>
-                                  )}
+                                  {qd.done === qd.total && <span className="ml-1 text-emerald-500">✓</span>}
                                 </p>
                               ) : qd !== undefined ? (
-                                <p className="mt-0.5 text-[10px] text-white/25">Aucune quête</p>
+                                <p className="mt-0.5 text-[10px] text-gray-300">Aucune quête</p>
                               ) : (
-                                <p className="mt-0.5 text-[10px] text-white/20">...</p>
+                                <p className="mt-0.5 text-[10px] text-gray-300">...</p>
                               )}
                             </div>
                           </div>
                         </button>
 
-                        {/* Open modal button */}
                         <button
                           onClick={() => { setSidebarPanel(null); handlePoiClick(poi.id); }}
-                          className="shrink-0 rounded-lg border border-white/10 bg-white/6 px-2.5 py-1.5 text-[11px] font-bold text-white/45 opacity-0 transition-all group-hover:opacity-100 hover:border-white/20 hover:bg-white/15 hover:text-white"
+                          className="shrink-0 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-[11px] font-bold text-gray-400 opacity-0 transition-all group-hover:opacity-100 hover:border-gray-300 hover:bg-gray-100 hover:text-gray-700"
                         >
                           →
                         </button>
@@ -542,25 +621,22 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
 
           {/* Évènements panel */}
           {city.use3DMap && sidebarPanel === "evenements" && (
-            <div className="pointer-events-auto absolute left-0 top-0 z-[1000] flex h-full w-[380px] flex-col border-r border-white/10 bg-gray-950/93 backdrop-blur-xl">
-
-              <div className="flex shrink-0 items-center justify-between border-b border-white/8 px-5 py-4">
+            <div className="pointer-events-auto absolute z-[1000] flex w-[380px] flex-col overflow-hidden rounded-2xl bg-white"
+              style={{ left: 484, top: 20, height: "calc(100vh - 40px)", boxShadow: "0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1)" }}>
+              <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">Saison</span>
-                  <h3 className="mt-0.5 text-sm font-bold text-white">Évènements</h3>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">Saison</span>
+                  <h3 className="mt-0.5 text-sm font-bold text-gray-800">Évènements</h3>
                 </div>
-                <button onClick={() => setSidebarPanel(null)} className="text-white/30 transition-colors hover:text-white/70">
+                <button onClick={() => setSidebarPanel(null)} className="text-gray-400 transition-colors hover:text-gray-600">
                   <X className="h-4 w-4" />
                 </button>
               </div>
-
               <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/8 bg-white/5 text-2xl">
-                  🌸
-                </div>
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 text-2xl">🌸</div>
                 <div>
-                  <p className="text-sm font-semibold text-white/60">Aucun évènement en cours</p>
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-white/30">
+                  <p className="text-sm font-semibold text-gray-500">Aucun évènement en cours</p>
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-gray-400">
                     Les évènements saisonniers apparaîtront ici — hanami, matsuri, Halloween, illuminations de Noël…
                   </p>
                 </div>
@@ -570,27 +646,24 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
 
           {/* Contacts panel */}
           {city.use3DMap && sidebarPanel === "contacts" && (
-            <div className="pointer-events-auto absolute left-0 top-0 z-[1000] flex h-full w-[380px] flex-col border-r border-white/10 bg-gray-950/93 backdrop-blur-xl">
-
-              {/* Header */}
-              <div className="flex shrink-0 items-center justify-between border-b border-white/8 px-5 py-4">
+            <div className="pointer-events-auto absolute z-[1000] flex w-[380px] flex-col overflow-hidden rounded-2xl bg-white"
+              style={{ left: 484, top: 20, height: "calc(100vh - 40px)", boxShadow: "0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1)" }}>
+              <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/40">Carnet</span>
-                  <h3 className="mt-0.5 text-sm font-bold text-white">Contacts</h3>
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">Carnet</span>
+                  <h3 className="mt-0.5 text-sm font-bold text-gray-800">Contacts</h3>
                 </div>
-                <button onClick={() => { setSidebarPanel(null); setRdvOpenId(null); }}
-                  className="text-white/30 transition-colors hover:text-white/70">
+                <button onClick={() => { setSidebarPanel(null); setRdvOpenId(null); }} className="text-gray-400 transition-colors hover:text-gray-600">
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
-              {/* List */}
               {contactsLoading ? (
                 <div className="flex flex-1 items-center justify-center">
-                  <Loader2 className="h-5 w-5 animate-spin text-violet-400" />
+                  <Loader2 className="h-5 w-5 animate-spin text-violet-500" />
                 </div>
               ) : contacts.length === 0 ? (
-                <p className="px-5 py-8 text-center text-[11px] text-white/30">
+                <p className="px-5 py-8 text-center text-[11px] text-gray-400">
                   Parlez à des personnages pour les ajouter ici.
                 </p>
               ) : (
@@ -599,11 +672,8 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                     const friendship = getFriendshipLevel(contact.memoryCount);
                     const isRdvOpen  = rdvOpenId === contact.id;
                     return (
-                      <div key={contact.id} className="overflow-hidden rounded-2xl border border-white/8 bg-white/4">
-
-                        {/* Card */}
+                      <div key={contact.id} className="overflow-hidden rounded-2xl border border-gray-100 bg-white">
                         <div className="flex items-center gap-3 p-4">
-                          {/* Avatar */}
                           <div className="relative shrink-0">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
@@ -612,66 +682,50 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                               style={{ border: `2px solid ${friendship.color}55` }}
                             />
                             <div
-                              className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-gray-950"
+                              className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white"
                               style={{ background: friendship.color }}
                             />
                           </div>
-
-                          {/* Info */}
                           <div className="min-w-0 flex-1">
                             <div className="flex items-baseline gap-1.5">
-                              <p className="truncate text-sm font-bold text-white">{contact.name}</p>
-                              <span className="shrink-0 text-[11px] text-white/30">{contact.nameJp}</span>
+                              <p className="truncate text-sm font-bold text-gray-800">{contact.name}</p>
+                              <span className="shrink-0 text-[11px] text-gray-400">{contact.nameJp}</span>
                             </div>
-                            <p className="mt-0.5 text-[10px] text-white/40">{contact.role}</p>
+                            <p className="mt-0.5 text-[10px] text-gray-400">{contact.role}</p>
                             <div className="mt-2 flex items-center gap-2">
                               <span
                                 className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
-                                style={{
-                                  background: `${friendship.color}18`,
-                                  color:      friendship.color,
-                                  border:     `1px solid ${friendship.color}35`,
-                                }}
+                                style={{ background: `${friendship.color}14`, color: friendship.color, border: `1px solid ${friendship.color}30` }}
                               >
                                 {friendship.label}
                               </span>
                               {contact.memoryCount > 0 && (
-                                <span className="text-[9px] text-white/30">
+                                <span className="text-[9px] text-gray-400">
                                   {contact.memoryCount} souvenir{contact.memoryCount > 1 ? "s" : ""}
                                 </span>
                               )}
                             </div>
                           </div>
-
-                          {/* RDV button */}
                           <button
                             onClick={() => setRdvOpenId(isRdvOpen ? null : contact.id)}
                             className={`shrink-0 rounded-xl border px-3 py-2 text-[10px] font-bold transition-all ${
                               isRdvOpen
-                                ? "border-violet-500/50 bg-violet-500/20 text-violet-300"
-                                : "border-white/10 bg-white/5 text-white/45 hover:border-violet-500/30 hover:bg-violet-500/10 hover:text-violet-300"
+                                ? "border-violet-400 bg-violet-50 text-violet-600"
+                                : "border-gray-200 bg-white text-gray-500 hover:border-violet-400 hover:bg-violet-50 hover:text-violet-600"
                             }`}
                           >
                             📍 RDV
                           </button>
                         </div>
 
-                        {/* Location picker */}
                         {isRdvOpen && (
-                          <div className="border-t border-white/8 px-4 py-3">
-                            <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">
-                              Choisir un lieu
-                            </p>
+                          <div className="border-t border-gray-100 px-4 py-3">
+                            <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.18em] text-gray-400">Choisir un lieu</p>
                             <div className="flex flex-col gap-1">
                               {contact.locations.map(loc => (
-                                <div key={loc.poiId}
-                                  className="flex items-center justify-between rounded-lg border border-white/6 bg-white/4 px-3 py-2.5">
-                                  <span className="text-xs text-white/60">{loc.name}</span>
-                                  <button
-                                    disabled
-                                    className="cursor-not-allowed text-[9px] font-bold text-white/20"
-                                    title="Bientôt disponible"
-                                  >
+                                <div key={loc.poiId} className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-3 py-2.5">
+                                  <span className="text-xs text-gray-500">{loc.name}</span>
+                                  <button disabled className="cursor-not-allowed text-[9px] font-bold text-gray-300" title="Bientôt disponible">
                                     Inviter →
                                   </button>
                                 </div>

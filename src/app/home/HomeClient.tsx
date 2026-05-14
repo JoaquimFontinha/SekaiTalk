@@ -150,28 +150,28 @@ export default function HomeClient() {
       <main className="pointer-events-none relative h-screen overflow-hidden">
 
         {/* Stats HUD — top right */}
-        <div className="pointer-events-auto absolute top-5 right-5 z-20 flex items-center gap-6 rounded-2xl border border-gray-200 bg-white px-7 py-4 shadow-md">
-          {userStats && (
-            <>
-              <div className="flex items-center gap-3">
-                <span className="rounded-full bg-violet-100 px-4 py-1.5 text-sm font-bold text-violet-700">
-                  Nv.{userStats.level}
-                </span>
-                <div className="flex flex-col gap-1.5">
-                  <div className="h-2.5 w-32 rounded-full bg-gray-100 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-violet-500 transition-all duration-700"
-                      style={{ width: `${userStats.percent}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] text-gray-400 text-right leading-none tabular-nums">
-                    {userStats.xpInLevel}/{userStats.xpNeeded ?? "MAX"} XP
-                  </span>
+        <div className="pointer-events-auto absolute top-5 right-5 z-20 flex items-center gap-5 rounded-2xl border border-gray-200 bg-white px-6 py-4 shadow-md">
+
+          {/* Tickets journaliers */}
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-1">
+              {[0, 1, 2, 3, 4].map(i => (
+                <div key={i} className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-lg">
+                  🎫
                 </div>
-              </div>
-              <div className="w-px h-7 bg-gray-200" />
-            </>
-          )}
+              ))}
+              <button className="ml-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-gray-200 text-gray-400 hover:border-violet-400 hover:text-violet-500 transition-colors text-sm font-bold">
+                +
+              </button>
+            </div>
+            <span className="flex items-center gap-1 text-[10px] text-gray-400 leading-none">
+              <span>⏱</span>
+              <span className="tabular-nums">10h 28min</span>
+            </span>
+          </div>
+
+          <div className="w-px h-9 bg-gray-100" />
+
           <button className="flex items-center gap-2 text-gray-400 hover:text-orange-400 transition-colors">
             <Flame className="h-6 w-6 text-orange-300" />
             <span className="text-base font-semibold text-gray-600">0</span>
@@ -179,9 +179,33 @@ export default function HomeClient() {
           <button className="text-gray-400 hover:text-gray-700 transition-colors">
             <Bell className="h-6 w-6" />
           </button>
-          <button className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-gray-200 text-gray-400 hover:border-gray-400 hover:text-gray-700 transition-colors">
-            <User className="h-5 w-5" />
-          </button>
+
+          {/* Avatar + XP ring (style Pokémon GO) */}
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="relative" style={{ width: 64, height: 64 }}>
+              <svg width={64} height={64} style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }}>
+                <circle cx={32} cy={32} r={28} fill="none" stroke="#e5e7eb" strokeWidth={4.5} />
+                <circle
+                  cx={32} cy={32} r={28}
+                  fill="none"
+                  stroke="#7c3aed"
+                  strokeWidth={4.5}
+                  strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 28}
+                  strokeDashoffset={2 * Math.PI * 28 * (1 - (userStats?.percent ?? 0) / 100)}
+                  style={{ transition: "stroke-dashoffset 0.7s ease" }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400">
+                  <User className="h-5 w-5" />
+                </div>
+              </div>
+            </div>
+            <span className="text-xs font-bold text-gray-700 tabular-nums">
+              Lv. {userStats?.level ?? "—"}
+            </span>
+          </div>
         </div>
 
         {/* Vignette */}
