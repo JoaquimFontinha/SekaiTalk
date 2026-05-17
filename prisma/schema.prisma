@@ -21,14 +21,15 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  xp                Int                 @default(0)
-  yens              Int                 @default(0)
+  xp                Int                  @default(0)
+  yens              Int                  @default(0)
   accounts          Account[]
   sessions          Session[]
   questProgress     UserQuestProgress[]
   characterMemories CharacterMemory[]
   vocabProgress     UserVocabProgress[]
   sessionRecords    SessionRecord[]
+  lessonProgress    UserLessonProgress[]
 }
 
 model Account {
@@ -247,4 +248,56 @@ enum QuestStatus {
 enum TaskStatus {
   PENDING
   COMPLETED
+}
+
+// ── Lesson system ─────────────────────────────────────────────────────────────
+
+enum StepType {
+  INTRO
+  TRUE_FALSE
+  COMPLETE_WORD
+  CHOOSE_ANSWER
+  MATCH_PAIRS
+  CULTURE_NOTE
+}
+
+model Lesson {
+  id          String               @id @default(cuid())
+  poiId       String               @unique
+  title       String
+  description String?
+  steps       LessonStep[]
+  progress    UserLessonProgress[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  @@index([poiId])
+}
+
+model LessonStep {
+  id       String   @id @default(cuid())
+  lessonId String
+  lesson   Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  order    Int
+  type     StepType
+  data     Json
+
+  @@index([lessonId])
+}
+
+model UserLessonProgress {
+  id               String    @id @default(cuid())
+  userId           String
+  lessonId         String
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson           Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  score            Int       @default(0)
+  validated        Boolean   @default(false)
+  firstValidatedAt DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@unique([userId, lessonId])
+  @@index([userId])
 }

@@ -350,6 +350,127 @@ async function main() {
   }
   console.log("Task suggestions updated.");
 
+  // ── Lessons ──────────────────────────────────────────────────────────────────
+
+  const konbiniLesson = await prisma.lesson.upsert({
+    where:  { poiId: "konbini-shinjuku" },
+    update: { title: "Bienvenue au konbini !", description: "Vocabulaire et culture des épiceries japonaises 24h/24" },
+    create: { poiId: "konbini-shinjuku", title: "Bienvenue au konbini !", description: "Vocabulaire et culture des épiceries japonaises 24h/24" },
+  });
+
+  // Recreate steps each time so the content stays fresh
+  await prisma.lessonStep.deleteMany({ where: { lessonId: konbiniLesson.id } });
+  await prisma.lessonStep.createMany({
+    data: [
+      {
+        lessonId: konbiniLesson.id,
+        order: 1,
+        type: "INTRO",
+        data: {
+          word: "いらっしゃいませ",
+          romaji: "irasshaimase",
+          translation: "Bienvenue / Soyez le bienvenu",
+          example: "Formule d'accueil obligatoire dans tous les konbini",
+        },
+      },
+      {
+        lessonId: konbiniLesson.id,
+        order: 2,
+        type: "INTRO",
+        data: {
+          word: "おにぎり",
+          romaji: "onigiri",
+          translation: "Triangle de riz farci",
+          example: "La collation emblématique du konbini japonais",
+        },
+      },
+      {
+        lessonId: konbiniLesson.id,
+        order: 3,
+        type: "TRUE_FALSE",
+        data: {
+          statement: "« いくらですか » signifie « Combien ça coûte ? »",
+          isTrue: true,
+          explanation: "Correct ! 「いくら」(ikura) signifie « combien » et 「ですか」est la particule interrogative polie.",
+          word: "いくらですか",
+        },
+      },
+      {
+        lessonId: konbiniLesson.id,
+        order: 4,
+        type: "CHOOSE_ANSWER",
+        data: {
+          question: "Comment demander si un article est disponible ?",
+          choices: [
+            { text: "ありますか？",       subtext: "arimasu ka?",       isCorrect: true  },
+            { text: "いくらですか？",     subtext: "ikura desu ka?",     isCorrect: false },
+            { text: "おねがいします",     subtext: "onegaishimasu",      isCorrect: false },
+          ],
+          explanation: "「ありますか？」signifie « Est-ce que vous en avez ? ». C'est la phrase clé pour chercher un produit.",
+          translation: "Est-ce que vous en avez ?",
+        },
+      },
+      {
+        lessonId: konbiniLesson.id,
+        order: 5,
+        type: "CULTURE_NOTE",
+        data: {
+          title: "Le konbini, pilier de la vie japonaise",
+          text: "Les コンビニ (konbini) sont des épiceries ouvertes 24h/24, 365 jours par an. On y trouve tout : おにぎり, bentō, médicaments, billets de spectacle et même des services bancaires. Le personnel salue chaque client avec 「いらっしゃいませ」.",
+          vocab: [
+            { word: "コンビニ",   kana: "こんびに",  translation: "convenience store" },
+            { word: "おにぎり",                     translation: "triangle de riz"   },
+            { word: "べんとう",                     translation: "repas box"          },
+            { word: "レジ袋",    kana: "れじぶくろ", translation: "sac plastique"      },
+          ],
+        },
+      },
+      {
+        lessonId: konbiniLesson.id,
+        order: 6,
+        type: "COMPLETE_WORD",
+        data: {
+          question: "Complète le mot.",
+          prefix: "おに",
+          suffix: "",
+          answer: "ぎり",
+          choices: ["ぎり", "ごり", "ぐり"],
+          explanation: "「おにぎり」— le triangle de riz, star incontestée du konbini !",
+          translation: "Triangle de riz",
+        },
+      },
+      {
+        lessonId: konbiniLesson.id,
+        order: 7,
+        type: "MATCH_PAIRS",
+        data: {
+          pairs: [
+            { left: "いらっしゃいませ", right: "Bienvenue"       },
+            { left: "おにぎり",         right: "Triangle de riz" },
+            { left: "いくら",           right: "Combien"         },
+            { left: "ありがとう",       right: "Merci"           },
+          ],
+        },
+      },
+      {
+        lessonId: konbiniLesson.id,
+        order: 8,
+        type: "CHOOSE_ANSWER",
+        data: {
+          question: "Le caissier vous rend la monnaie. Comment le remerciez-vous poliment ?",
+          choices: [
+            { text: "ありがとうございます", subtext: "arigatou gozaimasu", isCorrect: true  },
+            { text: "すみません",           subtext: "sumimasen",          isCorrect: false },
+            { text: "いただきます",         subtext: "itadakimasu",        isCorrect: false },
+          ],
+          explanation: "「ありがとうございます」est la forme polie de « merci ». 「すみません」= excusez-moi, 「いただきます」= avant de manger.",
+          translation: "Merci beaucoup",
+        },
+      },
+    ],
+  });
+  console.log("Lesson seeded for konbini-shinjuku.");
+
   console.log("Seed completed.");
 }
 

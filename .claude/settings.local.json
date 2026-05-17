@@ -53,7 +53,12 @@
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\src\\\\app\\\\home\" -Recurse -Filter \"*GameMap3D*\")",
       "Bash(dir \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\src\\\\app\\\\home\" /s /b)",
       "Bash(findstr \".tsx\")",
-      "Bash(dir \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\src\\\\app\\\\home\\\\[city]\\\\[poi]\" /b)"
+      "Bash(dir \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\src\\\\app\\\\home\\\\[city]\\\\[poi]\" /b)",
+      "Bash(mkdir \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\src\\\\app\\\\api\\\\lessons\\\\poi\\\\[poiId]\")",
+      "Bash(mkdir \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\src\\\\app\\\\api\\\\lessons\\\\[lessonId]\\\\complete\")",
+      "Bash(mkdir -p \"c:/Users/user/Documents/GitHub/SekaiTalk/src/app/api/lessons/poi/[poiId]\")",
+      "Bash(mkdir -p \"c:/Users/user/Documents/GitHub/SekaiTalk/src/app/api/lessons/[lessonId]/complete\")",
+      "Bash(mkdir -p \"c:/Users/user/Documents/GitHub/SekaiTalk/src/app/home/[city]/[poi]/lesson\" && echo done)"
     ],
     "additionalDirectories": [
       "C:\\Program Files\\PostgreSQL\\17\\data",
@@ -61,7 +66,8 @@
       "c:\\Users\\user\\Documents\\GitHub\\SekaiTalk\\public",
       "c:\\Users\\user\\Documents\\GitHub\\SekaiTalk\\src\\app\\api\\characters",
       "c:\\Users\\user\\Documents\\GitHub\\SekaiTalk\\src\\app\\home\\[city]",
-      "C:\\Users\\user\\Documents\\GitHub\\SekaiTalk"
+      "C:\\Users\\user\\Documents\\GitHub\\SekaiTalk",
+      "c:\\Users\\user\\Documents\\GitHub\\SekaiTalk\\src\\app\\home\\[city]\\[poi]"
     ]
   }
 }

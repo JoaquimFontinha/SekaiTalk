@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle, CheckCircle2, Circle, Settings, ChevronLeft, ChevronRight, Smartphone } from "lucide-react";
+import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle, CheckCircle2, Circle, Settings, ChevronLeft, ChevronRight, Smartphone, GraduationCap } from "lucide-react";
 import PhoneOverlay from "@/components/PhoneOverlay";
 import cities, { POI, POIType } from "@/lib/cities";
 import POI_LOGOS from "@/lib/poi-logos";
@@ -120,6 +120,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
   const [poiQuests, setPoiQuests]         = useState<PoiQuest[]>([]);
   const [questsLoading, setQuestsLoading] = useState(false);
   const [questPreview, setQuestPreview]   = useState<{ quest: PoiQuest; poi: POI } | null>(null);
+  const [lessonData, setLessonData]       = useState<{ id: string; title: string; validated: boolean; score: number } | null | "none">(null);
 
   // Sidebar state
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
@@ -179,12 +180,25 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
     setSelectedPoi(poi);
     setPoiQuests([]);
     setQuestsLoading(true);
+    setLessonData(null);
     flyToPoi(poi);
     fetch(`/api/quests/poi/${poiId}`)
       .then(r => r.ok ? r.json() : [])
       .then(setPoiQuests)
       .catch(() => setPoiQuests([]))
       .finally(() => setQuestsLoading(false));
+    fetch(`/api/lessons/poi/${poiId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) { setLessonData("none"); return; }
+        setLessonData({
+          id: data.id,
+          title: data.title,
+          validated: data.userProgress?.validated ?? false,
+          score: data.userProgress?.score ?? 0,
+        });
+      })
+      .catch(() => setLessonData("none"));
   }, [city, flyToPoi]);
 
   const closeModal = useCallback(() => {
@@ -884,6 +898,55 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                 <div>
                   <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">À savoir</p>
                   <p className="text-[13px] leading-relaxed text-white/65">{selectedPoi.description}</p>
+                </div>
+              )}
+
+              {/* Lesson */}
+              {lessonData !== "none" && (
+                <div>
+                  <p className="mb-3 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">Leçon</p>
+                  {lessonData === null ? (
+                    <div className="flex justify-center py-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-white/30" />
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-white/8 bg-white/4 p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-500/20">
+                          <GraduationCap className="h-4.5 w-4.5 text-violet-300" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-bold text-white truncate">{lessonData.title}</p>
+                          {lessonData.validated ? (
+                            <p className="mt-0.5 text-[10px] text-emerald-400 font-semibold">
+                              Validée ✓  — {lessonData.score} %
+                            </p>
+                          ) : lessonData.score > 0 ? (
+                            <p className="mt-0.5 text-[10px] text-amber-400">
+                              Score précédent : {lessonData.score} % (min. 80 %)
+                            </p>
+                          ) : (
+                            <p className="mt-0.5 text-[10px] text-white/35">Non commencée</p>
+                          )}
+                        </div>
+                        {lessonData.validated && (
+                          <span className="flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                            <CheckCircle className="h-3 w-3" /> OK
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => selectedPoi && router.push(`/home/${citySlug}/${selectedPoi.id}/lesson`)}
+                        className={`mt-3 w-full rounded-lg py-2.5 text-xs font-bold transition-all ${
+                          lessonData.validated
+                            ? "border border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60"
+                            : "border border-violet-500/50 bg-violet-600/80 text-white hover:bg-violet-500"
+                        }`}
+                      >
+                        {lessonData.validated ? "🔄 Refaire la leçon" : lessonData.score > 0 ? "🔄 Réessayer" : "🎓 Commencer la leçon"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
