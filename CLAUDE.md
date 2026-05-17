@@ -72,10 +72,13 @@ Deux fichiers d'env :
 - `UserTaskProgress` — progression par tâche (`PENDING` | `COMPLETED`)
 - `UserVocabProgress` — progression SRS par mot par utilisateur par quête. Clé `@@unique([userId, questId, wordJp])`. Champs : `encounters`, `correctCount`, `errorCount`, `lastSeenAt`
 - `SessionRecord` — résumé d'une session complétée. Champs : `durationSeconds`, `errorCount`, `suggestionsUsed`, `practicedWords` (Json — string[] des `jp` prononcés)
+- `Lesson` — leçon liée à un POI (`poiId @unique`). Champs : `title`, `description?`. Relation `steps: LessonStep[]`
+- `LessonStep` — étape d'une leçon, ordonnée par `order`. Champs : `type: StepType` (enum), `data: Json` (shape selon le type). Cascade delete depuis `Lesson`
+- `UserLessonProgress` — progression utilisateur sur une leçon. Clé `@@unique([userId, lessonId])`. Champs : `score`, `validated` (bool), `completedAt?`, `firstValidatedAt?`. Ne repasse pas `validated` à `false` si une nouvelle tentative échoue
 
 ### Seed
 
-`prisma/seed.ts` — crée `Scene`, `Character`, `CharacterAppearance` et `Quest` avec des IDs stables.
+`prisma/seed.ts` — crée `Scene`, `Character`, `CharacterAppearance`, `Quest` et `Lesson` avec des IDs stables.
 - Personnages : upsert par `id` stable (`"char-kenji"`, `"char-hana"`, `"char-taro"`)
 - `greetingWords` et `greetingTranslation` hardcodés dans le seed — pour un nouveau personnage, appeler `/api/analyze` une fois pour générer le breakdown puis le coller dans le seed
 - Scènes : upsert par `poiId` (konbini-shinjuku, konbini-shibuya, konbini-kyoto) avec `entrySound: "/sounds/konbini_enter.mp3"`
@@ -83,6 +86,7 @@ Deux fichiers d'env :
 - Quêtes : `findUnique` + `create` — idempotentes, non recréées si l'ID existe déjà
 - Vocab : `quest.update({ data: { vocab: VocabEntry[] } })` après le create — toujours upsertée pour rester à jour
 - Quête de test : `quest-konbini-shinjuku-info-1` avec 10 mots (N5 : すみません, どこ, おにぎり, ありますか, いくら, ありがとうございます / N4 : 種類, 新鮮, 冷蔵庫, 今朝)
+- **Leçons** : `findUnique` + `create` pour la `Lesson`, puis `deleteMany` + `createMany` pour les `LessonStep` (idempotent, les étapes sont recréées à chaque seed pour rester à jour). Seul `konbini-shinjuku` a une leçon pour l'instant
 
 ### Navigation et routes
 
@@ -91,6 +95,7 @@ Deux fichiers d'env :
 /home/[city]                   → carte 3D de la ville (CityClient)
 /home/[city]/[poi]             → conversation IA avec le personnage (POIClient)
 /home/[city]/[poi]?quest=<id>  → même page, démarre directement la quête
+/home/[city]/[poi]/lesson      → leçon interactive du POI (LessonClient)
 ```
 
 ### Flux quête complet
@@ -121,6 +126,8 @@ Deux fichiers d'env :
 | `/api/quests/[questId]/start` | POST | Crée un `UserQuestProgress` (auth requise) |
 | `/api/quests/tasks/[taskId]/complete` | POST | Valide une tâche, débloque la suivante ou termine la quête |
 | `/api/session/complete` | POST | Sauvegarde `SessionRecord` + upsert `UserVocabProgress` pour chaque mot pratiqué. Retourne `{ vocabWithMastery }` — chaque mot enrichi de `mastery`, `encounters`, `practiced` |
+| `/api/lessons/poi/[poiId]` | GET | Récupère la leçon d'un POI avec ses steps ordonnés et la progression de l'utilisateur connecté (`userProgress` ou `null`) |
+| `/api/lessons/[lessonId]/complete` | POST | Reçoit `{ score }`, calcule `validated = score >= 80`, upsert `UserLessonProgress` (ne repasse pas `validated` à `false`), retourne `{ validated, score }` |
 
 ### Système de maîtrise du vocabulaire (`src/lib/mastery.ts`)
 
@@ -190,7 +197,8 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 **Titre ville** : `position: absolute, top: 20`, `left: sidebarPanel ? 864 : sidebarExpanded ? 488 : 96` — se décale dynamiquement selon l'état sidebar/panneau.
 
 **Drawer POI** (420px, `right-0`, slide-in, fond `bg-gray-950/96`)
-- Hero image ou gradient par type. Titre, description, quêtes avec barre de progression.
+- Hero image ou gradient par type. Titre, description, leçon (si disponible) puis quêtes avec barre de progression.
+- **Section Leçon** : fetche `GET /api/lessons/poi/${poiId}` en parallèle avec les quêtes. État `lessonData` : `null` (chargement) | `"none"` (aucune leçon) | `{ id, title, validated, score }`. Affiche un spinner puis une carte avec GraduationCap, statut ("Non commencée" / score précédent / "Validée ✓") et bouton "🎓 Commencer la leçon" / "🔄 Réessayer" / "🔄 Refaire la leçon". Navigue vers `/home/${citySlug}/${poi.id}/lesson`.
 - Bouton "▶ Faire la quête" / "🔄 Refaire" → ouvre `questPreview` (état local).
 - Pas de bouton "Conversation libre" — toute navigation vers un POI requiert un `questId`.
 
@@ -460,6 +468,39 @@ Remplace le push-to-talk. Le micro est ouvert en permanence après le chargement
 - `speak()` dans `POIClient` : ElevenLabs si `voiceId` présent, fallback `speechSynthesis` browser
 - **Double-speak (React StrictMode)** : `speak()` crée un `AbortController` à chaque appel (`speakAbortRef`) et annule le précédent
 - Voix seed : Kenji=Liam (`TX3LPaxmHKxFdv7VOQHJ`), Hana=Matilda (`XrExE9yKIg1WjnnlVkGX`), Taro=Daniel (`onwK4e9ZLuTAKqWW03F9`)
+
+### Système de leçon (`LessonClient`)
+
+`src/app/home/[city]/[poi]/lesson/LessonClient.tsx` — lecteur de leçon style Busuu. `src/lib/lesson.ts` contient tous les types TypeScript.
+
+**Types de steps (`StepType`)** :
+- `INTRO` — carte introduction d'un mot (word, kana, romaji, translation, example?). Non scoré. `AudioPlayer` Busuu-style intégré (barre bleue, waveform animée, toggle vitesse 1x/.7x).
+- `TRUE_FALSE` — affirmation vrai/faux. Scoré. `SpeakButton` inline sur le mot japonais.
+- `CHOOSE_ANSWER` — QCM (4 choix). Scoré. `SpeakButton` à droite de chaque choix.
+- `COMPLETE_WORD` — compléter le mot manquant (prefix + trou + suffix, 4 choix lettre/syllabe). Scoré. `SpeakButton` apparaît après réponse, lecture automatique si correct (300ms delay).
+- `MATCH_PAIRS` — associer 4 paires japonais↔français. Scoré. Icône speaker SVG inline sur chaque item japonais (`e.stopPropagation()`).
+- `CULTURE_NOTE` — note culturelle avec texte + vocab illustratif. Non scoré. `SpeakButton` par ligne vocab.
+- `PRONUNCIATION` — test de prononciation via micro. Scoré. 3 essais max. Envoi à Groq Whisper (`/api/transcribe`), match substring sur `word` et `kana` normalisés. Succès → chime Web Audio (C5→E5→G5→C6) + cercle vert animé (`@keyframes successPop` spring) + checkmark SVG dessiné (`stroke-dashoffset`) + confetti + "よし！". Échec → affiche ce qui a été entendu + essais restants. Pas d'ElevenLabs ni de Web Speech API — micro réel uniquement.
+
+**`SCORED_TYPES`** : `["TRUE_FALSE", "CHOOSE_ANSWER", "COMPLETE_WORD", "MATCH_PAIRS", "PRONUNCIATION"]` — seuls ces types contribuent au score.
+
+**Score et validation** : `score = Math.round(correct / scored * 100)`. Si `scored === 0` (que des INTRO/CULTURE_NOTE) → score 100. `validated = score >= 80`. Stocké via `POST /api/lessons/[lessonId]/complete` en fin de leçon.
+
+**Audio (Web Speech API — 100% gratuit, aucun appel réseau)** :
+- `speakJapanese(text, rate?)` — `window.speechSynthesis`, `lang: "ja-JP"`, `rate * 0.85`, cherche une voix japonaise via `getVoices().find(v => v.lang.startsWith("ja"))`
+- `SpeakButton` — bouton icône speaker inline (bleu, 14px), `e.stopPropagation()` pour ne pas interférer avec la sélection
+- `AudioPlayer` — barre player Busuu (fond bleu `#1a73e8`), bouton play/pause, 20 barres waveform animées (`@keyframes audioWave`), toggle vitesse 1x/.7x. Placé dans l'INTRO entre la zone gradient et les infos mot.
+- Préchargement voix : `useEffect` appelle `getVoices()` + `onvoiceschanged` pour éviter le délai au premier clic
+- Cleanup : `window.speechSynthesis.cancel()` dans `handleBack` et à l'unmount de `AudioPlayer`
+
+**UI Busuu-style** :
+- Barre de progression verte en haut (pill, `width: ${stepIndex / steps.length * 100}%`)
+- `FeedbackBar` fixe en bas (vert/rouge) — explication + bouton "Continuer →"
+- `Confetti` (28 pièces colorées, `@keyframes confettiFall`) sur bonne réponse et si validé en fin
+- `CompletionScreen` — écran final avec score, badge ✓/✗, bouton "Retour"
+- `handleBack` → `router.push(/home/${citySlug}?poi=${poiId})` (rouvre le drawer du POI)
+
+**Seed** : leçon `konbini-shinjuku` avec 8 steps : 2 INTRO (いらっしゃいませ, おにぎり) → TRUE_FALSE → CHOOSE_ANSWER → CULTURE_NOTE → COMPLETE_WORD → MATCH_PAIRS → CHOOSE_ANSWER. Steps recréés via `deleteMany` + `createMany` à chaque seed.
 
 ### SessionProvider
 `src/app/providers.tsx` wrappe l'app avec le `SessionProvider` NextAuth, inclus dans `src/app/layout.tsx`.

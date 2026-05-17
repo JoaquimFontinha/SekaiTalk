@@ -259,6 +259,7 @@ enum StepType {
   CHOOSE_ANSWER
   MATCH_PAIRS
   CULTURE_NOTE
+  PRONUNCIATION
 }
 
 model Lesson {

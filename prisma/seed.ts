@@ -387,6 +387,18 @@ async function main() {
       {
         lessonId: konbiniLesson.id,
         order: 3,
+        type: "PRONUNCIATION",
+        data: {
+          word: "おにぎり",
+          kana: "おにぎり",
+          romaji: "o · ni · gi · ri",
+          translation: "Triangle de riz farci",
+          hint: "4 syllabes courtes et égales — prononce chaque voyelle distinctement",
+        },
+      },
+      {
+        lessonId: konbiniLesson.id,
+        order: 4,
         type: "TRUE_FALSE",
         data: {
           statement: "« いくらですか » signifie « Combien ça coûte ? »",
@@ -397,7 +409,7 @@ async function main() {
       },
       {
         lessonId: konbiniLesson.id,
-        order: 4,
+        order: 5,
         type: "CHOOSE_ANSWER",
         data: {
           question: "Comment demander si un article est disponible ?",
@@ -412,7 +424,7 @@ async function main() {
       },
       {
         lessonId: konbiniLesson.id,
-        order: 5,
+        order: 6,
         type: "CULTURE_NOTE",
         data: {
           title: "Le konbini, pilier de la vie japonaise",
@@ -427,7 +439,7 @@ async function main() {
       },
       {
         lessonId: konbiniLesson.id,
-        order: 6,
+        order: 7,
         type: "COMPLETE_WORD",
         data: {
           question: "Complète le mot.",
@@ -441,7 +453,7 @@ async function main() {
       },
       {
         lessonId: konbiniLesson.id,
-        order: 7,
+        order: 8,
         type: "MATCH_PAIRS",
         data: {
           pairs: [
@@ -454,7 +466,7 @@ async function main() {
       },
       {
         lessonId: konbiniLesson.id,
-        order: 8,
+        order: 9,
         type: "CHOOSE_ANSWER",
         data: {
           question: "Le caissier vous rend la monnaie. Comment le remerciez-vous poliment ?",

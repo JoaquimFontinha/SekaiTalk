@@ -4,7 +4,8 @@ export type StepType =
   | "COMPLETE_WORD"
   | "CHOOSE_ANSWER"
   | "MATCH_PAIRS"
-  | "CULTURE_NOTE";
+  | "CULTURE_NOTE"
+  | "PRONUNCIATION";
 
 export type IntroStepData = {
   word: string;
@@ -48,13 +49,22 @@ export type CultureNoteStepData = {
   vocab?: { word: string; kana?: string; translation: string }[];
 };
 
+export type PronunciationStepData = {
+  word: string;
+  kana: string;
+  romaji: string;
+  translation: string;
+  hint?: string;
+};
+
 export type AnyStepData =
   | IntroStepData
   | TrueFalseStepData
   | ChooseAnswerStepData
   | CompleteWordStepData
   | MatchPairsStepData
-  | CultureNoteStepData;
+  | CultureNoteStepData
+  | PronunciationStepData;
 
 export type LessonStepFull = {
   id: string;
@@ -81,4 +91,5 @@ export const SCORED_TYPES: StepType[] = [
   "CHOOSE_ANSWER",
   "COMPLETE_WORD",
   "MATCH_PAIRS",
+  "PRONUNCIATION",
 ];

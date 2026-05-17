@@ -12,10 +12,34 @@ import type {
   CompleteWordStepData,
   MatchPairsStepData,
   CultureNoteStepData,
+  PronunciationStepData,
   StepType,
 } from "@/lib/lesson";
 import { SCORED_TYPES } from "@/lib/lesson";
 import cities from "@/lib/cities";
+
+// ── Web Audio chime (free, no files needed) ───────────────────────────────────
+
+function playSuccessChime() {
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new AudioCtx();
+    ([523, 659, 784, 1047] as const).forEach((freq, i) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      const t = ctx.currentTime + i * 0.11;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.28, t + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+      osc.start(t);
+      osc.stop(t + 0.45);
+    });
+  } catch { /* ignore if AudioContext unavailable */ }
+}
 
 // ── Web Speech API helpers ────────────────────────────────────────────────────
 
@@ -516,6 +540,196 @@ function CultureNoteStep({ data, onNext }: { data: CultureNoteStepData; onNext: 
   );
 }
 
+// ── PRONUNCIATION step ────────────────────────────────────────────────────────
+
+type PronunciationPhase = "idle" | "recording" | "processing" | "success" | "fail";
+const MAX_PRONUNCIATION_ATTEMPTS = 3;
+
+function PronunciationStep({ data, onAnswer }: {
+  data: PronunciationStepData; onAnswer: (correct: boolean) => void;
+}) {
+  const [phase, setPhase]                   = useState<PronunciationPhase>("idle");
+  const [heard, setHeard]                   = useState("");
+  const [attemptsLeft, setAttemptsLeft]     = useState(MAX_PRONUNCIATION_ATTEMPTS);
+  const [showLocalConfetti, setShowLocalConfetti] = useState(false);
+  const recorderRef  = useRef<MediaRecorder | null>(null);
+  const chunksRef    = useRef<Blob[]>([]);
+  const answered     = useRef(false);
+  const attemptsRef  = useRef(MAX_PRONUNCIATION_ATTEMPTS);
+
+  const processAudio = async () => {
+    setPhase("processing");
+    try {
+      const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+      if (blob.size < 500) { setPhase("idle"); return; }
+      const fd = new FormData();
+      fd.append("audio", blob, "audio.webm");
+      const res  = await fetch("/api/transcribe", { method: "POST", body: fd });
+      const { text } = await res.json() as { text: string };
+      const norm       = (text ?? "").replace(/[\s·\-]/g, "").toLowerCase();
+      const normRomaji = data.romaji.replace(/[\s·\-]/g, "").toLowerCase();
+      const ok   = norm.includes(data.word) || norm.includes(data.kana) || norm.includes(normRomaji);
+      setHeard(text || "…");
+      if (ok) {
+        playSuccessChime();
+        setShowLocalConfetti(true);
+        setPhase("success");
+        if (!answered.current) {
+          answered.current = true;
+          setTimeout(() => onAnswer(true), 2200);
+        }
+      } else {
+        attemptsRef.current -= 1;
+        setAttemptsLeft(attemptsRef.current);
+        setPhase("fail");
+        if (attemptsRef.current <= 0 && !answered.current) {
+          answered.current = true;
+          setTimeout(() => onAnswer(false), 1600);
+        }
+      }
+    } catch {
+      setPhase("idle");
+    }
+  };
+
+  const toggleRecording = async () => {
+    if (answered.current) return;
+    if (phase === "recording") {
+      recorderRef.current?.stop();
+      return;
+    }
+    if (phase !== "idle" && phase !== "fail") return;
+    setHeard("");
+    try {
+      const stream   = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+      chunksRef.current = [];
+      recorder.ondataavailable = e => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+      recorder.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop());
+        await processAudio();
+      };
+      recorderRef.current = recorder;
+      recorder.start();
+      setPhase("recording");
+      // auto-stop after 5s
+      setTimeout(() => { if (recorderRef.current?.state === "recording") recorderRef.current.stop(); }, 5000);
+    } catch {
+      setPhase("idle");
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-7">
+      {showLocalConfetti && <Confetti />}
+
+      <p className="text-base font-semibold text-gray-500 tracking-wide">Prononce le mot !</p>
+
+      {/* Target word card */}
+      <div className="w-full max-w-sm rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="flex items-center justify-center"
+          style={{ height: 140, background: "linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)" }}>
+          <span className="text-[60px]">🎤</span>
+        </div>
+        <div className="px-5 py-4 text-center">
+          <p className="text-3xl font-black text-gray-900">{data.word}</p>
+          {data.kana !== data.word && (
+            <p className="mt-0.5 text-base text-violet-500">{data.kana}</p>
+          )}
+          <p className="mt-0.5 text-sm font-medium text-gray-400">{data.romaji}</p>
+          <p className="mt-1.5 text-sm text-gray-500">{data.translation}</p>
+          {data.hint && <p className="mt-1.5 text-xs italic text-gray-400">{data.hint}</p>}
+        </div>
+      </div>
+
+      {/* Mic / result area */}
+      <div className="flex flex-col items-center gap-4 min-h-[140px] justify-center">
+
+        {(phase === "idle" || phase === "fail") && (
+          <>
+            <button onClick={toggleRecording}
+              className="relative flex h-[72px] w-[72px] items-center justify-center rounded-full bg-red-500 shadow-lg hover:bg-red-600 active:scale-95 transition-all">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="white">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+              </svg>
+            </button>
+            {phase === "fail" ? (
+              <div className="text-center space-y-1">
+                <p className="text-sm text-red-400 font-semibold">
+                  J'ai entendu : <span className="italic">"{heard}"</span>
+                </p>
+                <p className="text-xs text-gray-400">
+                  {attemptsLeft > 0
+                    ? `${attemptsLeft} essai${attemptsLeft > 1 ? "s" : ""} restant${attemptsLeft > 1 ? "s" : ""} — réessaie !`
+                    : "Plus d'essais…"}
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">Appuie et parle</p>
+            )}
+          </>
+        )}
+
+        {phase === "recording" && (
+          <>
+            <button onClick={toggleRecording}
+              className="relative flex h-[72px] w-[72px] items-center justify-center rounded-full bg-red-500 shadow-lg">
+              <div className="absolute inset-0 rounded-full bg-red-400 animate-ping opacity-60" />
+              <div className="relative h-5 w-5 rounded-sm bg-white" />
+            </button>
+            <p className="text-sm font-semibold text-red-400 animate-pulse">● Écoute en cours… (appuie pour arrêter)</p>
+          </>
+        )}
+
+        {phase === "processing" && (
+          <>
+            <div className="h-[72px] w-[72px] rounded-full border-4 border-gray-200 border-t-violet-500 animate-spin" />
+            <p className="text-sm text-gray-400">Analyse de ta prononciation…</p>
+          </>
+        )}
+
+        {phase === "success" && (
+          <div className="flex flex-col items-center gap-3">
+            <div style={{ animation: "successPop 0.5s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+              <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-green-500 shadow-xl">
+                <svg width="36" height="36" viewBox="0 0 52 52" fill="none"
+                  stroke="white" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 27 L22 35 L38 19"
+                    style={{ strokeDasharray: 34, strokeDashoffset: 34,
+                      animation: "checkDraw 0.4s 0.2s ease-out forwards" }} />
+                </svg>
+              </div>
+            </div>
+            <p className="text-2xl font-black text-green-500"
+              style={{ animation: "fadeUpIn 0.4s 0.35s ease-out both" }}>
+              よし！🎉
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Hear the word */}
+      <div className="flex items-center gap-2">
+        <SpeakButton text={data.kana || data.word} size={16} />
+        <span className="text-xs text-gray-400">Écoute la prononciation</span>
+      </div>
+
+      <style>{`
+        @keyframes successPop {
+          0%   { transform: scale(0);    opacity: 0; }
+          70%  { transform: scale(1.18); opacity: 1; }
+          100% { transform: scale(1);    opacity: 1; }
+        }
+        @keyframes checkDraw  { to { stroke-dashoffset: 0; } }
+        @keyframes fadeUpIn {
+          from { transform: translateY(10px); opacity: 0; }
+          to   { transform: translateY(0);    opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 // ── Completion screen ─────────────────────────────────────────────────────────
 
 function CompletionScreen({ score, validated, firstName, onExit }: {
@@ -688,6 +902,9 @@ export default function LessonClient({ citySlug, poiId }: { citySlug: string; po
           onAnswer={c => handleAnswer(c, c ? "Toutes les paires sont correctes !" : "Essaie encore !")} />;
       case "CULTURE_NOTE":
         return <CultureNoteStep data={step.data as CultureNoteStepData} onNext={advance} />;
+      case "PRONUNCIATION":
+        return <PronunciationStep data={step.data as PronunciationStepData}
+          onAnswer={c => handleAnswer(c, c ? "Parfaite prononciation !" : `Le mot était : ${(step.data as PronunciationStepData).romaji}`)} />;
       default:
         return null;
     }
