@@ -4,19 +4,18 @@ import { useEffect, useState } from "react";
 import Map, { Marker } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useRouter } from "next/navigation";
-import cities from "@/lib/cities";
+import staticCities from "@/lib/cities";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
 type UserStats = { level: number };
+type CityEntry = { slug: string; name: string; lng: number; lat: number; levelRequired: number };
 
-const CITY_LIST = Object.entries(cities).map(([slug, data]) => ({
-  slug,
-  name: data.name,
-  lng: data.center[1],
-  lat: data.center[0],
-  levelRequired: data.levelRequired ?? 0,
-}));
+function toCityList(cities: Record<string, { name: string; center: [number,number]; levelRequired: number }>): CityEntry[] {
+  return Object.entries(cities).map(([slug, data]) => ({
+    slug, name: data.name, lng: data.center[1], lat: data.center[0], levelRequired: data.levelRequired ?? 0,
+  }));
+}
 
 const MAP_STYLE = {
   version: 8 as const,
@@ -67,11 +66,16 @@ const MAP_STYLE = {
 export default function JapanMap() {
   const router = useRouter();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [cityList, setCityList] = useState<CityEntry[]>(toCityList(staticCities));
 
   useEffect(() => {
     fetch("/api/user/stats")
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setUserStats(data); })
+      .catch(() => {});
+    fetch("/api/content/cities")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setCityList(toCityList(data)); })
       .catch(() => {});
   }, []);
 
@@ -101,7 +105,7 @@ export default function JapanMap() {
         attributionControl={false}
       style={{ width: "100%", height: "100%" }}
     >
-      {CITY_LIST.map(city => {
+      {cityList.map(city => {
         const isLocked = city.levelRequired > (userStats?.level ?? 0);
 
         return (

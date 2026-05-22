@@ -1,36 +1,44 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { MapProvider, useMapCtx } from "./MapContext";
-import cities from "@/lib/cities";
+import staticCities, { type CityData } from "@/lib/cities";
 
 const GameMap3D  = dynamic(() => import("./[city]/GameMap3D"), { ssr: false });
 const JapanMap   = dynamic(() => import("./JapanMap"),         { ssr: false });
 
-const DEFAULT_CITY = cities["tokyo"];
-
 function PersistentMap() {
   const pathname = usePathname();
   const { mapRef, activeType, poiClickRef, mapBgClickRef } = useMapCtx();
+  const [dbCities, setDbCities] = useState<Record<string, CityData>>(staticCities);
+  const fetchedRef = useRef(false);
+
+  // Charge les données depuis la DB une seule fois (pour refléter les modifs admin)
+  useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+    fetch("/api/content/cities")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setDbCities(data); })
+      .catch(() => {});
+  }, []);
 
   const parts = pathname.replace(/^\/home\/?/, "").split("/").filter(Boolean);
   const citySlug = parts[0] ?? null;
-  const city = citySlug ? cities[citySlug] : null;
+  const city = citySlug ? dbCities[citySlug] : null;
   const isOnCityPage = !!city?.use3DMap && parts.length === 1;
-  const displayCity = city?.use3DMap ? city : DEFAULT_CITY;
+  const displayCity = city?.use3DMap ? city : (dbCities["tokyo"] ?? staticCities["tokyo"]);
   const warmedUp = useRef(false);
 
-  // Préchargement des tuiles des autres villes quand la map est cachée
-  // (user en conv ou sur /home) — jumps invisibles, SW met tout en cache
   useEffect(() => {
     if (isOnCityPage || warmedUp.current) return;
     const map = (mapRef.current as any)?.getMap?.();
     if (!map) return;
     warmedUp.current = true;
 
-    const targets = Object.values(cities).filter(c => c.use3DMap);
+    const targets = Object.values(dbCities).filter(c => c.use3DMap);
     let i = 0;
     const next = () => {
       if (i >= targets.length) return;
@@ -39,7 +47,7 @@ function PersistentMap() {
       map.jumpTo({ center: [c.center[1], c.center[0]], zoom: 15 });
     };
     setTimeout(next, 800);
-  }, [isOnCityPage, mapRef]);
+  }, [isOnCityPage, mapRef, dbCities]);
 
   return (
     <div
@@ -89,7 +97,7 @@ function HomeShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const parts = pathname.replace(/^\/home\/?/, "").split("/").filter(Boolean);
   const citySlug = parts[0] ?? null;
-  const city = citySlug ? cities[citySlug] : null;
+  const city = citySlug ? staticCities[citySlug] : null;
   const isOnCityPage = !!city?.use3DMap && parts.length === 1;
   const isOnHomePage = parts.length === 0;
 

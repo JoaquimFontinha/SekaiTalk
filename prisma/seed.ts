@@ -1757,6 +1757,97 @@ async function main() {
   }
   console.log("Tokyo lessons batch 2 seeded.");
 
+  // ── CityRecord + POIRecord (admin DB mirror of cities.ts) ──────────────────
+  const CITIES_DATA = [
+    {
+      id: "tokyo", name: "Tokyo", nameJp: "東京", centerLat: 35.6762, centerLng: 139.6903,
+      zoom: 14, pitch: 60, bearing: -20, levelRequired: 1, use3DMap: true, isActive: true,
+      pois: [
+        { id: "konbini-shinjuku", name: "TEST — Konbini Shinjuku", type: "konbini", lat: 35.6940, lng: 139.7036, description: "Les konbini japonais redéfinissent le concept de commodité : onigiri fraîchement préparés, œufs à la coque marinés dans la soja, café torréfié à la minute, desserts sophistiqués. Ouverts 24h/24, ils sont le QG des noctambules de Kabukichō." },
+        { id: "jr-shinjuku", name: "Gare JR Shinjuku", type: "transport", lat: 35.6896, lng: 139.7006, description: "La gare la plus fréquentée au monde avec plus de 3 millions de voyageurs par jour." },
+        { id: "tokyo-station-shinkansen", name: "Gare de Tokyo — Shinkansen", type: "transport", lat: 35.6812, lng: 139.7671, description: "Inaugurée en 1914, sa façade en brique rouge est un symbole de l'ère Meiji." },
+        { id: "haneda-airport", name: "Aéroport International Haneda", type: "transport", lat: 35.5502, lng: 139.7798, description: "Le premier aéroport de Tokyo, parmi les plus ponctuels au monde." },
+        { id: "7eleven-shinjuku", name: "7-Eleven Kabukichō", type: "konbini", lat: 35.6940, lng: 139.7050, description: "7-Eleven est la chaîne de konbini la plus présente au Japon." },
+        { id: "familymart-shibuya", name: "FamilyMart Shibuya", type: "konbini", lat: 35.6601, lng: 139.6981, description: "FamilyMart se reconnaît à son jingle d'entrée emblématique." },
+        { id: "lawson-harajuku", name: "Lawson Harajuku", type: "konbini", lat: 35.6703, lng: 139.7025, description: "Lawson se distingue par ses Uchi Café desserts haut de gamme." },
+        { id: "donquijote-shibuya", name: "Mega Don Quijote Shibuya", type: "shop", lat: 35.6604, lng: 139.6963, description: "Don Quijote, surnommé \"Donki\", est le temple du shopping nocturne japonais." },
+        { id: "loft-shibuya", name: "Loft Shibuya", type: "shop", lat: 35.6604, lng: 139.6972, description: "Loft est la référence japonaise pour la papeterie créative." },
+        { id: "shibuya-109", name: "SHIBUYA109", type: "shop", lat: 35.6594, lng: 139.6988, description: "Le cylindre blanc de Shibuya est depuis 1979 le sanctuaire de la mode gyaru." },
+        { id: "yodobashi-akiba", name: "Yodobashi-Akiba", type: "shop", lat: 35.7000, lng: 139.7727, description: "Le plus grand magasin d'électronique du monde sur un seul site." },
+        { id: "lumine-est-shinjuku", name: "Lumine Est Shinjuku", type: "shop", lat: 35.6897, lng: 139.7009, description: "Lumine Est est le centre commercial connecté directement à la sortie est de la gare de Shinjuku." },
+        { id: "mcdonalds-shibuya", name: "McDonald's Shibuya", type: "restaurant", lat: 35.6598, lng: 139.6993, description: "Le McDonald's japonais n'est pas celui de chez vous." },
+        { id: "starbucks-shibuya", name: "Starbucks Shibuya Scramble", type: "cafe", lat: 35.6595, lng: 139.7003, description: "Le Starbucks le plus instagrammé de Tokyo." },
+        { id: "nine-hours-shinjuku", name: "Nine Hours Shinjuku-North", type: "hotel", lat: 35.6963, lng: 139.7044, description: "Nine Hours est la chaîne de capsule hôtels design par excellence." },
+        { id: "grand-hyatt-tokyo", name: "Grand Hyatt Tokyo", type: "hotel", lat: 35.6641, lng: 139.7307, description: "Le Grand Hyatt Tokyo trône au cœur de Roppongi Hills." },
+        { id: "matsumoto-kiyoshi-akiba", name: "Matsumoto Kiyoshi Akihabara", type: "pharmacie", lat: 35.6987, lng: 139.7712, description: "Matsumoto Kiyoshi est la pharmacie-droguerie la plus connue du Japon." },
+        { id: "keio-hospital", name: "Hôpital Keio University", type: "medecin", lat: 35.6863, lng: 139.7199, description: "L'Hôpital Universitaire Keio est l'un des plus réputés du Japon." },
+        { id: "tokyo-central-post", name: "Bureau de Poste Central de Tokyo", type: "poste", lat: 35.6804, lng: 139.7678, description: "Le Bureau de Poste Central de Tokyo est ouvert 24h/24." },
+        { id: "tokyo-skytree", name: "Tokyo Skytree", type: "site", lat: 35.7101, lng: 139.8107, description: "La plus haute structure du Japon (634 m)." },
+        { id: "tokyo-tower", name: "Tour de Tokyo", type: "site", lat: 35.6586, lng: 139.7454, description: "Inaugurée en 1958, la Tour de Tokyo dépasse de 13 mètres la Tour Eiffel." },
+        { id: "meiji-jingu", name: "Meiji Jingū", type: "site", lat: 35.6763, lng: 139.6993, description: "Un sanctuaire shinto entouré d'une forêt artificielle de 70 000 arbres." },
+        { id: "sensoji", name: "Sensō-ji", type: "site", lat: 35.7148, lng: 139.7967, description: "Le plus ancien temple de Tokyo, fondé en 645 selon la légende." },
+        { id: "tokyo-national-museum", name: "Tokyo National Museum", type: "site", lat: 35.7188, lng: 139.7764, description: "Le plus grand musée du Japon, fondé en 1872 dans le parc d'Ueno." },
+        { id: "asahi-super-dry-hall", name: "Asahi Super Dry Hall", type: "izakaya", lat: 35.7102, lng: 139.8021, description: "L'iconique bâtiment en or de la brasserie Asahi." },
+        { id: "tokyo-metro-theatre", name: "Tokyo Metropolitan Theatre", type: "site", lat: 35.7296, lng: 139.7107, description: "La Tokyo Gei-Jutsu Gekijō à Ikebukuro est la plus grande salle de spectacle." },
+        { id: "big-echo-kabukicho", name: "Big Echo Kabukichō", type: "loisir", lat: 35.6940, lng: 139.7027, description: "Big Echo est l'une des plus grandes chaînes de karaoke au Japon." },
+        { id: "at-home-cafe-akihabara", name: "@home café Akihabara", type: "loisir", lat: 35.6991, lng: 139.7741, description: "@home café est la chaîne de maid café la plus connue d'Akihabara." },
+      ],
+    },
+    {
+      id: "osaka", name: "Osaka", nameJp: "大阪", centerLat: 34.6937, centerLng: 135.5023,
+      zoom: 14, pitch: 60, bearing: -20, levelRequired: 2, use3DMap: false, isActive: true,
+      pois: [
+        { id: "namba-station", name: "Gare de Namba", type: "transport", lat: 34.6623, lng: 135.5019 },
+        { id: "umeda-station", name: "Gare d'Umeda", type: "transport", lat: 34.7028, lng: 135.4958 },
+        { id: "konbini-namba", name: "Konbini Namba", type: "konbini", lat: 34.6670, lng: 135.5030 },
+        { id: "dotonbori", name: "Dōtonbori", type: "izakaya", lat: 34.6686, lng: 135.5016 },
+        { id: "shinsekai", name: "Shinsekai", type: "izakaya", lat: 34.6514, lng: 135.5063 },
+        { id: "osaka-castle", name: "Château d'Osaka", type: "site", lat: 34.6873, lng: 135.5262 },
+        { id: "kuromon-market", name: "Marché Kuromon", type: "market", lat: 34.6648, lng: 135.5083 },
+        { id: "sumiyoshi", name: "Sumiyoshi Taisha", type: "site", lat: 34.6132, lng: 135.4933 },
+      ],
+    },
+    {
+      id: "kyoto", name: "Kyoto", nameJp: "京都", centerLat: 35.0116, centerLng: 135.7681,
+      zoom: 14, pitch: 60, bearing: -20, levelRequired: 3, use3DMap: false, isActive: true,
+      pois: [
+        { id: "kyoto-station", name: "Gare de Kyoto", type: "transport", lat: 34.9859, lng: 135.7588 },
+        { id: "fushimi-inari", name: "Fushimi Inari", type: "site", lat: 34.9671, lng: 135.7727 },
+        { id: "kinkakuji", name: "Kinkaku-ji", type: "site", lat: 35.0394, lng: 135.7292 },
+        { id: "ginkakuji", name: "Ginkaku-ji", type: "site", lat: 35.0270, lng: 135.7982 },
+        { id: "nishiki-market", name: "Marché Nishiki", type: "market", lat: 35.0054, lng: 135.7659 },
+        { id: "gion-izakaya", name: "Izakaya de Gion", type: "izakaya", lat: 35.0039, lng: 135.7764 },
+        { id: "konbini-kyoto", name: "Konbini", type: "konbini", lat: 35.0088, lng: 135.7595 },
+        { id: "nijo-castle", name: "Château Nijō", type: "site", lat: 35.0142, lng: 135.7481 },
+      ],
+    },
+    // Coming soon
+    { id: "nara", name: "Nara", nameJp: "奈良", centerLat: 34.6851, centerLng: 135.8048, zoom: 14, pitch: 60, bearing: -20, levelRequired: 99, use3DMap: false, isActive: false, pois: [] },
+    { id: "hiroshima", name: "Hiroshima", nameJp: "広島", centerLat: 34.3853, centerLng: 132.4553, zoom: 14, pitch: 60, bearing: -20, levelRequired: 99, use3DMap: false, isActive: false, pois: [] },
+    { id: "sapporo", name: "Sapporo", nameJp: "札幌", centerLat: 43.0618, centerLng: 141.3545, zoom: 14, pitch: 60, bearing: -20, levelRequired: 99, use3DMap: false, isActive: false, pois: [] },
+    { id: "nikko", name: "Nikkō", nameJp: "日光", centerLat: 36.7198, centerLng: 139.6982, zoom: 14, pitch: 60, bearing: -20, levelRequired: 99, use3DMap: false, isActive: false, pois: [] },
+    { id: "nagoya", name: "Nagoya", nameJp: "名古屋", centerLat: 35.1815, centerLng: 136.9066, zoom: 14, pitch: 60, bearing: -20, levelRequired: 99, use3DMap: false, isActive: false, pois: [] },
+    { id: "fukuoka", name: "Fukuoka", nameJp: "福岡", centerLat: 33.5904, centerLng: 130.4017, zoom: 14, pitch: 60, bearing: -20, levelRequired: 99, use3DMap: false, isActive: false, pois: [] },
+    { id: "beppu", name: "Beppu", nameJp: "別府", centerLat: 33.2840, centerLng: 131.4914, zoom: 14, pitch: 60, bearing: -20, levelRequired: 99, use3DMap: false, isActive: false, pois: [] },
+  ];
+
+  for (const city of CITIES_DATA) {
+    const { pois, ...cityData } = city;
+    await prisma.cityRecord.upsert({
+      where: { id: cityData.id },
+      update: { name: cityData.name, nameJp: cityData.nameJp, centerLat: cityData.centerLat, centerLng: cityData.centerLng, zoom: cityData.zoom, pitch: cityData.pitch, bearing: cityData.bearing, levelRequired: cityData.levelRequired, use3DMap: cityData.use3DMap },
+      create: cityData,
+    });
+    for (const poi of pois) {
+      await prisma.pOIRecord.upsert({
+        where: { id: poi.id },
+        update: { name: poi.name, type: poi.type, lat: poi.lat, lng: poi.lng, description: (poi as any).description ?? null },
+        create: { ...poi, cityId: cityData.id, description: (poi as any).description ?? null },
+      });
+    }
+  }
+  console.log("CityRecord + POIRecord seeded.");
+
   console.log("Seed completed.");
 }
 

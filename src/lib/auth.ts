@@ -43,6 +43,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.pseudo = (user as any).pseudo;
+        token.isAdmin = (user as any).isAdmin ?? false;
       }
       return token;
     },
@@ -50,6 +51,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as any).id = token.id;
         (session.user as any).pseudo = token.pseudo;
+        (session.user as any).isAdmin = token.isAdmin as boolean;
       }
       return session;
     },

@@ -6,7 +6,21 @@
       "PowerShell(scoop --version 2>&1)",
       "PowerShell(winget install -e --id PostgreSQL.PostgreSQL.17 --accept-package-agreements --accept-source-agreements 2>&1)",
       "PowerShell(Start-Service -Name \"postgresql-x64-17\"; \\(Get-Service -Name \"postgresql-x64-17\"\\).Status)",
-      "PowerShell(Get-Service | Where-Object { $_.DisplayName -match \"SQL\" } | Select-Object Name, DisplayName, Status)"
+      "PowerShell(Get-Service | Where-Object { $_.DisplayName -match \"SQL\" } | Select-Object Name, DisplayName, Status)",
+      "Bash(mkdir -p \"/c/Users/user/Documents/GitHub/SekaiTalk/src/app/api/admin/cities/[id]\")",
+      "Bash(mkdir -p \"/c/Users/user/Documents/GitHub/SekaiTalk/src/app/api/admin/pois/[id]\")",
+      "Bash(mkdir -p \"/c/Users/user/Documents/GitHub/SekaiTalk/src/app/api/admin/lessons/[id]\")",
+      "Bash(mkdir -p \"/c/Users/user/Documents/GitHub/SekaiTalk/src/app/api/admin/lessons/[id]/steps\")",
+      "Bash(mkdir -p \"/c/Users/user/Documents/GitHub/SekaiTalk/src/app/api/admin/lessons/[id]/steps/reorder\")",
+      "Bash(mkdir -p \"/c/Users/user/Documents/GitHub/SekaiTalk/src/app/admin/cities/[id]\")",
+      "Bash(mkdir -p \"/c/Users/user/Documents/GitHub/SekaiTalk/src/app/admin/pois/[id]\")",
+      "Bash(mkdir -p \"/c/Users/user/Documents/GitHub/SekaiTalk/src/app/admin/lessons/[id]\")",
+      "Bash(mkdir -p \"/c/Users/user/Documents/GitHub/SekaiTalk/src/app/admin/quests/[id]\")",
+      "Bash(mkdir -p \"/c/Users/user/Documents/GitHub/SekaiTalk/src/app/admin/characters/[id]\")",
+      "PowerShell(Get-Process -Id 46588, 66024)",
+      "PowerShell(Stop-Process -Id 70812, 15196, 66024 -Force)",
+      "Bash(node -e 'const {PrismaClient}=require\\('\\\\''@prisma/client'\\\\''\\);const p=new PrismaClient\\(\\);Promise.all\\([p.cityRecord.count\\(\\),p.pOIRecord.count\\(\\)]\\).then\\(\\([c,poi]\\)=>console.log\\('\\\\''Cities:'\\\\'',c,'\\\\''POIs:'\\\\'',poi\\)\\).finally\\(\\(\\)=>p.$disconnect\\(\\)\\)')",
+      "Bash(node -e 'const {PrismaClient}=require\\('\\\\''@prisma/client'\\\\''\\);const p=new PrismaClient\\(\\);p.user.updateMany\\({where:{email:'\\\\''jfontinha17@gmail.com'\\\\''},data:{isAdmin:true}}\\).then\\(r=>console.log\\('\\\\''Updated:'\\\\'',r.count,'\\\\''user\\(s\\)'\\\\''\\)\\).finally\\(\\(\\)=>p.$disconnect\\(\\)\\)')"
     ]
   }
 }

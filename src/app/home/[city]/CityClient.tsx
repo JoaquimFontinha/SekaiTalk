@@ -112,7 +112,7 @@ function MapClickBlocker() { useMapEvents({}); return null; }
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export default function CityClient({ citySlug }: { citySlug: string }) {
+export default function CityClient({ citySlug, initialCity }: { citySlug: string; initialCity?: import("@/lib/cities").CityData | null }) {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const { activeType, setActiveType, poiClickRef, mapBgClickRef, mapRef } = useMapCtx();
@@ -159,7 +159,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
   }, []);
 
 
-  const city = cities[citySlug];
+  const city = initialCity ?? cities[citySlug];
 
   if (!city) {
     router.push("/home");
@@ -725,7 +725,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                                 mapRef.current.flyTo({ center: [poi.lng, poi.lat], zoom: 18, pitch: 72, duration: 1600 });
                               }
                               setSidebarPanel(null);
-                              handlePoiClick(poi);
+                              handlePoiClick(poi.id);
                             }}
                             className="flex items-center gap-3 border-b border-gray-50 px-5 py-3 text-left transition-colors hover:bg-violet-50/40"
                           >

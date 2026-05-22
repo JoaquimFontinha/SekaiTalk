@@ -55,12 +55,15 @@ Deux fichiers d'env :
 - Inscription manuelle : `POST /api/register` → `src/app/api/register/route.ts`
 - Pages auth : `src/app/(auth)/login/` et `src/app/(auth)/register/`
 - Après connexion/inscription → redirect vers `/home`
+- Middleware admin : `src/middleware.ts` (withAuth) — bloque `/admin/*` si `token.isAdmin !== true`, redirige vers `/home`
 
 ### Database — modèles Prisma
 
-- `User` — profil central (email, pseudo unique, firstName, lastName, birthDate, image, password haché bcrypt)
+- `User` — profil central (email, pseudo unique, firstName, lastName, birthDate, image, password haché bcrypt). Champ `isAdmin: Boolean @default(false)` — accès interface admin
 - `Account` — méthode de connexion liée à un User (géré par NextAuth)
 - `Session` — toujours vide (JWT strategy)
+- `CityRecord` — ville gérée via admin (id=slug ex: `"tokyo"`, name, nameJp, centerLat, centerLng, zoom, pitch, bearing, levelRequired, use3DMap, mapImage, mapBoundsJson, isActive). Source de vérité pour le jeu via `getCityFromDB()` — remplace `cities.ts` au runtime
+- `POIRecord` — POI géré via admin (id ex: `"tokyo-station-shinkansen"`, cityId FK vers CityRecord, name, type, lat, lng, description, logoPath, isActive). Le jeu lit depuis cette table via `getCityFromDB()`, plus depuis `cities.ts`
 - `Character` — personnage IA sans `poiId` (peut apparaître dans plusieurs lieux). Contient `id` stable (ex: `"char-kenji"`), `systemPrompt`, `greetingMessage`, `greetingTranslation`, `greetingWords` (Json — `Word[]` pré-calculé, évite un appel IA au chargement), `image`, `voiceId` (ElevenLabs), `isFriendable` (active la mémoire + outil `remember_fact`)
 - `CharacterAppearance` — table de jonction many-to-many `Character ↔ POI`. Champs : `characterId`, `poiId`, `locationContext?` (injection supplémentaire dans le system prompt pour contextualiser le lieu). Contrainte `@@unique([characterId, poiId])`
 - `Scene` — décor lié à un POI (`poiId @unique`). Champs : `backgroundImage?`, `entrySound?`, `ambientSound?`. Séparé du personnage car le même lieu peut avoir un autre personnage à l'avenir
@@ -78,7 +81,7 @@ Deux fichiers d'env :
 
 ### Seed
 
-`prisma/seed.ts` — crée `Scene`, `Character`, `CharacterAppearance`, `Quest` et `Lesson` avec des IDs stables.
+`prisma/seed.ts` — crée `Scene`, `Character`, `CharacterAppearance`, `Quest`, `Lesson`, `CityRecord` et `POIRecord` avec des IDs stables.
 - Personnages : upsert par `id` stable (`"char-kenji"`, `"char-hana"`, `"char-taro"`)
 - `greetingWords` et `greetingTranslation` hardcodés dans le seed — pour un nouveau personnage, appeler `/api/analyze` une fois pour générer le breakdown puis le coller dans le seed
 - Scènes : upsert par `poiId` (konbini-shinjuku, konbini-shibuya, konbini-kyoto) avec `entrySound: "/sounds/konbini_enter.mp3"`
@@ -86,7 +89,8 @@ Deux fichiers d'env :
 - Quêtes : `findUnique` + `create` — idempotentes, non recréées si l'ID existe déjà
 - Vocab : `quest.update({ data: { vocab: VocabEntry[] } })` après le create — toujours upsertée pour rester à jour
 - Quête de test : `quest-konbini-shinjuku-info-1` avec 10 mots (N5 : すみません, どこ, おにぎり, ありますか, いくら, ありがとうございます / N4 : 種類, 新鮮, 冷蔵庫, 今朝)
-- **Leçons** : `findUnique` + `create` pour la `Lesson`, puis `deleteMany` + `createMany` pour les `LessonStep` (idempotent, les étapes sont recréées à chaque seed pour rester à jour). Seul `konbini-shinjuku` a une leçon pour l'instant
+- **Leçons** : `findUnique` + `create` pour la `Lesson`, puis `deleteMany` + `createMany` pour les `LessonStep` (idempotent, les étapes sont recréées à chaque seed pour rester à jour). **28 leçons** au total — tous les POIs Tokyo (27) + konbini-shinjuku. Chaque leçon a 7 steps : 2 INTRO → PRONUNCIATION → TRUE_FALSE ou CHOOSE_ANSWER → CULTURE_NOTE → MATCH_PAIRS → CHOOSE_ANSWER.
+- **CityRecord + POIRecord** : upsert de toutes les villes et POIs depuis `cities.ts` à la fin du seed. 10 villes (tokyo, osaka, kyoto + 7 coming-soon) et 44 POIs Tokyo. Idempotent via `upsert({ where: { id }, create, update })`. Ces enregistrements servent de source de vérité pour le jeu via `getCityFromDB()`.
 
 ### Navigation et routes
 
@@ -128,6 +132,20 @@ Deux fichiers d'env :
 | `/api/session/complete` | POST | Sauvegarde `SessionRecord` + upsert `UserVocabProgress` pour chaque mot pratiqué. Retourne `{ vocabWithMastery }` — chaque mot enrichi de `mastery`, `encounters`, `practiced` |
 | `/api/lessons/poi/[poiId]` | GET | Récupère la leçon d'un POI avec ses steps ordonnés et la progression de l'utilisateur connecté (`userProgress` ou `null`) |
 | `/api/lessons/[lessonId]/complete` | POST | Reçoit `{ score }`, calcule `validated = score >= 80`, upsert `UserLessonProgress` (ne repasse pas `validated` à `false`), retourne `{ validated, score }` |
+| `/api/content/cities` | GET | Public (pas d'auth). Retourne `Record<string, CityData>` depuis la DB via `getAllCitiesFromDB()`. `revalidate = 0` (toujours frais). Utilisé par `layout.tsx` et `JapanMap.tsx` pour afficher les villes admin |
+| `/api/admin/export` | GET | Admin uniquement. Exporte tout le contenu DB (cityRecords, poiRecords, scenes, characters, appearances, quests+tasks+choices, lessons+steps) en JSON avec `Content-Disposition: attachment` |
+| `/api/admin/import` | POST | Admin uniquement. Importe un JSON exporté, upsert idempotent de toutes les entités. Retourne `{ imported: { cities, pois, … } }`. Stratégie de sync dev→prod |
+| `/api/admin/upload` | POST | Admin uniquement. Multipart form-data. Sauvegarde le fichier dans `public/uploads/{type}/{timestamp-filename}`. Retourne `{ url }` |
+| `/api/admin/cities` | GET/POST | CRUD villes (CityRecord) |
+| `/api/admin/cities/[id]` | PUT/DELETE | Mise à jour / suppression d'une ville |
+| `/api/admin/pois` | GET/POST | CRUD POIs (POIRecord) |
+| `/api/admin/pois/[id]` | PUT/DELETE | Mise à jour / suppression d'un POI |
+| `/api/admin/lessons` | GET/POST | CRUD leçons |
+| `/api/admin/lessons/[id]` | GET/PUT/DELETE | Détail, mise à jour, suppression leçon |
+| `/api/admin/lessons/[id]/steps` | POST | Crée un LessonStep |
+| `/api/admin/lessons/[id]/steps/[stepId]` | PUT/DELETE | Mise à jour / suppression step |
+| `/api/admin/users` | GET | Liste des utilisateurs (admin) |
+| `/api/admin/users/[id]` | GET/PATCH | Détail utilisateur, modification `isAdmin` |
 
 ### Système de maîtrise du vocabulaire (`src/lib/mastery.ts`)
 
@@ -142,13 +160,24 @@ Types et constantes partagés entre client et serveur :
   - ≥3 erreurs ou ratio <40% → `learning` / ratio <65% ou <4 rencontres → `almost`
   - ratio <85% ou <8 rencontres → `acquired` / sinon → `perfect`
 
-### `src/lib/cities.ts` — structure
+### `src/lib/cities.ts` — structure (fallback statique)
 
 `CityData` : `{ name, center: [lat, lng], zoom, pois: POI[], levelRequired, use3DMap?, mapImage?, mapBounds? }`
+
+**Rôle** : fallback statique uniquement. La source de vérité au runtime est la DB (`CityRecord` + `POIRecord`) lue via `src/lib/cities-db.ts`. `cities.ts` est utilisé comme valeur initiale avant que la DB réponde, et comme fallback si un slug est absent de la DB.
 
 **Villes actives** (avec POIs) : `tokyo` (nv.1), `osaka` (nv.2), `kyoto` (nv.3)
 
 **Villes coming soon** (`levelRequired: 99`, `pois: []`) : `nara`, `hiroshima`, `sapporo`, `nikko`, `nagoya`, `fukuoka`, `beppu` — affichées sur la carte Japon en état verrouillé, jamais navigables car `levelRequired > userStats.level` pour tout utilisateur réel.
+
+### `src/lib/cities-db.ts` — lecture DB des villes
+
+Helper server-side (uniquement `import` côté serveur / route handlers / `page.tsx` async).
+
+- `getCityFromDB(slug)` → `Promise<CityData | null>` : lit `CityRecord` + ses `POIRecord[]`, mappe vers le format `CityData`. Fallback vers `staticCities[slug]` si absent de la DB.
+- `getAllCitiesFromDB()` → `Promise<Record<string, CityData>>` : toutes les villes DB + fallback des villes `cities.ts` absentes de la DB.
+- La fonction `dbToCity(cr, pois)` interne convertit les champs DB (centerLat/Lng, mapBoundsJson…) vers `CityData`.
+- Utilisé par : `src/app/home/[city]/page.tsx` (server component), `src/app/api/content/cities/route.ts`.
 
 ### Catégories POI (`POIType`)
 
@@ -166,7 +195,7 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 **État étendu (448px)** — contenu identique à `HomeClient` :
 - Header : logo 🗾 violet + "SekaiTalk" + bouton `ChevronLeft` (collapse + `setSidebarPanel(null)`)
 - Objectifs du jour : 3 tâches avec `CheckCircle2`/`Circle`
-- Navigation : 4 boutons (Lieux, Contacts, Évènements, Révision `disabled`) + bouton **Téléphone** inséré après Évènements (`i === 2` dans `.map()`). Section `flex-1`.
+- Navigation : `SIDEBAR_BUTTONS` = [Guidage, Lieux, Contacts, Évènements, Révision `disabled`] + bouton **Téléphone** inséré après Évènements (`i === 3` dans `.map()`). Section `flex-1`.
 - Mes stats : grille 3 colonnes (statiques)
 - Paramètres : footer `opacity-40`
 
@@ -189,6 +218,8 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 - Bouton "📍 RDV" → toggle `rdvOpenId` → liste des lieux (bouton "Inviter →" désactivé).
 
 **Panneau Évènements** (`sidebarPanel === "evenements"`, 380px) — placeholder vide.
+
+**Panneau Guidage** (`sidebarPanel === "guidage"`, 380px) — premier item de navigation. Affiche le système de guidage contextuel (`src/lib/guidage.ts`).
 
 **Panneau Révision** — désactivé (`enabled: false`), à implémenter.
 
@@ -501,6 +532,43 @@ Remplace le push-to-talk. Le micro est ouvert en permanence après le chargement
 - `handleBack` → `router.push(/home/${citySlug}?poi=${poiId})` (rouvre le drawer du POI)
 
 **Seed** : leçon `konbini-shinjuku` avec 8 steps : 2 INTRO (いらっしゃいませ, おにぎり) → TRUE_FALSE → CHOOSE_ANSWER → CULTURE_NOTE → COMPLETE_WORD → MATCH_PAIRS → CHOOSE_ANSWER. Steps recréés via `deleteMany` + `createMany` à chaque seed.
+
+### Interface Admin (`/admin`)
+
+Accessible uniquement aux utilisateurs avec `User.isAdmin = true`. Protégée par `src/middleware.ts` (withAuth) : redirige vers `/home` si token sans `isAdmin`. Après avoir ajouté `isAdmin` en DB, se déconnecter + reconnecter pour rafraîchir le JWT.
+
+**Structure des routes admin** :
+```
+/admin                    → Dashboard (stats globales)
+/admin/cities             → Liste des villes (CityRecord)
+/admin/cities/[id]        → Édition ville
+/admin/pois               → Liste des POIs (POIRecord)
+/admin/pois/[id]          → Édition POI
+/admin/lessons            → Liste des leçons
+/admin/lessons/[id]       → Éditeur de leçon avec step builder
+/admin/quests             → Liste des quêtes
+/admin/characters         → Liste des personnages
+/admin/users              → Liste des utilisateurs
+/admin/export-import      → Export JSON + Import JSON
+```
+
+**Layout admin** (`src/app/admin/layout.tsx`) : client component, sidebar fixe avec liens de navigation violet actif. Vérifie `session.user.isAdmin` côté client (double protection après middleware).
+
+**Step builder** (`/admin/lessons/[id]`) : éditeur de leçon en 440 lignes. `StepEditor` avec `defaultData(type)` factory par type. Panneau d'édition inline sous la liste des steps. Sauvegarde via PUT `/api/admin/lessons/[id]/steps/[stepId]` ou POST pour nouveaux steps.
+
+**Auth propagation** — `src/lib/auth.ts` injecte `isAdmin` dans le JWT et la session :
+```ts
+// jwt callback: token.isAdmin = (user as any).isAdmin ?? false
+// session callback: (session.user as any).isAdmin = token.isAdmin
+```
+
+**Workflow export/import dev→prod** :
+1. En dev : créer/modifier villes, POIs, leçons, quêtes via admin
+2. `GET /api/admin/export` → télécharge `sekai-content.json`
+3. En prod : `POST /api/admin/import` avec le JSON → upsert idempotent de toutes les entités
+4. Le JSON contient : cityRecords, poiRecords, scenes, characters, appearances, quests+tasks+choices, lessons+steps
+
+**Upload assets** : `POST /api/admin/upload` multipart → `public/uploads/{logos|backgrounds|sounds}/`. Types acceptés : images (logo POI, background scène), audio (entrée, ambiance).
 
 ### SessionProvider
 `src/app/providers.tsx` wrappe l'app avec le `SessionProvider` NextAuth, inclus dans `src/app/layout.tsx`.
