@@ -2,71 +2,77 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { computeMastery } from "@/lib/mastery";
+import { computeMastery, type VocabEntry } from "@/lib/mastery";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id as string | undefined;
 
   const body = await req.json() as {
-    questId:        string;
+    questId:         string;
     durationSeconds: number;
-    errorCount:     number;
+    errorCount:      number;
     suggestionsUsed: number;
-    practicedWords: string[]; // jp fields of detected vocab
+    practicedWords:  string[]; // jp fields of detected vocab
   };
 
   const { questId, durationSeconds, errorCount, suggestionsUsed, practicedWords } = body;
 
-  // Persist session record (even for guests, skip if no userId)
+  // Fetch quest vocab to register all words (not just spoken ones)
+  const quest = await prisma.quest.findUnique({ where: { id: questId } });
+  const allVocab = (quest?.vocab ?? []) as VocabEntry[];
+  const practicedSet = new Set(practicedWords);
+
   if (userId) {
     await prisma.sessionRecord.create({
-      data: {
-        userId,
-        questId,
-        durationSeconds,
-        errorCount,
-        suggestionsUsed,
-        practicedWords,
-      },
+      data: { userId, questId, durationSeconds, errorCount, suggestionsUsed, practicedWords },
     });
 
-    // Upsert vocab progress for each practiced word
-    for (const wordJp of practicedWords) {
+    // Register ALL quest vocab words — user was exposed to them
+    for (const word of allVocab) {
+      const wasPracticed = practicedSet.has(word.jp);
       const existing = await prisma.userVocabProgress.findUnique({
-        where: { userId_questId_wordJp: { userId, questId, wordJp } },
+        where: { userId_wordJp: { userId, wordJp: word.jp } },
       });
 
       if (existing) {
-        const newEncounters   = existing.encounters + 1;
-        const newCorrectCount = existing.correctCount + Math.max(0, 1 - errorCount / Math.max(practicedWords.length, 1));
-        await prisma.userVocabProgress.update({
-          where: { userId_questId_wordJp: { userId, questId, wordJp } },
-          data: {
-            encounters:   newEncounters,
-            correctCount: Math.round(newCorrectCount),
-            lastSeenAt:   new Date(),
-          },
-        });
+        if (wasPracticed) {
+          await prisma.userVocabProgress.update({
+            where: { userId_wordJp: { userId, wordJp: word.jp } },
+            data: { encounters: { increment: 1 }, correctCount: { increment: 1 }, lastSeenAt: new Date() },
+          });
+        }
+        // Non-practiced existing word: leave untouched
       } else {
+        // First time seeing this word
         await prisma.userVocabProgress.create({
-          data: { userId, questId, wordJp, encounters: 1, correctCount: 1, errorCount: 0 },
+          data: {
+            userId,
+            questId,
+            wordJp:       word.jp,
+            kana:         word.kana,
+            romaji:       word.romaji,
+            fr:           word.fr,
+            jlpt:         word.jlpt,
+            encounters:   1,
+            correctCount: wasPracticed ? 1 : 0,
+            errorCount:   0,
+          },
         });
       }
     }
   }
 
-  // Fetch quest vocab + current progress to compute mastery for summary
-  const quest = await prisma.quest.findUnique({ where: { id: questId } });
-  const vocabEntries = (quest?.vocab ?? []) as Array<{ jp: string; kana: string; romaji: string; fr: string; jlpt: number }>;
-
+  // Build summary with mastery for the quest vocab
   const progressRows = userId
-    ? await prisma.userVocabProgress.findMany({ where: { userId, questId } })
+    ? await prisma.userVocabProgress.findMany({
+        where: { userId, wordJp: { in: allVocab.map(v => v.jp) } },
+      })
     : [];
 
   const progressMap = new Map(progressRows.map(r => [r.wordJp, r]));
 
-  const vocabWithMastery = vocabEntries.map(v => {
+  const vocabWithMastery = allVocab.map(v => {
     const p = progressMap.get(v.jp);
     return {
       ...v,
@@ -74,7 +80,7 @@ export async function POST(req: NextRequest) {
       encounters:   p?.encounters ?? 0,
       correctCount: p?.correctCount ?? 0,
       errorCount:   p?.errorCount ?? 0,
-      practiced:    practicedWords.includes(v.jp),
+      practiced:    practicedSet.has(v.jp),
     };
   });
 

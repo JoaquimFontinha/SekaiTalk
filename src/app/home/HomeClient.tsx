@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, Settings, CheckCircle2, Circle, Smartphone } from "lucide-react";
 import PhoneOverlay from "@/components/PhoneOverlay";
+import RevisionOverlay from "@/components/RevisionOverlay";
 
 type UserStats = {
   xp: number; yens: number; level: number;
@@ -49,7 +50,8 @@ function CompassRose() {
 
 export default function HomeClient() {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [showPhone, setShowPhone] = useState(false);
+  const [showPhone, setShowPhone]       = useState(false);
+  const [showRevision, setShowRevision] = useState(false);
 
   useEffect(() => {
     fetch("/api/user/stats")
@@ -111,13 +113,24 @@ export default function HomeClient() {
           <div className="mt-3 flex flex-col gap-1">
             {NAV_ITEMS.map(({ Icon, label }, i) => (
               <>
-                <div
-                  key={label}
-                  className="flex cursor-default select-none items-center gap-4 rounded-xl px-4 py-4 opacity-40"
-                >
-                  <Icon className="h-5 w-5 shrink-0 text-gray-500" />
-                  <span className="text-base font-medium text-gray-600">{label}</span>
-                </div>
+                {label === "Révision" ? (
+                  <button
+                    key={label}
+                    onClick={() => setShowRevision(true)}
+                    className="flex items-center gap-4 rounded-xl px-4 py-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <Icon className="h-5 w-5 shrink-0 text-gray-500" />
+                    <span className="text-base font-medium text-gray-600">{label}</span>
+                  </button>
+                ) : (
+                  <div
+                    key={label}
+                    className="flex cursor-default select-none items-center gap-4 rounded-xl px-4 py-4 opacity-40"
+                  >
+                    <Icon className="h-5 w-5 shrink-0 text-gray-500" />
+                    <span className="text-base font-medium text-gray-600">{label}</span>
+                  </div>
+                )}
                 {i === 2 && (
                   <button
                     key="phone"
@@ -160,7 +173,8 @@ export default function HomeClient() {
         </div>
       </div>
 
-      {showPhone && <PhoneOverlay onClose={() => setShowPhone(false)} />}
+      {showPhone    && <PhoneOverlay    onClose={() => setShowPhone(false)}    />}
+      {showRevision && <RevisionOverlay onClose={() => setShowRevision(false)} />}
 
       {/* ── Transparent overlay (HUD, compass, vignette) ── */}
       <main className="pointer-events-none relative h-screen overflow-hidden">

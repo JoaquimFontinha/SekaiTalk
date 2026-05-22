@@ -73,7 +73,7 @@ Deux fichiers d'env :
 - `TaskChoice` — choix QCM d'une tâche (`isCorrect` pour la bonne réponse)
 - `UserQuestProgress` — progression d'un utilisateur sur une quête (`IN_PROGRESS` | `COMPLETED`)
 - `UserTaskProgress` — progression par tâche (`PENDING` | `COMPLETED`)
-- `UserVocabProgress` — progression SRS par mot par utilisateur par quête. Clé `@@unique([userId, questId, wordJp])`. Champs : `encounters`, `correctCount`, `errorCount`, `lastSeenAt`
+- `UserVocabProgress` — progression SRS par mot par utilisateur. Clé `@@unique([userId, wordJp])` — **un seul enregistrement par mot par utilisateur**, quelle que soit la source. Champs : `questId?` (source quête, nullable), `lessonId?` (source leçon, nullable), `wordJp`, `kana`, `romaji`, `fr`, `jlpt` (champs auto-portants, pas besoin de jointure), `encounters`, `correctCount`, `errorCount`, `lastSeenAt`. Alimenté par `/api/session/complete` (quêtes) et `/api/lessons/[lessonId]/complete` (steps INTRO). Schema migré via `prisma db push --accept-data-loss` (changement de contrainte unique)
 - `SessionRecord` — résumé d'une session complétée. Champs : `durationSeconds`, `errorCount`, `suggestionsUsed`, `practicedWords` (Json — string[] des `jp` prononcés)
 - `Lesson` — leçon liée à un POI (`poiId @unique`). Champs : `title`, `description?`. Relation `steps: LessonStep[]`
 - `LessonStep` — étape d'une leçon, ordonnée par `order`. Champs : `type: StepType` (enum), `data: Json` (shape selon le type). Cascade delete depuis `Lesson`
@@ -129,9 +129,11 @@ Deux fichiers d'env :
 | `/api/quests/poi/[poiId]` | GET | Liste les quêtes d'un POI avec progression utilisateur (inclut `vocab`, `xpReward`, `yenReward`) |
 | `/api/quests/[questId]/start` | POST | Crée un `UserQuestProgress` (auth requise) |
 | `/api/quests/tasks/[taskId]/complete` | POST | Valide une tâche, débloque la suivante ou termine la quête |
-| `/api/session/complete` | POST | Sauvegarde `SessionRecord` + upsert `UserVocabProgress` pour chaque mot pratiqué. Retourne `{ vocabWithMastery }` — chaque mot enrichi de `mastery`, `encounters`, `practiced` |
+| `/api/session/complete` | POST | Sauvegarde `SessionRecord` + upsert `UserVocabProgress` pour **tous** les mots du vocab de la quête (pas uniquement les mots prononcés). Mots pratiqués : `encounters+1, correctCount+1`. Mots non pratiqués existants : inchangés. Nouveaux mots non pratiqués : `encounters:1, correctCount:0`. Retourne `{ vocabWithMastery }` — chaque mot enrichi de `mastery`, `encounters`, `practiced` |
 | `/api/lessons/poi/[poiId]` | GET | Récupère la leçon d'un POI avec ses steps ordonnés et la progression de l'utilisateur connecté (`userProgress` ou `null`) |
-| `/api/lessons/[lessonId]/complete` | POST | Reçoit `{ score }`, calcule `validated = score >= 80`, upsert `UserLessonProgress` (ne repasse pas `validated` à `false`), retourne `{ validated, score }` |
+| `/api/lessons/[lessonId]/complete` | POST | Reçoit `{ score }`, calcule `validated = score >= 80`, upsert `UserLessonProgress` (ne repasse pas `validated` à `false`), **puis upsert `UserVocabProgress`** pour chaque step INTRO de la leçon (`update: {}` préserve la progression existante, `create` avec `encounters:1, correctCount:0`), retourne `{ validated, score }` |
+| `/api/revision/vocab` | GET | Retourne `{ words: RevisionWord[], stats: { toWork, toReview, acquired } }` — tous les mots de l'utilisateur (`encounters > 0`), triés par `lastSeenAt desc`, enrichis du niveau `mastery`. `toWork` = never/new/learning, `toReview` = almost/acquired, `acquired` = perfect |
+| `/api/revision/result` | POST | Reçoit `{ results: [{ wordJp, correct }] }`, incrémente `encounters` + `correctCount`/`errorCount` + `lastSeenAt` via la clé `userId_wordJp` |
 | `/api/content/cities` | GET | Public (pas d'auth). Retourne `Record<string, CityData>` depuis la DB via `getAllCitiesFromDB()`. `revalidate = 0` (toujours frais). Utilisé par `layout.tsx` et `JapanMap.tsx` pour afficher les villes admin |
 | `/api/admin/export` | GET | Admin uniquement. Exporte tout le contenu DB (cityRecords, poiRecords, scenes, characters, appearances, quests+tasks+choices, lessons+steps) en JSON avec `Content-Disposition: attachment` |
 | `/api/admin/import` | POST | Admin uniquement. Importe un JSON exporté, upsert idempotent de toutes les entités. Retourne `{ imported: { cities, pois, … } }`. Stratégie de sync dev→prod |
@@ -221,7 +223,7 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 
 **Panneau Guidage** (`sidebarPanel === "guidage"`, 380px) — premier item de navigation. Affiche le système de guidage contextuel (`src/lib/guidage.ts`).
 
-**Panneau Révision** — désactivé (`enabled: false`), à implémenter.
+**Panneau Révision** — désactivé dans `CityClient` (`enabled: false`), à implémenter. Actif dans `HomeClient` via bouton "Révision" dans la sidebar (ouvre `RevisionOverlay`).
 
 **HUD top-right** — identique à `HomeClient` : tickets 🎫×5 + timer + flame + bell + avatar SVG XP ring. Positionnement : `right: selectedPoi ? 440 : 20`.
 
@@ -291,7 +293,7 @@ Le wrapper `children` dans `HomeShell` a `pointerEvents: none` quand une map Map
 - 5 sections séparées par des dividers `h-px bg-gray-100` avec `mx-7` :
   1. **Header** — logo 🗾 violet 56px + "SekaiTalk" bold
   2. **Objectifs du jour** — 3 tâches quotidiennes avec `CheckCircle2` / `Circle` (statiques pour l'instant, à brancher sur une API)
-  3. **Navigation** — 4 items `opacity-40 cursor-default` (Lieux, Contacts, Évènements, Révision) + bouton **Téléphone** inséré après Évènements (actif, `onClick={() => setShowPhone(true)}`). Section `flex-1`.
+  3. **Navigation** — 3 items `opacity-40 cursor-default` (Lieux, Contacts, Évènements) + bouton **Révision** actif (`onClick={() => setShowRevision(true)}`, ouvre `RevisionOverlay`) + bouton **Téléphone** inséré après Évènements (actif, `onClick={() => setShowPhone(true)}`). Section `flex-1`.
   4. **Mes stats** — grille 3 colonnes : Conversations / Mots maîtrisés / Quêtes terminées (valeurs `"—"` à brancher)
   5. **Paramètres** — footer, `opacity-40 cursor-default`
 - `pointer-events-auto` explicite — le wrapper `children` dans `HomeShell` est `pointer-events-none`
@@ -331,6 +333,63 @@ Modal plein-écran simulant un iPhone japonais. Déclenché via le bouton **Tél
 **Fermeture** : clic sur le fond noir ou bouton `X` en haut à droite.
 
 **Usage futur** : les apps (LINE, Amazon, Rakuten, Maps, PayPay, Suica…) serviront de points d'entrée vers des fonctionnalités d'immersion Japon.
+
+### RevisionOverlay (`src/components/RevisionOverlay.tsx`)
+
+Modal plein-écran de révision style Busuu. Accessible via le bouton **Révision** dans la sidebar de `HomeClient` (et désactivé dans `CityClient`). Overlay `fixed inset-0 z-[2000] bg-white`.
+
+**Deux onglets** : `"vocab"` (défaut) et `"kana"`.
+
+#### Onglet Vocabulaire
+
+Fetche `GET /api/revision/vocab` au montage. Affiche les stats (`toWork`, `toReview`, `acquired`) puis lance une session de 10 exercices.
+
+**Types d'exercice (`ExerciseType`)** :
+- `JP_TO_FR` — affiche le mot japonais (kanji + kana + romaji), 4 choix français → sélection
+- `FR_TO_JP` — affiche la traduction française, 4 choix japonais → sélection
+- `WRITE_JP` — affiche la traduction française, champ texte libre → l'élève écrit en japonais (hiragana, katakana, kanji ou romaji acceptés)
+
+**Distribution** : ~1/3 WRITE_JP, ~1/3 JP_TO_FR, ~1/3 FR_TO_JP (aléatoire via `Math.random()`).
+
+**Bouton "Je ne sais pas"** : présent sur tous les types. Envoie la valeur sentinelle `"__skip__"` via `handleAnswer`, toujours comptée incorrecte. La feedback bar affiche la bonne réponse.
+
+**`checkWrittenAnswer(input, word)`** : normalise (trim + lowercase + collapse espaces), accepte `word.jp`, `word.kana`, ou `word.romaji`.
+
+**Feedback bar** (`FeedbackBar`) : fixe en bas, verte (correct) ou rouge (incorrect). Pour WRITE_JP incorrect : affiche toutes les formes acceptées (`jp · kana · romaji`). Bouton "Continuer →".
+
+**Session** : 10 mots tirés aléatoirement, priorité aux mots `toWork`. En fin de session : POST `/api/revision/result` avec `{ results: [{ wordJp, correct }] }`.
+
+#### Onglet Kana (`KanaPanel`)
+
+Intégré dans `RevisionOverlay`. Vue table + vue session flash cards. Mastery persistée en **localStorage** (clé `sekai-kana-mastery`) — aucune API ni DB.
+
+**Scripts** : Hiragana / Katakana / Les deux. **Groupes** : Basiques / Dakuten / Combinaisons (checkboxes).
+
+**Modes** : Kana→Rōmaji / Rōmaji→Kana / Aléatoire.
+
+**Table** (`KanaTableSection`) : collapsible par groupe, cellules colorées selon la maîtrise :
+- Sans fond : non vu (mastery `none`)
+- `bg-orange-50` : en cours (`learning` — < 3 essais ou ratio < 70 %)
+- `bg-emerald-50` : bien (`good` — ≥ 3 essais, ratio ≥ 70 %)
+- `bg-amber-100` + ★ doré : maîtrisé (`mastered` — ≥ 5 essais, ratio ≥ 90 %)
+
+**Session flash cards** (20 questions) — affichée en `fixed inset-0 z-[2010]` (au-dessus de l'overlay principal) :
+- `kana_to_romaji` : affiche le kana, 4 choix romaji
+- `romaji_to_kana` : affiche le romaji, 4 choix kana (en serif)
+- Déduplication des distracteurs via `Set` (évite le bug 5 boutons dû aux doublons じ/ぢ = "ji")
+- Clé React `${choice}-${index}` pour éviter les conflits de clés dupliquées
+
+**Écran résumé** : score + répartition correct/incorrect. `applyMastery(results)` sauvegarde dans localStorage.
+
+**Types internes** :
+```typescript
+type KanaGroup = "basic" | "dakuten" | "combo";
+type KanaScript = "hiragana" | "katakana";
+type KanaMode = "kana_to_romaji" | "romaji_to_kana" | "mixed";
+type KanaMasteryEntry = { correct: number; total: number };
+type KanaMasteryStore = Record<string, KanaMasteryEntry>;
+// clé mastery = `${script[0]}:${romaji}` ex: "h:ka", "k:chi"
+```
 
 ### Carte 3D Tokyo (`GameMap3D`)
 

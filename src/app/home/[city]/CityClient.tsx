@@ -7,6 +7,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle, CheckCircle2, Circle, Settings, ChevronLeft, ChevronRight, Smartphone, GraduationCap, Compass } from "lucide-react";
 import PhoneOverlay from "@/components/PhoneOverlay";
+import RevisionOverlay from "@/components/RevisionOverlay";
 import cities, { POI, POIType } from "@/lib/cities";
 import POI_LOGOS from "@/lib/poi-logos";
 import { type VocabEntry, JLPT_COLORS } from "@/lib/mastery";
@@ -54,7 +55,7 @@ const SIDEBAR_BUTTONS: { panel: Exclude<SidebarPanel, null>; Icon: React.Element
   { panel: "lieux",      Icon: MapPin,    label: "Lieux",      enabled: true  },
   { panel: "contacts",   Icon: Users,     label: "Contacts",   enabled: true  },
   { panel: "evenements", Icon: Sparkles,  label: "Évènements", enabled: true  },
-  { panel: "revision",   Icon: BookOpen,  label: "Révision",   enabled: false },
+  { panel: "revision",   Icon: BookOpen,  label: "Révision",   enabled: true  },
 ];
 
 const DAILY_GOALS = [
@@ -126,7 +127,8 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
 
   // Sidebar state
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
-  const [showPhone, setShowPhone] = useState(false);
+  const [showPhone, setShowPhone]       = useState(false);
+  const [showRevision, setShowRevision] = useState(false);
   const [sidebarPanel, setSidebarPanel]   = useState<SidebarPanel>(null);
   const [lieuxType, setLieuxType]         = useState<POIType | null>(null);
   const [poiQuestData, setPoiQuestData]   = useState<Record<string, { done: number; total: number }>>({});
@@ -381,7 +383,11 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                   <>
                     <button
                       key={panel}
-                      onClick={() => { if (enabled) setSidebarPanel(prev => prev === panel ? null : panel); }}
+                      onClick={() => {
+                        if (!enabled) return;
+                        if (panel === "revision") { setShowRevision(true); return; }
+                        setSidebarPanel(prev => prev === panel ? null : panel);
+                      }}
                       className={`flex items-center gap-4 rounded-xl px-4 py-4 text-left transition-colors ${
                         !enabled ? "cursor-default opacity-40"
                         : sidebarPanel === panel ? "bg-violet-50"
@@ -445,7 +451,12 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
               <button
                 key={panel}
                 title={label}
-                onClick={() => { if (enabled) { setSidebarExpanded(true); setSidebarPanel(panel); } }}
+                onClick={() => {
+                  if (!enabled) return;
+                  if (panel === "revision") { setShowRevision(true); return; }
+                  setSidebarExpanded(true);
+                  setSidebarPanel(panel);
+                }}
                 className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${
                   !enabled ? "opacity-40 cursor-default"
                   : sidebarPanel === panel ? "bg-violet-50 text-violet-500"
@@ -1112,7 +1123,8 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
 
         </main>
 
-      {showPhone && <PhoneOverlay onClose={() => setShowPhone(false)} />}
+      {showPhone    && <PhoneOverlay    onClose={() => setShowPhone(false)}    />}
+      {showRevision && <RevisionOverlay onClose={() => setShowRevision(false)} />}
 
       {/* ── Quest preview modal ── */}
       {questPreview && (() => {

@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
+type IntroData = { word: string; kana: string; romaji: string; translation: string; jlpt?: number };
+
 export async function POST(
   req: NextRequest,
   { params }: { params: { lessonId: string } }
@@ -15,28 +17,56 @@ export async function POST(
 
   if (!userId) return NextResponse.json({ validated, score });
 
+  const now = new Date();
   const existing = await prisma.userLessonProgress.findUnique({
     where: { userId_lessonId: { userId, lessonId: params.lessonId } },
   });
 
-  const now = new Date();
   await prisma.userLessonProgress.upsert({
     where: { userId_lessonId: { userId, lessonId: params.lessonId } },
     update: {
       score,
-      validated: existing?.validated || validated,
-      completedAt: now,
+      validated:        existing?.validated || validated,
+      completedAt:      now,
       firstValidatedAt: existing?.firstValidatedAt ?? (validated ? now : null),
     },
     create: {
       userId,
-      lessonId: params.lessonId,
+      lessonId:         params.lessonId,
       score,
       validated,
-      completedAt: now,
+      completedAt:      now,
       firstValidatedAt: validated ? now : null,
     },
   });
+
+  // Register all INTRO step words into vocab progress
+  const lesson = await prisma.lesson.findUnique({
+    where: { id: params.lessonId },
+    include: { steps: { where: { type: "INTRO" }, orderBy: { order: "asc" } } },
+  });
+
+  for (const step of lesson?.steps ?? []) {
+    const d = step.data as IntroData;
+    if (!d.word) continue;
+
+    await prisma.userVocabProgress.upsert({
+      where: { userId_wordJp: { userId, wordJp: d.word } },
+      update: {}, // Preserve existing progress — don't overwrite if already tracked from a quest
+      create: {
+        userId,
+        lessonId:     params.lessonId,
+        wordJp:       d.word,
+        kana:         d.kana   ?? d.word,
+        romaji:       d.romaji ?? "",
+        fr:           d.translation ?? "",
+        jlpt:         d.jlpt  ?? 5,
+        encounters:   1,
+        correctCount: 0,
+        errorCount:   0,
+      },
+    });
+  }
 
   return NextResponse.json({ validated, score });
 }

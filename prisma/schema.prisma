@@ -211,15 +211,21 @@ model UserVocabProgress {
   id           String   @id @default(cuid())
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  questId      String
-  quest        Quest    @relation(fields: [questId], references: [id], onDelete: Cascade)
-  wordJp       String   // clé primaire du mot (champ `jp` de VocabEntry)
+  questId      String?  // source quest (informatif) — null si provient d'une leçon
+  quest        Quest?   @relation(fields: [questId], references: [id], onDelete: SetNull)
+  lessonId     String?  // source leçon (informatif) — null si provient d'une quête
+  lesson       Lesson?  @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  wordJp       String   // clé du mot (champ `jp` de VocabEntry)
+  kana         String   @default("")  // stocké pour ne pas dépendre de la source
+  romaji       String   @default("")
+  fr           String   @default("")
+  jlpt         Int      @default(5)
   encounters   Int      @default(0)
   correctCount Int      @default(0)
   errorCount   Int      @default(0)
   lastSeenAt   DateTime @default(now())
 
-  @@unique([userId, questId, wordJp])
+  @@unique([userId, wordJp])
   @@index([userId])
 }
 
@@ -264,14 +270,15 @@ enum StepType {
 }
 
 model Lesson {
-  id          String               @id @default(cuid())
-  poiId       String               @unique
-  title       String
-  description String?
-  steps       LessonStep[]
-  progress    UserLessonProgress[]
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
+  id            String               @id @default(cuid())
+  poiId         String               @unique
+  title         String
+  description   String?
+  steps         LessonStep[]
+  progress      UserLessonProgress[]
+  vocabProgress UserVocabProgress[]
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
 
   @@index([poiId])
 }
