@@ -5,11 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle, CheckCircle2, Circle, Settings, ChevronLeft, ChevronRight, Smartphone, GraduationCap } from "lucide-react";
+import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle, CheckCircle2, Circle, Settings, ChevronLeft, ChevronRight, Smartphone, GraduationCap, Compass } from "lucide-react";
 import PhoneOverlay from "@/components/PhoneOverlay";
 import cities, { POI, POIType } from "@/lib/cities";
 import POI_LOGOS from "@/lib/poi-logos";
 import { type VocabEntry, JLPT_COLORS } from "@/lib/mastery";
+import { CITY_GUIDAGE } from "@/lib/guidage";
 import { getNeighborhood } from "@/lib/tokyo-neighborhoods";
 import IllustratedMap from "./IllustratedMap";
 import { useMapCtx } from "../MapContext";
@@ -27,7 +28,7 @@ type PoiQuest = {
   userProgress: { id: string; status: string; firstCompletedAt: string | null; taskProgress: { taskId: string; status: string }[] }[];
 };
 
-type SidebarPanel = "lieux" | "contacts" | "evenements" | "revision" | null;
+type SidebarPanel = "lieux" | "contacts" | "evenements" | "revision" | "guidage" | null;
 
 type UserStats = {
   xp: number; yens: number; level: number;
@@ -49,6 +50,7 @@ type Contact = {
 const CITY_JP: Record<string, string> = { tokyo: "東京", osaka: "大阪", kyoto: "京都" };
 
 const SIDEBAR_BUTTONS: { panel: Exclude<SidebarPanel, null>; Icon: React.ElementType; label: string; enabled: boolean }[] = [
+  { panel: "guidage",    Icon: Compass,   label: "Guidage",    enabled: true  },
   { panel: "lieux",      Icon: MapPin,    label: "Lieux",      enabled: true  },
   { panel: "contacts",   Icon: Users,     label: "Contacts",   enabled: true  },
   { panel: "evenements", Icon: Sparkles,  label: "Évènements", enabled: true  },
@@ -389,7 +391,7 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
                       <Icon className={`h-5 w-5 shrink-0 ${sidebarPanel === panel && enabled ? "text-violet-500" : "text-gray-500"}`} />
                       <span className={`text-base font-medium ${sidebarPanel === panel && enabled ? "text-violet-600" : "text-gray-600"}`}>{label}</span>
                     </button>
-                    {i === 2 && (
+                    {i === 3 && (
                       <button
                         key="phone"
                         onClick={() => setShowPhone(true)}
@@ -671,6 +673,87 @@ export default function CityClient({ citySlug }: { citySlug: string }) {
               </div>
             </div>
           )}
+
+          {/* Guidage panel */}
+          {city.use3DMap && sidebarPanel === "guidage" && (() => {
+            const themes = CITY_GUIDAGE[citySlug] ?? [];
+            return (
+              <div className="pointer-events-auto absolute z-[1000] flex w-[380px] flex-col overflow-hidden rounded-2xl bg-white"
+                style={{ left: 484, top: 20, height: "calc(100vh - 40px)", boxShadow: "0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1)" }}>
+                {/* Header */}
+                <div className="shrink-0 border-b border-gray-100 px-5 py-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-violet-500">Parcours guidé</span>
+                      <h3 className="mt-0.5 text-lg font-black text-gray-900">Guidage</h3>
+                    </div>
+                    <button onClick={() => setSidebarPanel(null)} className="text-gray-400 transition-colors hover:text-gray-600">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-gray-400">
+                    Suis ce parcours pour apprendre le japonais de manière progressive, du plus simple au plus complexe.
+                  </p>
+                </div>
+
+                {/* Themes */}
+                <div className="flex flex-col overflow-y-auto">
+                  {themes.map((theme, ti) => (
+                    <div key={theme.id}>
+                      {/* Theme header */}
+                      <div className="flex items-center gap-3 border-t border-gray-100 bg-gray-50/80 px-5 py-3">
+                        <span className="text-xl">{theme.emoji}</span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-gray-400">Thème {ti + 1}</p>
+                          <p className="text-sm font-bold text-gray-800">{theme.title}</p>
+                          <p className="mt-0.5 text-[10px] text-gray-400">{theme.description}</p>
+                        </div>
+                      </div>
+
+                      {/* POIs */}
+                      {theme.poiIds.map((poiId, pi) => {
+                        const poi = city.pois.find(p => p.id === poiId);
+                        if (!poi) return null;
+                        const meta = POI_META[poi.type];
+                        const qd = poiQuestData[poiId];
+                        const isDone = qd && qd.total > 0 && qd.done === qd.total;
+                        return (
+                          <button
+                            key={poiId}
+                            onClick={() => {
+                              if (mapRef?.current) {
+                                mapRef.current.flyTo({ center: [poi.lng, poi.lat], zoom: 18, pitch: 72, duration: 1600 });
+                              }
+                              setSidebarPanel(null);
+                              handlePoiClick(poi);
+                            }}
+                            className="flex items-center gap-3 border-b border-gray-50 px-5 py-3 text-left transition-colors hover:bg-violet-50/40"
+                          >
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors"
+                              style={{ background: isDone ? "#22c55e" : "#f3f4f6", color: isDone ? "white" : "#9ca3af" }}>
+                              {isDone ? "✓" : pi + 1}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-gray-800">{poi.name}</p>
+                              <p className="text-[11px] text-gray-400">{meta.label}</p>
+                            </div>
+                            <ChevronRight className="h-4 w-4 shrink-0 text-gray-300" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
+                  {themes.length === 0 && (
+                    <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 py-16 text-center">
+                      <Compass className="h-10 w-10 text-gray-200" />
+                      <p className="text-sm text-gray-400">Aucun guidage disponible pour cette ville.</p>
+                    </div>
+                  )}
+                  <div className="h-4 shrink-0" />
+                </div>
+              </div>
+            );
+          })()}
 
           {/* Évènements panel */}
           {city.use3DMap && sidebarPanel === "evenements" && (

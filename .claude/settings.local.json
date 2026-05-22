@@ -58,7 +58,9 @@
       "Bash(mkdir \"c:\\\\Users\\\\user\\\\Documents\\\\GitHub\\\\SekaiTalk\\\\src\\\\app\\\\api\\\\lessons\\\\[lessonId]\\\\complete\")",
       "Bash(mkdir -p \"c:/Users/user/Documents/GitHub/SekaiTalk/src/app/api/lessons/poi/[poiId]\")",
       "Bash(mkdir -p \"c:/Users/user/Documents/GitHub/SekaiTalk/src/app/api/lessons/[lessonId]/complete\")",
-      "Bash(mkdir -p \"c:/Users/user/Documents/GitHub/SekaiTalk/src/app/home/[city]/[poi]/lesson\" && echo done)"
+      "Bash(mkdir -p \"c:/Users/user/Documents/GitHub/SekaiTalk/src/app/home/[city]/[poi]/lesson\" && echo done)",
+      "Bash(node -e 'const {PrismaClient} = require\\('\\\\''@prisma/client'\\\\''\\); const p = new PrismaClient\\(\\); p.lesson.findFirst\\({include:{steps:{orderBy:{order:'\\\\''asc'\\\\''}}}}\\).then\\(r => console.log\\(JSON.stringify\\(r,null,2\\)\\)\\).finally\\(\\(\\)=>p.$disconnect\\(\\)\\)')",
+      "Bash(node -e 'const {PrismaClient}=require\\('\\\\''@prisma/client'\\\\''\\);const p=new PrismaClient\\(\\);Promise.all\\([p.lesson.count\\(\\),p.lessonStep.count\\(\\),p.quest.count\\(\\)]\\).then\\(\\([l,s,q]\\)=>console.log\\('\\\\''Lessons:'\\\\'',l,'\\\\''Steps:'\\\\'',s,'\\\\''Quests:'\\\\'',q\\)\\).finally\\(\\(\\)=>p.$disconnect\\(\\)\\)')"
     ],
     "additionalDirectories": [
       "C:\\Program Files\\PostgreSQL\\17\\data",
