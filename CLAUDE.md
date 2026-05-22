@@ -78,6 +78,7 @@ Deux fichiers d'env :
 - `Lesson` — leçon liée à un POI (`poiId @unique`). Champs : `title`, `description?`. Relation `steps: LessonStep[]`
 - `LessonStep` — étape d'une leçon, ordonnée par `order`. Champs : `type: StepType` (enum), `data: Json` (shape selon le type). Cascade delete depuis `Lesson`
 - `UserLessonProgress` — progression utilisateur sur une leçon. Clé `@@unique([userId, lessonId])`. Champs : `score`, `validated` (bool), `completedAt?`, `firstValidatedAt?`. Ne repasse pas `validated` à `false` si une nouvelle tentative échoue
+- `SnsConversation` — conversation SNS/texto simulée pour un POI. Champs : `id` stable (ex: `"sns-konbini-shinjuku"`), `poiId`, `title`, `context` (affiché à l'intro), `xpReward`, `contact` (Json — `{ name, handle, avatar, image?, relation }`), `steps` (Json — `SnsStep[]` avec choix embarqués), `isActive`. Types TypeScript dans `src/lib/sns-conversations.ts` (fichier types uniquement, plus de données statiques). Géré via admin `/admin/sns`, lu par le jeu via `GET /api/sns/poi/[poiId]`.
 
 ### Seed
 
@@ -91,6 +92,7 @@ Deux fichiers d'env :
 - Quête de test : `quest-konbini-shinjuku-info-1` avec 10 mots (N5 : すみません, どこ, おにぎり, ありますか, いくら, ありがとうございます / N4 : 種類, 新鮮, 冷蔵庫, 今朝)
 - **Leçons** : `findUnique` + `create` pour la `Lesson`, puis `deleteMany` + `createMany` pour les `LessonStep` (idempotent, les étapes sont recréées à chaque seed pour rester à jour). **28 leçons** au total — tous les POIs Tokyo (27) + konbini-shinjuku. Chaque leçon a 7 steps : 2 INTRO → PRONUNCIATION → TRUE_FALSE ou CHOOSE_ANSWER → CULTURE_NOTE → MATCH_PAIRS → CHOOSE_ANSWER.
 - **CityRecord + POIRecord** : upsert de toutes les villes et POIs depuis `cities.ts` à la fin du seed. 10 villes (tokyo, osaka, kyoto + 7 coming-soon) et 44 POIs Tokyo. Idempotent via `upsert({ where: { id }, create, update })`. Ces enregistrements servent de source de vérité pour le jeu via `getCityFromDB()`.
+- **SnsConversation** : upsert des 7 conversations SNS à la fin du seed (`upsert({ where: { id }, update, create })`). IDs stables : `sns-konbini-shinjuku`, `sns-familymart-shibuya`, `sns-donquijote-shibuya`, `sns-starbucks-shibuya`, `sns-jr-shinjuku`, `sns-at-home-cafe-akihabara`, `sns-tokyo-skytree`.
 
 ### Navigation et routes
 
@@ -135,8 +137,9 @@ Deux fichiers d'env :
 | `/api/revision/vocab` | GET | Retourne `{ words: RevisionWord[], stats: { toWork, toReview, acquired } }` — tous les mots de l'utilisateur (`encounters > 0`), triés par `lastSeenAt desc`, enrichis du niveau `mastery`. `toWork` = never/new/learning, `toReview` = almost/acquired, `acquired` = perfect |
 | `/api/revision/result` | POST | Reçoit `{ results: [{ wordJp, correct }] }`, incrémente `encounters` + `correctCount`/`errorCount` + `lastSeenAt` via la clé `userId_wordJp` |
 | `/api/content/cities` | GET | Public (pas d'auth). Retourne `Record<string, CityData>` depuis la DB via `getAllCitiesFromDB()`. `revalidate = 0` (toujours frais). Utilisé par `layout.tsx` et `JapanMap.tsx` pour afficher les villes admin |
-| `/api/admin/export` | GET | Admin uniquement. Exporte tout le contenu DB (cityRecords, poiRecords, scenes, characters, appearances, quests+tasks+choices, lessons+steps) en JSON avec `Content-Disposition: attachment` |
-| `/api/admin/import` | POST | Admin uniquement. Importe un JSON exporté, upsert idempotent de toutes les entités. Retourne `{ imported: { cities, pois, … } }`. Stratégie de sync dev→prod |
+| `/api/sns/poi/[poiId]` | GET | Public. Retourne la `SnsConversation` active pour un POI (`isActive: true`), ou `null`. Appelé par `CityClient` à chaque sélection de POI. |
+| `/api/admin/export` | GET | Admin uniquement. Exporte tout le contenu DB (cityRecords, poiRecords, scenes, characters, appearances, quests+tasks+choices, lessons+steps, **snsConversations**) en JSON avec `Content-Disposition: attachment` |
+| `/api/admin/import` | POST | Admin uniquement. Importe un JSON exporté, upsert idempotent de toutes les entités (incluant `snsConversations`). Retourne `{ imported: { cities, pois, …, sns } }`. Stratégie de sync dev→prod |
 | `/api/admin/upload` | POST | Admin uniquement. Multipart form-data. Sauvegarde le fichier dans `public/uploads/{type}/{timestamp-filename}`. Retourne `{ url }` |
 | `/api/admin/cities` | GET/POST | CRUD villes (CityRecord) |
 | `/api/admin/cities/[id]` | PUT/DELETE | Mise à jour / suppression d'une ville |
@@ -146,6 +149,8 @@ Deux fichiers d'env :
 | `/api/admin/lessons/[id]` | GET/PUT/DELETE | Détail, mise à jour, suppression leçon |
 | `/api/admin/lessons/[id]/steps` | POST | Crée un LessonStep |
 | `/api/admin/lessons/[id]/steps/[stepId]` | PUT/DELETE | Mise à jour / suppression step |
+| `/api/admin/sns` | GET/POST | CRUD conversations SNS (SnsConversation) |
+| `/api/admin/sns/[id]` | GET/PUT/DELETE | Détail, mise à jour, suppression conversation SNS |
 | `/api/admin/users` | GET | Liste des utilisateurs (admin) |
 | `/api/admin/users/[id]` | GET/PATCH | Détail utilisateur, modification `isAdmin` |
 
@@ -197,14 +202,13 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 **État étendu (448px)** — contenu identique à `HomeClient` :
 - Header : logo 🗾 violet + "SekaiTalk" + bouton `ChevronLeft` (collapse + `setSidebarPanel(null)`)
 - Objectifs du jour : 3 tâches avec `CheckCircle2`/`Circle`
-- Navigation : `SIDEBAR_BUTTONS` = [Guidage, Lieux, Contacts, Évènements, Révision `disabled`] + bouton **Téléphone** inséré après Évènements (`i === 3` dans `.map()`). Section `flex-1`.
+- Navigation : `SIDEBAR_BUTTONS` = [Guidage, Lieux, Contacts, Évènements, Révision `disabled`]. Section `flex-1`. Le bouton **Téléphone** a été supprimé — les conversations SNS sont dans le drawer POI.
 - Mes stats : grille 3 colonnes (statiques)
 - Paramètres : footer `opacity-40`
 
 **État collapsé (60px)** :
 - Logo 🗾 violet (clic → expand)
 - 4 icônes nav (clic → `setSidebarExpanded(true)` + `setSidebarPanel(panel)`)
-- Icône `Smartphone` (clic → `setShowPhone(true)`) avant `ChevronRight`
 - `ChevronRight` en bas (expand)
 
 **Panneaux flottants** (`z-[1000]`, `left: 484`, `top: 20`, `height: calc(100vh - 40px)`, `rounded-2xl bg-white`, même shadow que la sidebar). Toujours affichés avec la sidebar étendue (collapse ferme le panneau).
@@ -233,6 +237,7 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 - Hero image ou gradient par type. Titre, description, leçon (si disponible) puis quêtes avec barre de progression.
 - **Section Leçon** : fetche `GET /api/lessons/poi/${poiId}` en parallèle avec les quêtes. État `lessonData` : `null` (chargement) | `"none"` (aucune leçon) | `{ id, title, validated, score }`. Affiche un spinner puis une carte avec GraduationCap, statut ("Non commencée" / score précédent / "Validée ✓") et bouton "🎓 Commencer la leçon" / "🔄 Réessayer" / "🔄 Refaire la leçon". Navigue vers `/home/${citySlug}/${poi.id}/lesson`.
 - Bouton "▶ Faire la quête" / "🔄 Refaire" → ouvre `questPreview` (état local).
+- **Section SNS** : si `snsConversation` (state, fetchée via `GET /api/sns/poi/[poiId]` à la sélection du POI) est non-null, affiche une carte verte "Discussion SNS" avec l'avatar/nom du contact, le contexte et les XP. Clic → `setShowSns(true)` → `SnsOverlay`. State `snsConversation` réinitialisée à `null` à chaque changement de POI.
 - Pas de bouton "Conversation libre" — toute navigation vers un POI requiert un `questId`.
 
 **Modale prévisualisation quête** (`questPreview` state)
@@ -308,7 +313,7 @@ Le wrapper `children` dans `HomeShell` a `pointerEvents: none` quand une map Map
 
 ### PhoneOverlay (`src/components/PhoneOverlay.tsx`)
 
-Modal plein-écran simulant un iPhone japonais. Déclenché via le bouton **Téléphone** dans la sidebar de `HomeClient` et `CityClient`.
+Composant iPhone japonais standalone (plus utilisé depuis la sidebar — le bouton Téléphone a été supprimé). Sert de **référence / base visuelle** pour `SnsOverlay` qui en réutilise tous les éléments de frame.
 
 **Dimensions** : 292×600px (ratio 37:76), `BR=50`, `HUE=284` (violet profond).
 
@@ -333,6 +338,23 @@ Modal plein-écran simulant un iPhone japonais. Déclenché via le bouton **Tél
 **Fermeture** : clic sur le fond noir ou bouton `X` en haut à droite.
 
 **Usage futur** : les apps (LINE, Amazon, Rakuten, Maps, PayPay, Suica…) serviront de points d'entrée vers des fonctionnalités d'immersion Japon.
+
+### SnsOverlay (`src/components/SnsOverlay.tsx`)
+
+Modal de conversation SNS simulée, rendu dans un **frame iPhone** réutilisant les constantes de `PhoneOverlay` (`PH=720`, `PW=351`, `BR=50`, `HUE=284`, `btnStyle`, `sectionBg`, `DynamicIsland`, `StatusIcons`). Déclenché par le bouton SNS dans le drawer POI de `CityClient`. Données lues depuis la DB (`SnsConversation`).
+
+**3 phases** (machine à états `phase: "intro" | "chat" | "result"`) :
+- **Intro** : écran d'accueil iPhone (gradient violet + DynamicIsland + status bar) avec une notification LINE simulée (avatar du contact + premier message) + carte contexte + bouton "Ouvrir →".
+- **Chat** : fond blanc + status bar sombre + header LINE (avatar + nom + handle) + zone messages scrollable (`bg: #e8ecf1`) + panel choix. Messages "them" = bulles blanches `border-radius 14px 14px 14px 3px` + miniature avatar ; messages "you" correct = `#07C160` (vert LINE), incorrect = `#f87171` (rouge) + feedback.
+- **Result** : fond gris clair + score + barre de progression verte + `+XP` + bouton "Terminer".
+
+**`ContactAvatar`** : composant interne. Affiche `contact.image` avec `<img onError>` fallback vers div emoji + gradient vert LINE.
+
+**Step machine** : `useEffect([phase, idx, steps])` — steps "them" = typing indicator (800–1300ms) puis rendu ; steps "you" = `awaitingChoice(true)`. `pick(choice)` → enregistre dans `rendered`, met à jour score, `idx++`.
+
+**Types** (`src/lib/sns-conversations.ts`) : `SnsChoice`, `SnsStep`, `SnsContact`, `SnsConversation` — types uniquement, données en DB. `getSnsConversation()` supprimé (plus utilisé).
+
+**`pointer-events-auto`** obligatoire sur le backdrop (le wrapper `children` de `HomeShell` est `pointer-events-none` sur les pages city).
 
 ### RevisionOverlay (`src/components/RevisionOverlay.tsx`)
 
@@ -606,6 +628,8 @@ Accessible uniquement aux utilisateurs avec `User.isAdmin = true`. Protégée pa
 /admin/lessons            → Liste des leçons
 /admin/lessons/[id]       → Éditeur de leçon avec step builder
 /admin/quests             → Liste des quêtes
+/admin/sns                → Liste des conversations SNS (SnsConversation)
+/admin/sns/[id]           → Éditeur conversation SNS (métadonnées + contact JSON + steps JSON)
 /admin/characters         → Liste des personnages
 /admin/users              → Liste des utilisateurs
 /admin/export-import      → Export JSON + Import JSON

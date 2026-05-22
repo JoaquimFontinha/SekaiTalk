@@ -12,7 +12,7 @@ async function checkAdmin() {
 export async function GET() {
   if (!await checkAdmin()) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const [cityRecords, poiRecords, scenes, characters, appearances, quests, lessons] = await Promise.all([
+  const [cityRecords, poiRecords, scenes, characters, appearances, quests, lessons, snsConversations] = await Promise.all([
     prisma.cityRecord.findMany({ orderBy: { levelRequired: "asc" } }),
     prisma.pOIRecord.findMany({ orderBy: [{ cityId: "asc" }, { name: "asc" }] }),
     prisma.scene.findMany(),
@@ -30,9 +30,10 @@ export async function GET() {
     prisma.lesson.findMany({
       include: { steps: { orderBy: { order: "asc" } } },
     }),
+    prisma.snsConversation.findMany({ orderBy: { poiId: "asc" } }),
   ]);
 
-  const payload = { cityRecords, poiRecords, scenes, characters, appearances, quests, lessons };
+  const payload = { cityRecords, poiRecords, scenes, characters, appearances, quests, lessons, snsConversations };
 
   return new NextResponse(JSON.stringify(payload, null, 2), {
     headers: {

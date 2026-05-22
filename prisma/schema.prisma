@@ -311,6 +311,23 @@ model UserLessonProgress {
   @@index([userId])
 }
 
+// ── SNS Conversations ─────────────────────────────────────────────────────────
+
+model SnsConversation {
+  id        String   @id  // e.g. "sns-konbini-shinjuku"
+  poiId     String
+  title     String
+  context   String   @db.Text
+  xpReward  Int      @default(50)
+  contact   Json     // { name, handle, avatar, image?, relation }
+  steps     Json     // SnsStep[] (with choices embedded)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([poiId])
+}
+
 // ── Admin: CityRecord + POIRecord ──────────────────────────────────────────────
 
 model CityRecord {

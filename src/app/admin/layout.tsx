@@ -11,6 +11,7 @@ const navLinks = [
   { href: "/admin/pois", label: "POIs", icon: "📍" },
   { href: "/admin/lessons", label: "Leçons", icon: "🎓" },
   { href: "/admin/quests", label: "Quêtes", icon: "📜" },
+  { href: "/admin/sns", label: "SNS", icon: "💬" },
   { href: "/admin/characters", label: "Personnages", icon: "🧑" },
   { href: "/admin/users", label: "Utilisateurs", icon: "👥" },
   { href: "/admin/export", label: "Export/Import", icon: "📦" },

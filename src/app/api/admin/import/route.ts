@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   if (!await checkAdmin()) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const payload = await req.json();
-  const counts = { cities: 0, pois: 0, scenes: 0, characters: 0, appearances: 0, quests: 0, lessons: 0 };
+  const counts = { cities: 0, pois: 0, scenes: 0, characters: 0, appearances: 0, quests: 0, lessons: 0, sns: 0 };
 
   if (payload.cityRecords) {
     for (const c of payload.cityRecords) {
@@ -92,6 +92,14 @@ export async function POST(req: Request) {
           await prisma.lessonStep.upsert({ where: { id: sData.id }, update: sData, create: sData });
         }
       }
+    }
+  }
+
+  if (payload.snsConversations) {
+    for (const c of payload.snsConversations) {
+      const { createdAt: _ca, updatedAt: _ua, ...data } = c;
+      await prisma.snsConversation.upsert({ where: { id: data.id }, update: data, create: data });
+      counts.sns++;
     }
   }
 

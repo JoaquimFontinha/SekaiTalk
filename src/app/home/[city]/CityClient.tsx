@@ -5,9 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle, CheckCircle2, Circle, Settings, ChevronLeft, ChevronRight, Smartphone, GraduationCap, Compass } from "lucide-react";
-import PhoneOverlay from "@/components/PhoneOverlay";
+import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle, CheckCircle2, Circle, Settings, ChevronLeft, ChevronRight, GraduationCap, Compass, MessageCircle } from "lucide-react";
 import RevisionOverlay from "@/components/RevisionOverlay";
+import SnsOverlay from "@/components/SnsOverlay";
+import type { SnsConversation } from "@/lib/sns-conversations";
 import cities, { POI, POIType } from "@/lib/cities";
 import POI_LOGOS from "@/lib/poi-logos";
 import { type VocabEntry, JLPT_COLORS } from "@/lib/mastery";
@@ -127,8 +128,9 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
 
   // Sidebar state
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
-  const [showPhone, setShowPhone]       = useState(false);
-  const [showRevision, setShowRevision] = useState(false);
+  const [showRevision, setShowRevision]       = useState(false);
+  const [showSns, setShowSns]                 = useState(false);
+  const [snsConversation, setSnsConversation] = useState<SnsConversation | null>(null);
   const [sidebarPanel, setSidebarPanel]   = useState<SidebarPanel>(null);
   const [lieuxType, setLieuxType]         = useState<POIType | null>(null);
   const [poiQuestData, setPoiQuestData]   = useState<Record<string, { done: number; total: number }>>({});
@@ -185,7 +187,12 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
     setPoiQuests([]);
     setQuestsLoading(true);
     setLessonData(null);
+    setSnsConversation(null);
     flyToPoi(poi);
+    fetch(`/api/sns/poi/${poiId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(setSnsConversation)
+      .catch(() => {});
     fetch(`/api/quests/poi/${poiId}`)
       .then(r => r.ok ? r.json() : [])
       .then(setPoiQuests)
@@ -397,16 +404,6 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                       <Icon className={`h-5 w-5 shrink-0 ${sidebarPanel === panel && enabled ? "text-violet-500" : "text-gray-500"}`} />
                       <span className={`text-base font-medium ${sidebarPanel === panel && enabled ? "text-violet-600" : "text-gray-600"}`}>{label}</span>
                     </button>
-                    {i === 3 && (
-                      <button
-                        key="phone"
-                        onClick={() => setShowPhone(true)}
-                        className="flex items-center gap-4 rounded-xl px-4 py-4 text-left hover:bg-gray-50 transition-colors"
-                      >
-                        <Smartphone className="h-5 w-5 shrink-0 text-gray-500" />
-                        <span className="text-base font-medium text-gray-600">Téléphone</span>
-                      </button>
-                    )}
                   </>
                 ))}
               </div>
@@ -467,13 +464,6 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
               </button>
             ))}
             <div className="flex-1" />
-            <button
-              title="Téléphone"
-              onClick={() => setShowPhone(true)}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
-            >
-              <Smartphone className="h-5 w-5" />
-            </button>
             <button
               onClick={() => setSidebarExpanded(true)}
               className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-300 hover:bg-gray-100 hover:text-gray-500 transition-colors"
@@ -1118,13 +1108,45 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                 )}
               </div>
 
+              {/* ── SNS section ── */}
+              {selectedPoi && snsConversation && (() => {
+                const conv = snsConversation;
+                return (
+                  <div className="mt-2 px-4 pb-4">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-white/30">Discussion SNS</span>
+                    <button
+                      onClick={() => setShowSns(true)}
+                      className="mt-3 w-full rounded-2xl border border-emerald-500/30 bg-emerald-950/40 p-3.5 text-left hover:bg-emerald-900/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-xl shrink-0">
+                          {conv.contact.avatar}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-white truncate">{conv.contact.name}</p>
+                          <p className="text-[11px] text-emerald-400 truncate">{conv.context}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold">
+                            +{conv.xpReward} XP
+                          </span>
+                          <MessageCircle className="h-4 w-4 text-emerald-500/50" />
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                );
+              })()}
+
             </div>
           </div>
 
         </main>
 
-      {showPhone    && <PhoneOverlay    onClose={() => setShowPhone(false)}    />}
       {showRevision && <RevisionOverlay onClose={() => setShowRevision(false)} />}
+      {showSns && snsConversation && (
+        <SnsOverlay conversation={snsConversation} onClose={() => setShowSns(false)} />
+      )}
 
       {/* ── Quest preview modal ── */}
       {questPreview && (() => {

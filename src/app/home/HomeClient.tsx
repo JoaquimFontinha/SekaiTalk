@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, Settings, CheckCircle2, Circle, Smartphone } from "lucide-react";
-import PhoneOverlay from "@/components/PhoneOverlay";
+import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, Settings, CheckCircle2, Circle } from "lucide-react";
 import RevisionOverlay from "@/components/RevisionOverlay";
 
 type UserStats = {
@@ -50,7 +49,6 @@ function CompassRose() {
 
 export default function HomeClient() {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [showPhone, setShowPhone]       = useState(false);
   const [showRevision, setShowRevision] = useState(false);
 
   useEffect(() => {
@@ -131,16 +129,6 @@ export default function HomeClient() {
                     <span className="text-base font-medium text-gray-600">{label}</span>
                   </div>
                 )}
-                {i === 2 && (
-                  <button
-                    key="phone"
-                    onClick={() => setShowPhone(true)}
-                    className="flex items-center gap-4 rounded-xl px-4 py-4 hover:bg-gray-50 transition-colors"
-                  >
-                    <Smartphone className="h-5 w-5 shrink-0 text-gray-500" />
-                    <span className="text-base font-medium text-gray-600">Téléphone</span>
-                  </button>
-                )}
               </>
             ))}
           </div>
@@ -173,7 +161,6 @@ export default function HomeClient() {
         </div>
       </div>
 
-      {showPhone    && <PhoneOverlay    onClose={() => setShowPhone(false)}    />}
       {showRevision && <RevisionOverlay onClose={() => setShowRevision(false)} />}
 
       {/* ── Transparent overlay (HUD, compass, vignette) ── */}
