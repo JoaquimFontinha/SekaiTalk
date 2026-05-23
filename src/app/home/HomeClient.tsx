@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, Settings, CheckCircle2, Circle } from "lucide-react";
 import RevisionOverlay from "@/components/RevisionOverlay";
+import MonObjectif from "@/components/MonObjectif";
 
 type UserStats = {
   xp: number; yens: number; level: number;
@@ -23,11 +24,6 @@ const DAILY_GOALS = [
 ];
 
 
-const GLOBAL_STATS = [
-  { label: "Conversations", value: "—", icon: "💬" },
-  { label: "Mots maîtrisés", value: "—", icon: "✨" },
-  { label: "Quêtes terminées", value: "—", icon: "🎯" },
-];
 
 function CompassRose() {
   return (
@@ -136,19 +132,8 @@ export default function HomeClient() {
 
         <div className="mx-7 h-px bg-gray-100 shrink-0" />
 
-        {/* ── Stats globales ── */}
-        <div className="px-7 pt-8 pb-8 shrink-0">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Mes stats</span>
-          <div className="mt-4 grid grid-cols-3 gap-3">
-            {GLOBAL_STATS.map(({ label, value, icon }) => (
-              <div key={label} className="flex flex-col items-center rounded-2xl bg-gray-50 px-3 py-5 gap-2">
-                <span className="text-2xl">{icon}</span>
-                <span className="text-lg font-black text-gray-700 tabular-nums">{value}</span>
-                <span className="text-[10px] text-gray-400 text-center leading-tight">{label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* ── Mon Objectif ── */}
+        <MonObjectif />
 
         <div className="mx-7 h-px bg-gray-100 shrink-0" />
 

@@ -10,7 +10,11 @@ export async function POST(req: NextRequest) {
   const userId = (session?.user as any)?.id as string | undefined;
   if (!userId) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  const { results } = await req.json() as { results: ResultItem[] };
+  const { results, durationSeconds } = await req.json() as { results: ResultItem[]; durationSeconds?: number };
+
+  if (durationSeconds && durationSeconds > 0) {
+    await prisma.practiceRecord.create({ data: { userId, type: "revision", durationSeconds } });
+  }
 
   await Promise.all(results.map(({ wordJp, correct }) =>
     prisma.userVocabProgress.update({

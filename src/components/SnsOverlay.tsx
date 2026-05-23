@@ -116,8 +116,10 @@ export default function SnsOverlay({
   const [time, setTime] = useState(() =>
     new Date().toLocaleTimeString("ja-JP", { timeZone: "Asia/Tokyo", hour: "2-digit", minute: "2-digit", hour12: false })
   );
-  const endRef = useRef<HTMLDivElement>(null);
-  const messagesRef = useRef<HTMLDivElement>(null);
+  const endRef         = useRef<HTMLDivElement>(null);
+  const messagesRef    = useRef<HTMLDivElement>(null);
+  const startTimeRef   = useRef<number>(0);
+  const completedRef   = useRef(false);
 
   const steps = conversation.steps;
   const totalChoices = steps.filter(s => s.from === "you").length;
@@ -134,6 +136,22 @@ export default function SnsOverlay({
     , 1000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (phase === "chat" && startTimeRef.current === 0) {
+      startTimeRef.current = Date.now();
+    }
+    if (phase === "result" && !completedRef.current) {
+      completedRef.current = true;
+      const durationSeconds = Math.round((Date.now() - startTimeRef.current) / 1000);
+      const scorePercent = score.total > 0 ? Math.round((score.correct / score.total) * 100) : 100;
+      fetch(`/api/sns/${conversation.id}/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ score: scorePercent, durationSeconds }),
+      }).catch(() => {});
+    }
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (phase !== "chat") return;

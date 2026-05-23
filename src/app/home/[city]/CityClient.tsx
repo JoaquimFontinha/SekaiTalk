@@ -8,6 +8,7 @@ import "leaflet/dist/leaflet.css";
 import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle, CheckCircle2, Circle, Settings, ChevronLeft, ChevronRight, GraduationCap, Compass, MessageCircle } from "lucide-react";
 import RevisionOverlay from "@/components/RevisionOverlay";
 import SnsOverlay from "@/components/SnsOverlay";
+import MonObjectif from "@/components/MonObjectif";
 import type { SnsConversation } from "@/lib/sns-conversations";
 import cities, { POI, POIType } from "@/lib/cities";
 import POI_LOGOS from "@/lib/poi-logos";
@@ -65,11 +66,6 @@ const DAILY_GOALS = [
   { label: "Complète une quête",       done: false },
 ];
 
-const GLOBAL_STATS = [
-  { label: "Conversations",   value: "—", icon: "💬" },
-  { label: "Mots maîtrisés",  value: "—", icon: "✨" },
-  { label: "Quêtes terminées",value: "—", icon: "🎯" },
-];
 
 function getFriendshipLevel(count: number): { label: string; color: string } {
   if (count === 0) return { label: "Étranger",      color: "#6b7280" };
@@ -411,19 +407,8 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
 
             <div className="mx-7 h-px bg-gray-100 shrink-0" />
 
-            {/* Mes stats */}
-            <div className="px-7 pt-8 pb-8 shrink-0">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Mes stats</span>
-              <div className="mt-4 grid grid-cols-3 gap-3">
-                {GLOBAL_STATS.map(({ label, value, icon }) => (
-                  <div key={label} className="flex flex-col items-center rounded-2xl bg-gray-50 px-3 py-5 gap-2">
-                    <span className="text-2xl">{icon}</span>
-                    <span className="text-lg font-black text-gray-700 tabular-nums">{value}</span>
-                    <span className="text-[10px] text-gray-400 text-center leading-tight">{label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* Mon Objectif */}
+            <MonObjectif />
 
             <div className="mx-7 h-px bg-gray-100 shrink-0" />
 

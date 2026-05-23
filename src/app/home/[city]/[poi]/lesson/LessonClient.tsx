@@ -788,8 +788,9 @@ export default function LessonClient({ citySlug, poiId }: { citySlug: string; po
   const [validated, setValidated]       = useState(false);
   const [firstName, setFirstName]       = useState("toi");
 
-  const correctRef = useRef(0);
-  const scoredRef  = useRef(0);
+  const correctRef   = useRef(0);
+  const scoredRef    = useRef(0);
+  const startTimeRef = useRef(Date.now());
 
   // Ensure voices are loaded (browsers may delay this)
   useEffect(() => {
@@ -826,7 +827,7 @@ export default function LessonClient({ citySlug, poiId }: { citySlug: string; po
       fetch(`/api/lessons/${lesson.id}/complete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ score }),
+        body: JSON.stringify({ score, durationSeconds: Math.round((Date.now() - startTimeRef.current) / 1000) }),
       })
         .then(r => r.ok ? r.json() : { validated: score >= 80 })
         .then(d => setValidated(d.validated))

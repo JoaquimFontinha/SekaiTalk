@@ -24,6 +24,7 @@ model User {
 
   xp                Int                  @default(0)
   yens              Int                  @default(0)
+  dailyGoalMinutes  Int                  @default(10)
   accounts          Account[]
   sessions          Session[]
   questProgress     UserQuestProgress[]
@@ -31,6 +32,8 @@ model User {
   vocabProgress     UserVocabProgress[]
   sessionRecords    SessionRecord[]
   lessonProgress    UserLessonProgress[]
+  practiceRecords   PracticeRecord[]
+  snsProgress       UserSnsProgress[]
 }
 
 model Account {
@@ -326,6 +329,33 @@ model SnsConversation {
   updatedAt DateTime @updatedAt
 
   @@index([poiId])
+}
+
+// ── SNS progress ─────────────────────────────────────────────────────────────
+
+model UserSnsProgress {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snsId       String
+  score       Int      @default(0)
+  completedAt DateTime @default(now())
+
+  @@unique([userId, snsId])
+  @@index([userId])
+}
+
+// ── Practice records (temps de pratique par activité) ────────────────────────
+
+model PracticeRecord {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String   // "quest" | "lesson" | "revision"
+  durationSeconds Int
+  createdAt       DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 // ── Admin: CityRecord + POIRecord ──────────────────────────────────────────────

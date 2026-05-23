@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { X, BookOpen, ChevronRight, RotateCcw, Trophy, Loader2 } from "lucide-react";
 import { type VocabEntry, type MasteryLevel, MASTERY_CONFIG, JLPT_COLORS, computeMastery } from "@/lib/mastery";
 
@@ -659,6 +659,7 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
   const [writtenInput, setWrittenInput] = useState("");
   const [results, setResults]       = useState<SessionResult[]>([]);
   const [saving, setSaving]         = useState(false);
+  const sessionStartRef             = useRef<number>(0);
 
   useEffect(() => {
     fetch("/api/revision/vocab")
@@ -679,6 +680,7 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
     setSelected(null);
     setWrittenInput("");
     setResults([]);
+    sessionStartRef.current = Date.now();
     setView("session");
   }, [words, filter]);
 
@@ -704,6 +706,7 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           results: results.map(r => ({ wordJp: r.word.jp, correct: r.correct })),
+          durationSeconds: Math.round((Date.now() - sessionStartRef.current) / 1000),
         }),
       }).catch(() => {});
       setSaving(false);

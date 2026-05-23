@@ -24,9 +24,14 @@ export async function POST(req: NextRequest) {
   const practicedSet = new Set(practicedWords);
 
   if (userId) {
-    await prisma.sessionRecord.create({
-      data: { userId, questId, durationSeconds, errorCount, suggestionsUsed, practicedWords },
-    });
+    await Promise.all([
+      prisma.sessionRecord.create({
+        data: { userId, questId, durationSeconds, errorCount, suggestionsUsed, practicedWords },
+      }),
+      prisma.practiceRecord.create({
+        data: { userId, type: "quest", durationSeconds },
+      }),
+    ]);
 
     // Register ALL quest vocab words — user was exposed to them
     for (const word of allVocab) {

@@ -9,13 +9,19 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { lessonId: string } }
 ) {
-  const { score }: { score: number } = await req.json();
+  const { score, durationSeconds }: { score: number; durationSeconds?: number } = await req.json();
   const validated = score >= 80;
 
   const session = await getServerSession(authOptions);
   const userId = (session?.user as { id?: string })?.id ?? null;
 
   if (!userId) return NextResponse.json({ validated, score });
+
+  if (durationSeconds && durationSeconds > 0) {
+    await prisma.practiceRecord.create({
+      data: { userId, type: "lesson", durationSeconds },
+    });
+  }
 
   const now = new Date();
   const existing = await prisma.userLessonProgress.findUnique({
