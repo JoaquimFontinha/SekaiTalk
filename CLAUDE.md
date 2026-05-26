@@ -297,19 +297,69 @@ Le wrapper `children` dans `HomeShell` a `pointerEvents: none` quand une map Map
 - `overflow-y: auto` pour les petits écrans
 - 5 sections séparées par des dividers `h-px bg-gray-100` avec `mx-7` :
   1. **Header** — logo 🗾 violet 56px + "SekaiTalk" bold
-  2. **Objectifs du jour** — 3 tâches quotidiennes avec `CheckCircle2` / `Circle` (statiques pour l'instant, à brancher sur une API)
-  3. **Navigation** — 3 items `opacity-40 cursor-default` (Lieux, Contacts, Évènements) + bouton **Révision** actif (`onClick={() => setShowRevision(true)}`, ouvre `RevisionOverlay`) + bouton **Téléphone** inséré après Évènements (actif, `onClick={() => setShowPhone(true)}`). Section `flex-1`.
-  4. **Mes stats** — grille 3 colonnes : Conversations / Mots maîtrisés / Quêtes terminées (valeurs `"—"` à brancher)
-  5. **Paramètres** — footer, `opacity-40 cursor-default`
+  2. **Objectifs du jour** (`id="tut-home-daily"`) — 3 tâches quotidiennes avec `CheckCircle2` / `Circle` (statiques pour l'instant)
+  3. **Navigation** (`id="tut-home-nav"`) — 3 items `opacity-40 cursor-default` (Lieux, Contacts, Évènements) + bouton **Révision** actif (ouvre `RevisionOverlay`). Section `flex-1`.
+  4. **Mon Objectif** (`id="tut-home-objectif"`) — wrapper autour de `<MonObjectif />`
+  5. **Paramètres** (`id="tut-home-settings"`) — footer, `opacity-40 cursor-default`
 - `pointer-events-auto` explicite — le wrapper `children` dans `HomeShell` est `pointer-events-none`
 
 **HUD top-right** (`position: absolute, top: 20px, right: 20px, z-20`) — toujours visible :
-- **Tickets journaliers** : 5 icônes 🎫 (bg amber-50, 32×32px) + bouton `+` arrondi pointillé + timer `⏱ 10h 28min` (visuels uniquement, à brancher sur une API de quota)
+- **Tickets journaliers** (`id="tut-home-tickets"`) : 5 icônes 🎫 (bg amber-50, 32×32px) + bouton `+` arrondi pointillé + timer `⏱ 10h 28min` (visuels uniquement)
 - Séparateur vertical `h-9 w-px bg-gray-100`
-- **Flame** `h-6 w-6 text-orange-300` + streak `0`
+- **Flame** (`id="tut-home-flame"`) `h-6 w-6 text-orange-300` + streak `0`
 - **Bell** `h-6 w-6`
-- **Avatar XP ring** (style Pokémon GO) : SVG 64px avec `strokeDashoffset` calculé sur `userStats.percent`, rotated `-90deg`. Avatar intérieur `h-11 w-11 bg-gray-100`. Label `Lv. {level}` en dessous.
+- **Avatar XP ring** (`id="tut-home-xp"`) (style Pokémon GO) : SVG 64px avec `strokeDashoffset` calculé sur `userStats.percent`, rotated `-90deg`. Avatar intérieur `h-11 w-11 bg-gray-100`. Label `Lv. {level}` en dessous.
 - Taille globale : `px-6 py-4`, gap `gap-5`
+
+**Tutorial** : `<TutorialLayer onAdvance={(step) => { if (step === "pricing") setShowPricing(true); }} />` monté directement. `showPricing` state — ouvert aussi si `getTutoStep() === "pricing"` au mount. `PricingModal` close → `storeTutoStep("complete")`.
+
+### Système tutorial / onboarding (`src/lib/tutorial.ts` + `src/components/TutorialLayer.tsx`)
+
+**State machine** persistée en `localStorage` (clé `sekai_tuto_step`). `getTutoStep()` / `setTutoStep()` / `initTuto(force?)`.
+
+**Flux complet** :
+```
+city_intro_0 → city_intro_1 → city_intro_2
+  → map_konbini (ring: ouvre panneau Lieux)
+  → lieux_filter_konbini (ring: filtre konbini)
+  → lieux_select_poi (ring: konbini-shinjuku spécifique)
+  → pre_lesson_guide → drawer_lesson (ring: bouton leçon)
+  → lesson_active [leçon en cours]
+  → pre_quest_guide → drawer_quest (ring: bouton quête)
+  → quest_active [quête en cours]
+  → quest_done_0 → quest_done_1
+  → sidebar_lieux → sidebar_contacts → sidebar_revision → sidebar_guidage
+  → guide_free_0 → guide_free_1
+  → [router.push("/home")] → home_map_0 → home_map_1
+  → home_tickets → home_flame → home_xp → home_daily → home_nav → home_objectif → home_settings
+  → pricing → complete
+```
+
+**Démarrage** : `?tuto=start` dans l'URL de la page city → `initOnMount={true}` → `initTuto(force=true)` → reset à `city_intro_0`.
+
+**TutorialLayer** (`src/components/TutorialLayer.tsx`) — composant client rendu dans `CityClient` et `HomeClient`. Props : `citySlug?`, `selectedPoiId?`, `sidebarPanel?`, `lieuxType?`, `initOnMount?`, `onAdvance?`, `onClose?`.
+
+**Deux types d'overlay** :
+- `GuideDialogue` (step in `CITY_INTRO_LINES`) : personnage + bulle de dialogue. `zIndex: 1005`. `pointerEvents: "auto"` explicite (override du `pointer-events: none` hérité de HomeShell/CityClient).
+- `HighlightTooltip` (step in `HIGHLIGHTS`) : anneau lumineux + tooltip. Ring : `boxShadow: "0 0 0 4px #a78bfa, 0 0 0 9999px rgba(0,0,0,0.45)"` → effet spotlight. `zIndex: 1002` (anneau) / `1003` (tooltip). `showDismiss: false` = action requise (pas de bouton "Compris!") ; `showDismiss: true` = info avec bouton.
+
+**Z-index hiérarchie** : sidebar `z-1001` → ring `z-1002` → tooltip `z-1003` → guide dialogue `z-1005` → quest drawer `z-1000`.
+
+**Auto-avance au mount** : useEffect `[]` unique lit localStorage. Si `lesson_active` → avance à `pre_quest_guide`. Si `quest_active` → avance à `quest_done_0`. Évite le bug de double `[]` useEffect (stale closure : le second effet voit `step = null` avant re-render).
+
+**Restrictions tutoriel dans CityClient** : `tutoRestrictFilters` state — quand `lieux_filter_konbini` ou `lieux_select_poi`, les filtres non-konbini sont `opacity: 0.3, pointerEvents: "none"`. `onAdvance` callback sync cet état.
+
+**IDs requis** :
+| ID | Élément |
+|---|---|
+| `tut-sidebar-lieux` | Bouton Lieux dans la sidebar CityClient |
+| `tut-lieux-filter-konbini` | Bouton filtre konbini dans panneau Lieux |
+| `tut-poi-konbini-shinjuku` | Ligne POI FamilyMart Shinjuku dans la liste |
+| `tut-lesson-btn` | Bouton "Commencer la leçon" dans le drawer |
+| `tut-quest-btn` | Bouton "Faire la quête" dans le drawer |
+| `tut-sidebar-contacts` / `tut-sidebar-revision` / `tut-sidebar-guidage` | Boutons nav sidebar |
+| `tut-home-tickets` / `tut-home-flame` / `tut-home-xp` | Éléments HUD HomeClient |
+| `tut-home-daily` / `tut-home-nav` / `tut-home-objectif` / `tut-home-settings` | Sections sidebar HomeClient |
 
 ### PhoneOverlay (`src/components/PhoneOverlay.tsx`)
 
@@ -660,5 +710,6 @@ Accessible uniquement aux utilisateurs avec `User.isAdmin = true`. Protégée pa
 
 - **Modale flex collapse** : ne jamais utiliser `flex flex-col` + `max-height` + enfant `flex-1 overflow-y-auto` sans `min-h-0` — le contenu collapse et devient invisible. Utiliser le pattern "scrollable outer" : `fixed inset-0 overflow-y-auto` → `flex min-h-full items-center justify-center` → carte en bloc naturel.
 - **Fixed + overflow-hidden parent** : les éléments `fixed` ne sont pas clippés par `overflow-hidden` des parents (sauf si le parent a `transform`/`filter`/`perspective`). Le `pointer-events-none` du root CityClient est hérité CSS — toujours mettre `pointer-events-auto` sur les modales fixes.
+- **HomeShell pointer-events hérité** : HomeShell wrappe `children` avec `pointer-events: none` sur `/home` et les pages city. Tout composant rendu dans `HomeClient` ou `CityClient` (overlays, modales, TutorialLayer) qui doit être cliquable **doit** avoir `pointerEvents: "auto"` sur son élément racine, même s'il est `position: fixed`. La propriété CSS `pointer-events` s'hérite même à travers les éléments fixed. Concerne : `TutorialLayer` (déjà géré dans `GuideDialogue`), `PricingModal` (backdrop fixe), `SnsOverlay`, `RevisionOverlay`.
 - **Canvas Mapbox opaque** : `mapboxgl-map` a `background: #000` par défaut dans `mapbox-gl.css` — les coins non-rendus apparaissent noirs. Fix dans `globals.css` : `.mapboxgl-map, .mapboxgl-canvas-container, .mapboxgl-canvas { background: transparent !important; }`. Ne fonctionne QUE si le style Mapbox n'a pas de layer `background` opaque (utiliser un style JSON inline sans background layer, pas `dark-v11`).
 - **Gradient derrière le canvas Mapbox** : un `<div>` overlay CSS est toujours AU-DESSUS du canvas (y compris sur la terre). Pour qu'un gradient/pattern soit visible uniquement sur l'océan, le placer AVANT le `<Map>` dans le DOM avec `z-index` inférieur — le canvas opaque masquera le div sur la terre, le div sera visible à travers les pixels transparents (océan).

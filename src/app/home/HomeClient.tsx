@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, Settings, CheckCircle2, Circle } from "lucide-react";
 import RevisionOverlay from "@/components/RevisionOverlay";
 import MonObjectif from "@/components/MonObjectif";
+import PricingModal from "@/components/PricingModal";
+import TutorialLayer from "@/components/TutorialLayer";
+import { getTutoStep, setTutoStep as storeTutoStep } from "@/lib/tutorial";
 
 type UserStats = {
   xp: number; yens: number; level: number;
@@ -22,8 +25,6 @@ const DAILY_GOALS = [
   { label: "Apprends 5 nouveaux mots", done: false },
   { label: "Complète une quête",       done: false },
 ];
-
-
 
 function CompassRose() {
   return (
@@ -46,12 +47,17 @@ function CompassRose() {
 export default function HomeClient() {
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [showRevision, setShowRevision] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
 
   useEffect(() => {
     fetch("/api/user/stats")
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setUserStats(data); })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (getTutoStep() === "pricing") setShowPricing(true);
   }, []);
 
   return (
@@ -77,7 +83,7 @@ export default function HomeClient() {
         </div>
 
         {/* ── Objectifs du jour ── */}
-        <div className="px-7 pb-8 shrink-0">
+        <div id="tut-home-daily" className="px-7 pb-8 shrink-0">
           <div className="flex items-center justify-between mb-4">
             <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Objectifs du jour</span>
             <span className="text-xs font-semibold text-violet-500 bg-violet-50 px-2.5 py-1 rounded-full">
@@ -102,10 +108,10 @@ export default function HomeClient() {
         <div className="mx-7 h-px bg-gray-100 shrink-0" />
 
         {/* ── Navigation ── */}
-        <div className="px-5 pt-8 pb-8 flex-1">
+        <div id="tut-home-nav" className="px-5 pt-8 pb-8 flex-1">
           <span className="px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Navigation</span>
           <div className="mt-3 flex flex-col gap-1">
-            {NAV_ITEMS.map(({ Icon, label }, i) => (
+            {NAV_ITEMS.map(({ Icon, label }) => (
               <>
                 {label === "Révision" ? (
                   <button
@@ -133,12 +139,14 @@ export default function HomeClient() {
         <div className="mx-7 h-px bg-gray-100 shrink-0" />
 
         {/* ── Mon Objectif ── */}
-        <MonObjectif />
+        <div id="tut-home-objectif">
+          <MonObjectif />
+        </div>
 
         <div className="mx-7 h-px bg-gray-100 shrink-0" />
 
         {/* ── Footer ── */}
-        <div className="px-5 pt-5 pb-6 shrink-0">
+        <div id="tut-home-settings" className="px-5 pt-5 pb-6 shrink-0">
           <button className="flex w-full cursor-default items-center gap-4 rounded-xl px-4 py-4 opacity-40">
             <Settings className="h-5 w-5 shrink-0 text-gray-500" />
             <span className="text-base font-medium text-gray-600">Paramètres</span>
@@ -147,6 +155,13 @@ export default function HomeClient() {
       </div>
 
       {showRevision && <RevisionOverlay onClose={() => setShowRevision(false)} />}
+      {showPricing && <PricingModal onClose={() => { storeTutoStep("complete"); setShowPricing(false); }} />}
+
+      <TutorialLayer
+        onAdvance={(step) => {
+          if (step === "pricing") setShowPricing(true);
+        }}
+      />
 
       {/* ── Transparent overlay (HUD, compass, vignette) ── */}
       <main className="pointer-events-none relative h-screen overflow-hidden">
@@ -155,7 +170,7 @@ export default function HomeClient() {
         <div className="pointer-events-auto absolute top-5 right-5 z-20 flex items-center gap-5 rounded-2xl border border-gray-200 bg-white px-6 py-4 shadow-md">
 
           {/* Tickets journaliers */}
-          <div className="flex flex-col items-center gap-1">
+          <div id="tut-home-tickets" className="flex flex-col items-center gap-1">
             <div className="flex items-center gap-1">
               {[0, 1, 2, 3, 4].map(i => (
                 <div key={i} className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-lg">
@@ -174,7 +189,7 @@ export default function HomeClient() {
 
           <div className="w-px h-9 bg-gray-100" />
 
-          <button className="flex items-center gap-2 text-gray-400 hover:text-orange-400 transition-colors">
+          <button id="tut-home-flame" className="flex items-center gap-2 text-gray-400 hover:text-orange-400 transition-colors">
             <Flame className="h-6 w-6 text-orange-300" />
             <span className="text-base font-semibold text-gray-600">0</span>
           </button>
@@ -183,7 +198,7 @@ export default function HomeClient() {
           </button>
 
           {/* Avatar + XP ring (style Pokémon GO) */}
-          <div className="flex flex-col items-center gap-1.5">
+          <div id="tut-home-xp" className="flex flex-col items-center gap-1.5">
             <div className="relative" style={{ width: 64, height: 64 }}>
               <svg width={64} height={64} style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }}>
                 <circle cx={32} cy={32} r={28} fill="none" stroke="#e5e7eb" strokeWidth={4.5} />

@@ -2071,6 +2071,194 @@ async function main() {
   }
   console.log("SnsConversation seeded.");
 
+  // ── Tutorial — Agent Tanaka (douane) ────────────────────────────────────────
+
+  // Scene
+  await prisma.scene.upsert({
+    where:  { poiId: "tutorial-douane" },
+    update: { backgroundImage: "/backgrounds/aeroport_tutoriel.avif" },
+    create: {
+      poiId:           "tutorial-douane",
+      backgroundImage: "/backgrounds/aeroport_tutoriel.avif",
+      entrySound:      null,
+      ambientSound:    null,
+    },
+  });
+
+  // CityRecord (tutorial city — isActive: false, invisible on the map)
+  await prisma.cityRecord.upsert({
+    where:  { id: "tutorial" },
+    update: {},
+    create: {
+      id:            "tutorial",
+      name:          "Aéroport de Tokyo",
+      nameJp:        "東京空港",
+      centerLat:     35.5494,
+      centerLng:     139.7798,
+      zoom:          14,
+      pitch:         0,
+      bearing:       0,
+      levelRequired: 0,
+      use3DMap:      false,
+      isActive:      false,
+    },
+  });
+
+  // POIRecord
+  await prisma.pOIRecord.upsert({
+    where:  { id: "tutorial-douane" },
+    update: {},
+    create: {
+      id:          "tutorial-douane",
+      cityId:      "tutorial",
+      name:        "Contrôle Douanier",
+      type:        "transport",
+      lat:         35.5494,
+      lng:         139.7798,
+      description: "Passage du contrôle douanier à l'aéroport de Tokyo — tutoriel",
+      isActive:    true,
+    },
+  });
+
+  // Character
+  const WORDS_TANAKA = [
+    { furigana: "",       jp: "いらっしゃいませ", romaji: "irasshaimase", fr: "bienvenue" },
+    { furigana: "",       jp: "パスポート",         romaji: "pasupōto",    fr: "passeport" },
+    { furigana: "はいけん", jp: "拝見",             romaji: "haiken",       fr: "voir (humble)" },
+  ];
+  await prisma.character.upsert({
+    where:  { id: "char-tanaka-douane" },
+    update: {
+      greetingTranslation: "Bienvenue. Puis-je voir votre passeport, s'il vous plaît ?",
+      greetingWords: WORDS_TANAKA,
+    },
+    create: {
+      id:         "char-tanaka-douane",
+      name:       "Agent Tanaka",
+      nameJp:     "田中さん",
+      role:       "Agent de douane",
+      image:      "/character_placeholder.png",
+      voiceId:    null,
+      systemPrompt: `あなたは東京国際空港の入国審査官、田中さんです。
+日本語学習者（フランス語話者）向けに、ゆっくり・分かりやすい日本語で話してください。
+必要に応じて括弧内に短いフランス語の訳を入れてください（例：「パスポート (passeport)」）。
+入国審査の自然な流れを進めてください：パスポート確認 → 来日目的 → 滞在期間 → 滞在先。
+正しい回答が得られたら「よし！」や「いいですね！」と励ましてから次の質問へ進んでください。
+回答は常に2文以内、短く、親しみやすくしてください。`,
+      greetingMessage:     "いらっしゃいませ。パスポートを拝見してもよろしいですか？",
+      greetingTranslation: "Bienvenue. Puis-je voir votre passeport, s'il vous plaît ?",
+      greetingWords:       WORDS_TANAKA,
+      isFriendable:        false,
+      isActive:            true,
+    },
+  });
+
+  // CharacterAppearance
+  await prisma.characterAppearance.upsert({
+    where:  { characterId_poiId: { characterId: "char-tanaka-douane", poiId: "tutorial-douane" } },
+    update: {},
+    create: { characterId: "char-tanaka-douane", poiId: "tutorial-douane" },
+  });
+
+  // Quest
+  const tutorialQuestExists = await prisma.quest.findUnique({ where: { id: "quest-tutorial-douane" } });
+  if (!tutorialQuestExists) {
+    await prisma.quest.create({
+      data: {
+        id:          "quest-tutorial-douane",
+        poiId:       "tutorial-douane",
+        title:       "Passer la douane",
+        description: "Entraîne-toi à passer le contrôle douanier à l'aéroport de Tokyo",
+        order:       1,
+        xpReward:    80,
+        yenReward:   0,
+        tasks: {
+          create: [
+            {
+              id:          "task-tuto-douane-1",
+              order:       1,
+              instruction: "Saluez l'agent de douane",
+              aiContext:   "L'apprenant doit vous saluer en japonais. Attendez un salut (こんにちは ou autre) puis demandez-lui de montrer son passeport.",
+              choices: { create: [
+                { order: 1, text: "L'agent vous a demandé votre passeport", isCorrect: true },
+                { order: 2, text: "L'agent vous a refusé l'entrée",          isCorrect: false },
+                { order: 3, text: "L'agent vous a demandé votre billet",     isCorrect: false },
+                { order: 4, text: "L'agent ne vous a pas répondu",            isCorrect: false },
+              ]},
+            },
+            {
+              id:          "task-tuto-douane-2",
+              order:       2,
+              instruction: "Montrez votre passeport",
+              aiContext:   "L'apprenant doit vous présenter son passeport (dire 「はい、どうぞ」 ou équivalent). Remerciez-le et demandez-lui la raison de sa visite au Japon (来日目的).",
+              choices: { create: [
+                { order: 1, text: "L'agent vous a demandé le motif de votre visite", isCorrect: true },
+                { order: 2, text: "L'agent a tampionné votre passeport et dit au revoir", isCorrect: false },
+                { order: 3, text: "L'agent vous a demandé votre carte bancaire",         isCorrect: false },
+                { order: 4, text: "L'agent vous a demandé votre adresse en France",      isCorrect: false },
+              ]},
+            },
+            {
+              id:          "task-tuto-douane-3",
+              order:       3,
+              instruction: "Expliquez la raison de votre visite",
+              aiContext:   "L'apprenant doit expliquer pourquoi il vient au Japon (tourisme, travail, études, culture…). Validez avec 「よし！」puis demandez la durée du séjour (滞在期間).",
+              choices: { create: [
+                { order: 1, text: "L'agent a validé et demandé la durée de votre séjour", isCorrect: true },
+                { order: 2, text: "L'agent n'a pas compris et vous a demandé de répéter", isCorrect: false },
+                { order: 3, text: "L'agent a refusé la raison invoquée",                   isCorrect: false },
+                { order: 4, text: "L'agent a terminé le contrôle",                          isCorrect: false },
+              ]},
+            },
+            {
+              id:          "task-tuto-douane-4",
+              order:       4,
+              instruction: "Dites combien de temps vous restez",
+              aiContext:   "L'apprenant doit indiquer la durée de son séjour (ex: 一週間、二週間、一ヶ月). Validez avec 「いいですね！」puis demandez l'adresse d'hébergement (滞在先).",
+              choices: { create: [
+                { order: 1, text: "L'agent a validé et demandé votre adresse au Japon", isCorrect: true },
+                { order: 2, text: "L'agent n'a pas compris la durée",                    isCorrect: false },
+                { order: 3, text: "L'agent a dit que c'est trop long",                   isCorrect: false },
+                { order: 4, text: "L'agent a demandé votre billet de retour",             isCorrect: false },
+              ]},
+            },
+            {
+              id:          "task-tuto-douane-5",
+              order:       5,
+              instruction: "Donnez votre adresse d'hébergement",
+              aiContext:   "L'apprenant doit donner son adresse ou hébergement au Japon (ex: 東京のホテルに泊まります). Validez avec 「完璧です！」, tamponnez le passeport et souhaitez-lui un bon séjour (よい滞在を).",
+              choices: { create: [
+                { order: 1, text: "L'agent a validé et vous a souhaité un bon séjour", isCorrect: true },
+                { order: 2, text: "L'agent a demandé l'adresse exacte avec code postal", isCorrect: false },
+                { order: 3, text: "L'agent a refusé l'hébergement indiqué",              isCorrect: false },
+                { order: 4, text: "L'agent a demandé un justificatif de réservation",     isCorrect: false },
+              ]},
+            },
+          ],
+        },
+      },
+    });
+    console.log("Tutorial quest created.");
+  }
+
+  // Quest vocab
+  type VocabEntry2 = { jp: string; kana: string; romaji: string; fr: string; jlpt: number };
+  const tutorialVocab: VocabEntry2[] = [
+    { jp: "こんにちは", kana: "こんにちは",   romaji: "konnichiwa",  fr: "bonjour",              jlpt: 5 },
+    { jp: "パスポート", kana: "パスポート",   romaji: "pasupōto",    fr: "passeport",             jlpt: 5 },
+    { jp: "はい",       kana: "はい",         romaji: "hai",         fr: "oui",                   jlpt: 5 },
+    { jp: "どうぞ",     kana: "どうぞ",       romaji: "dōzo",        fr: "voilà / je vous en prie", jlpt: 5 },
+    { jp: "観光",       kana: "かんこう",     romaji: "kankō",       fr: "tourisme",              jlpt: 4 },
+    { jp: "一週間",     kana: "いっしゅうかん", romaji: "isshūkan",  fr: "une semaine",           jlpt: 5 },
+    { jp: "ホテル",     kana: "ホテル",       romaji: "hoteru",      fr: "hôtel",                 jlpt: 5 },
+    { jp: "滞在",       kana: "たいざい",     romaji: "taizai",      fr: "séjour",                jlpt: 3 },
+  ];
+  await prisma.quest.update({
+    where: { id: "quest-tutorial-douane" },
+    data:  { vocab: tutorialVocab },
+  });
+  console.log("Tutorial vocab updated.");
+
   console.log("Seed completed.");
 }
 

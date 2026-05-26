@@ -291,6 +291,7 @@ export default function POIClient({
   const [showMenu, setShowMenu]               = useState(false);
   const [showBackConfirm, setShowBackConfirm] = useState(false);
   const [historyIndex, setHistoryIndex]       = useState(0);
+  const [poiTutoHint, setPoiTutoHint]         = useState<0 | 1 | 2>(poiId === "tutorial-douane" ? 1 : 0);
 
   // ── Refs ──
   const messagesRef     = useRef<Message[]>([]);
@@ -1586,6 +1587,59 @@ export default function POIClient({
                   <p className="text-sm font-semibold text-gray-700 group-hover:text-red-600 transition-colors">Retourner à la carte</p>
                   <p className="text-[10px] text-gray-400">Quitter la session en cours</p>
                 </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Tutorial hints (douane quest only) ── */}
+      {poiTutoHint > 0 && (
+        <div style={{
+          position: "fixed", bottom: 20, left: "50%", transform: "translateX(-50%)",
+          zIndex: 100, display: "flex", alignItems: "flex-end", gap: 14,
+          width: "min(600px, 92vw)", animation: "screen-fadein 0.3s ease",
+          pointerEvents: "auto",
+        }}>
+          <div style={{ flexShrink: 0, width: 64 }}>
+            <img src="/character_placeholder.png" alt="Guide"
+              style={{ width: "100%", objectFit: "contain", filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.4))" }} />
+          </div>
+          <div style={{
+            flex: 1, background: "rgba(12,9,26,0.95)",
+            border: "1.5px solid rgba(167,139,250,0.35)",
+            borderRadius: "4px 18px 18px 18px",
+            padding: "13px 16px 11px",
+            backdropFilter: "blur(16px)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.45)",
+            fontFamily: "system-ui, sans-serif",
+          }}>
+            <div style={{
+              display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 7,
+              background: "rgba(124,58,237,0.25)", borderRadius: 99, padding: "2px 12px",
+              border: "1px solid rgba(124,58,237,0.4)",
+            }}>
+              <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#a78bfa", boxShadow: "0 0 6px #a78bfa" }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#c4b5fd", letterSpacing: "0.06em" }}>GUIDE</span>
+            </div>
+            <p style={{ fontSize: 14, fontWeight: 600, color: "#f0eeff", lineHeight: 1.6, margin: "0 0 11px", whiteSpace: "pre-line" }}>
+              {poiTutoHint === 1
+                ? "Tu es à la douane ! 🛂\nL'agent va te poser quelques questions. Réponds-lui en japonais — le micro se déclenche automatiquement quand tu parles."
+                : "Ta mission s'affiche en haut à gauche. 📋\nUne fois que tu l'as accomplie, clique sur « ✓ J'ai compris » pour valider et passer à l'étape suivante !"}
+            </p>
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setPoiTutoHint(prev => prev === 1 ? 2 : 0)}
+                style={{
+                  padding: "7px 20px", borderRadius: 99,
+                  background: poiTutoHint === 2 ? "linear-gradient(135deg,#7c3aed,#6d28d9)" : "rgba(124,58,237,0.35)",
+                  border: "1px solid rgba(124,58,237,0.55)",
+                  color: "#ddd6fe", fontSize: 13, fontWeight: 700,
+                  cursor: "pointer",
+                  boxShadow: poiTutoHint === 2 ? "0 4px 16px rgba(124,58,237,0.4)" : "none",
+                }}
+              >
+                {poiTutoHint === 2 ? "C'est parti ! 🎌" : "Suivant →"}
               </button>
             </div>
           </div>

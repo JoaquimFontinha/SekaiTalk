@@ -315,6 +315,63 @@ body {
   to   { opacity: 1; }
 }
 
+/* ── Landing page animations ─────────────────────────────── */
+@keyframes kanjiFloat {
+  0%,100% { transform: translateY(0px) rotate(-2deg) scale(1); }
+  33%      { transform: translateY(-22px) rotate(2.5deg) scale(1.03); }
+  66%      { transform: translateY(-10px) rotate(-1deg) scale(0.97); }
+}
+@keyframes heroGlow {
+  0%,100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 0.85; transform: scale(1.08); }
+}
+@keyframes floatCard {
+  0%,100% { transform: translateY(0px) rotate(-0.8deg); }
+  50%      { transform: translateY(-14px) rotate(0.8deg); }
+}
+@keyframes shimmerGrad {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+@keyframes pulseCTA {
+  0%,100% { box-shadow: 0 0 28px rgba(124,58,237,0.45), 0 0 56px rgba(124,58,237,0.15); }
+  50%      { box-shadow: 0 0 44px rgba(168,85,247,0.65), 0 0 88px rgba(168,85,247,0.25); }
+}
+@keyframes gentle-sway {
+  0%,100% { transform: rotate(-0.8deg) translateY(0px); }
+  50%      { transform: rotate(0.8deg)  translateY(-8px); }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes gradBorder {
+  0%,100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+@keyframes lineGrow {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+@keyframes dotPop {
+  0%   { transform: scale(0); opacity: 0; }
+  60%  { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.lp-reveal {
+  opacity: 0;
+  transform: translateY(52px) scale(0.95);
+  transition: opacity 0.85s cubic-bezier(0.16,1,0.3,1), transform 0.85s cubic-bezier(0.16,1,0.3,1);
+}
+.lp-reveal.lp-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.lp-reveal-d1 { transition-delay: 0.05s; }
+.lp-reveal-d2 { transition-delay: 0.13s; }
+.lp-reveal-d3 { transition-delay: 0.21s; }
+.lp-reveal-d4 { transition-delay: 0.30s; }
+
 /* Masquer les contrôles MapLibre */
 .maplibregl-ctrl-logo { display: none !important; }
 .maplibregl-ctrl-attrib { display: none !important; }
@@ -327,3 +384,20 @@ body {
 /* Masquer logo et attribution Mapbox */
 .mapboxgl-ctrl-logo,
 .mapboxgl-ctrl-attrib { display: none !important; }
+
+@keyframes tut-ring-pulse {
+  0%, 100% { box-shadow: 0 0 0 4px #a78bfa, 0 0 0 9999px rgba(0,0,0,0.45); }
+  50%       { box-shadow: 0 0 0 7px #a78bfa, 0 0 0 9999px rgba(0,0,0,0.45); }
+}
+@keyframes tut-bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%       { transform: translateX(-50%) translateY(-8px); }
+}
+@keyframes tut-bounce-down {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(5px); }
+}
+@keyframes tut-bounce-up {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-5px); }
+}

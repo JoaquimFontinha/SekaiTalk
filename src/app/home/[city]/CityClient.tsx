@@ -9,6 +9,8 @@ import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loa
 import RevisionOverlay from "@/components/RevisionOverlay";
 import SnsOverlay from "@/components/SnsOverlay";
 import MonObjectif from "@/components/MonObjectif";
+import TutorialLayer from "@/components/TutorialLayer";
+import { getTutoStep, setTutoStep as storeTutoStep } from "@/lib/tutorial";
 import type { SnsConversation } from "@/lib/sns-conversations";
 import cities, { POI, POIType } from "@/lib/cities";
 import POI_LOGOS from "@/lib/poi-logos";
@@ -141,6 +143,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
   const [userStats, setUserStats]         = useState<UserStats | null>(null);
   const [mapLoading, setMapLoading] = useState(!!cities[citySlug]?.use3DMap);
   const [mapFading,  setMapFading]  = useState(false);
+  const [tutoRestrictFilters, setTutoRestrictFilters] = useState(false);
 
   useEffect(() => {
     const tick = () => setTokyoTime(
@@ -156,6 +159,11 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setUserStats(data); })
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const s = getTutoStep();
+    setTutoRestrictFilters(s === "lieux_filter_konbini" || s === "lieux_select_poi");
   }, []);
 
 
@@ -218,6 +226,23 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
     const returnPoiId = searchParams.get("poi");
     if (!returnPoiId) return;
     handlePoiClick(returnPoiId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Open Haneda POI drawer on tutorial start — same as clicking the POI
+  useEffect(() => {
+    if (searchParams.get("tuto") !== "start") return;
+    let attempts = 0;
+    const tryOpen = () => {
+      const map = (mapRef as React.RefObject<any>).current?.getMap?.();
+      if (map) {
+        handlePoiClick("haneda-airport");
+      } else if (attempts++ < 40) {
+        setTimeout(tryOpen, 200);
+      }
+    };
+    const id = setTimeout(tryOpen, 1000);
+    return () => clearTimeout(id);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -386,6 +411,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                   <>
                     <button
                       key={panel}
+                      id={`tut-sidebar-${panel}`}
                       onClick={() => {
                         if (!enabled) return;
                         if (panel === "revision") { setShowRevision(true); return; }
@@ -560,12 +586,13 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
 
                 <div className="flex flex-col gap-0.5 px-2 pb-4">
                   <button
-                    onClick={() => setLieuxType(null)}
+                    onClick={() => { if (!tutoRestrictFilters) setLieuxType(null); }}
                     className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-semibold transition-all ${
                       lieuxType === null
                         ? "bg-violet-50 text-violet-600"
                         : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
                     }`}
+                    style={tutoRestrictFilters ? { opacity: 0.3, pointerEvents: "none" } : undefined}
                   >
                     <span>Tous</span>
                     <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-bold text-gray-500">
@@ -574,21 +601,26 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                   </button>
 
                   {(Object.keys(POI_META) as POIType[]).map(type => {
-                    const count    = city.pois.filter(p => p.type === type).length;
+                    const count        = city.pois.filter(p => p.type === type).length;
                     if (count === 0) return null;
-                    const meta     = POI_META[type];
-                    const isActive = lieuxType === type;
+                    const meta         = POI_META[type];
+                    const isActive     = lieuxType === type;
+                    const isKonbini    = type === "konbini";
+                    const isTutoLocked = tutoRestrictFilters && !isKonbini;
                     return (
                       <button
                         key={type}
-                        onClick={() => setLieuxType(type)}
+                        id={isKonbini ? "tut-lieux-filter-konbini" : undefined}
+                        onClick={() => { if (!isTutoLocked) setLieuxType(type); }}
                         className="flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-semibold transition-all"
                         style={{
-                          background: isActive ? `${meta.color}14` : undefined,
-                          color:      isActive ? meta.color : "#6b7280",
+                          background:    isActive ? `${meta.color}14` : undefined,
+                          color:         isActive ? meta.color : "#6b7280",
+                          opacity:       isTutoLocked ? 0.3 : 1,
+                          pointerEvents: isTutoLocked ? "none" : undefined,
                         }}
-                        onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.04)"; }}
-                        onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = ""; }}
+                        onMouseEnter={e => { if (!isActive && !isTutoLocked) (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.04)"; }}
+                        onMouseLeave={e => { if (!isActive && !isTutoLocked) (e.currentTarget as HTMLElement).style.background = ""; }}
                       >
                         <span className="flex items-center gap-1.5">
                           <span>{meta.icon}</span>
@@ -620,9 +652,14 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                     return (
                       <div
                         key={poi.id}
+                        id={poi.id === "konbini-shinjuku" ? "tut-poi-konbini-shinjuku" : undefined}
                         className="group flex items-center gap-2 rounded-xl border border-gray-100 bg-white px-3 py-3 transition-all hover:border-gray-200 hover:bg-gray-50"
                       >
-                        <button className="min-w-0 flex-1 text-left" onClick={() => { flyToPoi(poi); handlePoiClick(poi.id); }}>
+                        <button className="min-w-0 flex-1 text-left" onClick={() => {
+                          flyToPoi(poi);
+                          handlePoiClick(poi.id);
+                          if (getTutoStep() === "lieux_select_poi") setSidebarPanel(null);
+                        }}>
                           <div className="flex items-center gap-2.5">
                             {POI_LOGOS[poi.id]
                               ? <img src={POI_LOGOS[poi.id]} alt="" className="h-7 w-7 rounded object-contain" />
@@ -1005,7 +1042,12 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                         )}
                       </div>
                       <button
-                        onClick={() => selectedPoi && router.push(`/home/${citySlug}/${selectedPoi.id}/lesson`)}
+                        id="tut-lesson-btn"
+                        onClick={() => {
+                          if (!selectedPoi) return;
+                          if (getTutoStep() === "drawer_lesson") storeTutoStep("lesson_active");
+                          router.push(`/home/${citySlug}/${selectedPoi.id}/lesson`);
+                        }}
                         className={`mt-3 w-full rounded-lg py-2.5 text-xs font-bold transition-all ${
                           lessonData.validated
                             ? "border border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60"
@@ -1028,7 +1070,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                   </div>
                 ) : poiQuests.length > 0 ? (
                   <div className="flex flex-col gap-2">
-                    {poiQuests.map(quest => {
+                    {poiQuests.map((quest, questIdx) => {
                       const progress  = quest.userProgress?.[0];
                       const isDone    = progress?.status === "COMPLETED";
                       const isReplay  = progress?.status === "IN_PROGRESS" && !!progress.firstCompletedAt;
@@ -1073,6 +1115,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                             <span className="ml-1 text-[10px] text-white/30">{quest.tasks.length} tâches</span>
                           </div>
                           <button
+                            id={questIdx === 0 ? "tut-quest-btn" : undefined}
                             onClick={() => {
                               if (selectedPoi) setQuestPreview({ quest, poi: selectedPoi });
                             }}
@@ -1132,6 +1175,15 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
       {showSns && snsConversation && (
         <SnsOverlay conversation={snsConversation} onClose={() => setShowSns(false)} />
       )}
+
+      <TutorialLayer
+        citySlug={citySlug}
+        selectedPoiId={selectedPoi?.id}
+        sidebarPanel={sidebarPanel}
+        lieuxType={lieuxType}
+        initOnMount={searchParams.get("tuto") === "start"}
+        onAdvance={(step) => setTutoRestrictFilters(step === "lieux_filter_konbini" || step === "lieux_select_poi")}
+      />
 
       {/* ── Quest preview modal ── */}
       {questPreview && (() => {
@@ -1248,6 +1300,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                   </button>
                   <button
                     onClick={() => {
+                      if (getTutoStep() === "drawer_quest") storeTutoStep("quest_active");
                       setQuestPreview(null);
                       closeModal();
                       router.push(`/home/${citySlug}/${poi.id}?quest=${quest.id}`);
