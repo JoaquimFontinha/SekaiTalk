@@ -66,13 +66,13 @@ const DISPLAY_MODES: DisplayMode[] = ["full", "kanji", "romaji"];
 const MODE_CONFIG: Record<DisplayMode, { char: string; color: string; label: string }> = {
   full:   { char: "全",   color: "bg-gray-300",   label: "Complet" },
   kanji:  { char: "漢",   color: "bg-yellow-400", label: "Kanji"   },
-  romaji: { char: "abc",  color: "bg-violet-400", label: "Romaji"  },
+  romaji: { char: "abc",  color: "bg-indigo-400", label: "Romaji"  },
 };
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const WORD_COLORS = [
-  "text-pink-600", "text-cyan-600", "text-violet-600", "text-yellow-600",
+  "text-pink-600", "text-cyan-600", "text-indigo-600", "text-yellow-600",
   "text-emerald-600", "text-orange-600", "text-blue-600", "text-rose-600",
 ];
 
@@ -163,7 +163,7 @@ function AudioWave({ analyserRef, isRecording, isSpeaking, isBusy, maxH = 20 }: 
       } else {
         const speed     = isSpeaking ? 4.0 : isBusy ? 3.0 : 1.8;
         const ampFactor = isSpeaking ? 0.5  : isBusy ? 0.35 : 0.22;
-        const color     = isSpeaking ? "#7c3aed" : "#cbd5e1";
+        const color     = isSpeaking ? "#6366f1" : "#cbd5e1";
         bars.forEach((bar, i) => {
           const h = baseH[i] * (1 + Math.sin(t * speed + i * 0.5) * ampFactor);
           bar.style.height          = `${Math.max(2, h)}px`;
@@ -1020,7 +1020,7 @@ export default function POIClient({
               {completedQuestInfo && (
                 <button
                   onClick={() => handleEndSession(completedQuestInfo, sessionPracticedVocab, sessionErrors, sessionSuggestionsUsed)}
-                  className="rounded-full bg-violet-600 px-6 py-3 text-sm font-bold text-white hover:bg-violet-500 transition-colors"
+                  className="rounded-full bg-indigo-600 px-6 py-3 text-sm font-bold text-white hover:bg-indigo-500 transition-colors"
                 >
                   Voir le résumé
                 </button>
@@ -1046,7 +1046,7 @@ export default function POIClient({
           {!questReward.isReplay && (questReward.xpGained > 0 || questReward.yensGained > 0) && (
             <div className="flex items-center gap-3 mt-0.5">
               {questReward.xpGained > 0 && (
-                <span className="rounded-full bg-violet-500/25 border border-violet-500/50 px-3 py-0.5 text-xs font-bold text-violet-700">
+                <span className="rounded-full bg-indigo-500/25 border border-indigo-500/50 px-3 py-0.5 text-xs font-bold text-indigo-700">
                   +{questReward.xpGained} XP
                 </span>
               )}
@@ -1058,7 +1058,7 @@ export default function POIClient({
             </div>
           )}
           {questReward.leveledUp && (
-            <p className="text-xs font-bold text-violet-600 mt-0.5">✨ Niveau {questReward.newLevel} atteint !</p>
+            <p className="text-xs font-bold text-indigo-600 mt-0.5">✨ Niveau {questReward.newLevel} atteint !</p>
           )}
           {questReward.isReplay && (
             <p className="text-[11px] text-gray-400 mt-0.5">Aucune récompense pour la reprise</p>
@@ -1071,7 +1071,7 @@ export default function POIClient({
       <div className="absolute bottom-[72px] left-1/2 -translate-x-1/2 z-20 flex flex-col gap-2.5" style={{ width: "54%" }}>
 
         <div className="flex items-center gap-2">
-          <div className="h-14 w-14 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0 bg-violet-100">
+          <div className="h-14 w-14 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0 bg-indigo-100">
             <img
               src={character.image || "/character_placeholder.png"}
               alt={character.name}
@@ -1209,7 +1209,7 @@ export default function POIClient({
         {activeQuest && (activeQuest.tasks[activeQuest.currentTaskIndex]?.suggestions?.length ?? 0) > 0 && (
           <button
             onClick={() => { setShowSuggestions(true); setSessionSuggestionsUsed(p => p + 1); }}
-            className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/95 px-4 py-2.5 text-xs font-bold text-gray-600 shadow-sm backdrop-blur-md transition-all hover:border-violet-400 hover:bg-violet-50 hover:text-violet-700"
+            className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/95 px-4 py-2.5 text-xs font-bold text-gray-600 shadow-sm backdrop-blur-md transition-all hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-700"
           >
             💬 Suggestions
           </button>
@@ -1227,7 +1227,7 @@ export default function POIClient({
         >
           {micMuted
             ? <MicOff className="h-3.5 w-3.5 shrink-0 text-red-400" />
-            : <Mic    className={`h-3.5 w-3.5 shrink-0 transition-colors duration-300 ${isSpeaking ? "text-violet-500" : "text-gray-400"}`} />
+            : <Mic    className={`h-3.5 w-3.5 shrink-0 transition-colors duration-300 ${isSpeaking ? "text-indigo-500" : "text-gray-400"}`} />
           }
           <AudioWave analyserRef={analyserRef} isRecording={isRecording && !micMuted} isSpeaking={isSpeaking} isBusy={isBusy} />
         </button>
@@ -1258,7 +1258,7 @@ export default function POIClient({
               {/* Header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-violet-600">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-600">
                     💬 Phrases utiles — Tâche {activeQuest.currentTaskIndex + 1}
                   </p>
                   <p className="text-sm font-semibold text-gray-900 mt-0.5">{task?.instruction}</p>
@@ -1280,7 +1280,7 @@ export default function POIClient({
                       <p className="text-2xl font-bold text-gray-900 leading-snug">{s.jp}</p>
                       <SuggestionPlayButton text={s.jp} />
                     </div>
-                    <p className="text-xs text-violet-600 italic">{s.romaji}</p>
+                    <p className="text-xs text-indigo-600 italic">{s.romaji}</p>
                   </div>
                 ))}
               </div>
@@ -1311,7 +1311,7 @@ export default function POIClient({
                 {!completedQuestInfo.isReplay && (completedQuestInfo.xpGained > 0 || completedQuestInfo.yensGained > 0) && (
                   <div className="flex items-center justify-center gap-3 mt-3">
                     {completedQuestInfo.xpGained > 0 && (
-                      <span className="rounded-full bg-violet-500/25 border border-violet-500/50 px-3 py-1 text-sm font-bold text-violet-700">
+                      <span className="rounded-full bg-indigo-500/25 border border-indigo-500/50 px-3 py-1 text-sm font-bold text-indigo-700">
                         +{completedQuestInfo.xpGained} XP
                       </span>
                     )}
@@ -1356,7 +1356,7 @@ export default function POIClient({
             <div className="flex flex-col gap-2.5 px-6 py-5">
               <button
                 onClick={() => handleEndSession(completedQuestInfo, sessionPracticedVocab, sessionErrors, sessionSuggestionsUsed)}
-                className="w-full rounded-xl bg-violet-600 py-3 text-sm font-bold text-white hover:bg-violet-500 transition-colors"
+                className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white hover:bg-indigo-500 transition-colors"
               >
                 Terminer la session →
               </button>
@@ -1393,7 +1393,7 @@ export default function POIClient({
                 <div className="grid grid-cols-3 gap-2.5">
                   {[
                     { label: "Erreurs",        value: sessionErrors,              icon: "❌", color: sessionErrors === 0 ? "text-emerald-600" : sessionErrors < 3 ? "text-orange-500" : "text-red-500" },
-                    { label: "Aides",          value: sessionSuggestionsUsed,     icon: "💬", color: "text-violet-600" },
+                    { label: "Aides",          value: sessionSuggestionsUsed,     icon: "💬", color: "text-indigo-600" },
                     { label: "Mots pratiqués", value: sessionAllDetectedVocab.size, icon: "🗣️", color: "text-blue-600" },
                   ].map(s => (
                     <div key={s.label} className="rounded-xl bg-gray-50 border border-gray-100 p-3.5 flex flex-col items-center gap-1">
@@ -1453,8 +1453,8 @@ export default function POIClient({
                 )}
 
                 {/* Encouragement */}
-                <div className="rounded-xl bg-violet-50 border border-violet-100 px-5 py-4 text-center">
-                  <p className="text-sm font-semibold text-violet-700">
+                <div className="rounded-xl bg-indigo-50 border border-indigo-100 px-5 py-4 text-center">
+                  <p className="text-sm font-semibold text-indigo-700">
                     {sessionErrors === 0
                       ? "Excellent ! Aucune erreur cette session 🌟"
                       : sessionErrors < 3
@@ -1557,7 +1557,7 @@ export default function POIClient({
                   <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Volume voix</p>
                   <input
                     type="range" min={0} max={100} defaultValue={80} disabled
-                    className="w-full mt-1 accent-violet-500 opacity-40 cursor-not-allowed"
+                    className="w-full mt-1 accent-indigo-500 opacity-40 cursor-not-allowed"
                   />
                 </div>
                 <span className="text-[10px] text-gray-300 font-medium">Bientôt</span>
@@ -1569,7 +1569,7 @@ export default function POIClient({
                   <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Volume ambiance</p>
                   <input
                     type="range" min={0} max={100} defaultValue={30} disabled
-                    className="w-full mt-1 accent-violet-500 opacity-40 cursor-not-allowed"
+                    className="w-full mt-1 accent-indigo-500 opacity-40 cursor-not-allowed"
                   />
                 </div>
                 <span className="text-[10px] text-gray-300 font-medium">Bientôt</span>
@@ -1616,8 +1616,8 @@ export default function POIClient({
           }}>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 7,
-              background: "rgba(124,58,237,0.25)", borderRadius: 99, padding: "2px 12px",
-              border: "1px solid rgba(124,58,237,0.4)",
+              background: "rgba(99,102,241,0.25)", borderRadius: 99, padding: "2px 12px",
+              border: "1px solid rgba(99,102,241,0.4)",
             }}>
               <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#a78bfa", boxShadow: "0 0 6px #a78bfa" }} />
               <span style={{ fontSize: 11, fontWeight: 700, color: "#c4b5fd", letterSpacing: "0.06em" }}>GUIDE</span>
@@ -1632,11 +1632,11 @@ export default function POIClient({
                 onClick={() => setPoiTutoHint(prev => prev === 1 ? 2 : 0)}
                 style={{
                   padding: "7px 20px", borderRadius: 99,
-                  background: poiTutoHint === 2 ? "linear-gradient(135deg,#7c3aed,#6d28d9)" : "rgba(124,58,237,0.35)",
-                  border: "1px solid rgba(124,58,237,0.55)",
+                  background: poiTutoHint === 2 ? "linear-gradient(135deg,#6366f1,#4f46e5)" : "rgba(99,102,241,0.35)",
+                  border: "1px solid rgba(99,102,241,0.55)",
                   color: "#ddd6fe", fontSize: 13, fontWeight: 700,
                   cursor: "pointer",
-                  boxShadow: poiTutoHint === 2 ? "0 4px 16px rgba(124,58,237,0.4)" : "none",
+                  boxShadow: poiTutoHint === 2 ? "0 4px 16px rgba(99,102,241,0.4)" : "none",
                 }}
               >
                 {poiTutoHint === 2 ? "C'est parti ! 🎌" : "Suivant →"}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { Pencil, Check, X } from "lucide-react";
@@ -63,7 +63,7 @@ export default function MonObjectif() {
       <div className="flex items-center justify-between mb-5">
         <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Mon Objectif</span>
         {!editing ? (
-          <button onClick={() => setEditing(true)} className="text-gray-300 hover:text-violet-400 transition-colors">
+          <button onClick={() => setEditing(true)} className="text-gray-300 hover:text-indigo-400 transition-colors">
             <Pencil className="h-3.5 w-3.5" />
           </button>
         ) : (
@@ -85,14 +85,14 @@ export default function MonObjectif() {
           <div className="flex items-center gap-5">
             <button
               onClick={() => setDraft(d => Math.max(5, d - 5))}
-              className="w-10 h-10 rounded-full bg-gray-100 hover:bg-violet-100 text-xl font-bold text-gray-600 hover:text-violet-600 flex items-center justify-center transition-colors"
+              className="w-10 h-10 rounded-full bg-gray-100 hover:bg-indigo-100 text-xl font-bold text-gray-600 hover:text-indigo-600 flex items-center justify-center transition-colors"
             >
               −
             </button>
-            <span className="text-4xl font-black text-violet-600 w-14 text-center tabular-nums">{draft}</span>
+            <span className="text-4xl font-black text-indigo-600 w-14 text-center tabular-nums">{draft}</span>
             <button
               onClick={() => setDraft(d => Math.min(30, d + 5))}
-              className="w-10 h-10 rounded-full bg-gray-100 hover:bg-violet-100 text-xl font-bold text-gray-600 hover:text-violet-600 flex items-center justify-center transition-colors"
+              className="w-10 h-10 rounded-full bg-gray-100 hover:bg-indigo-100 text-xl font-bold text-gray-600 hover:text-indigo-600 flex items-center justify-center transition-colors"
             >
               +
             </button>
@@ -104,8 +104,8 @@ export default function MonObjectif() {
                 onClick={() => setDraft(v)}
                 className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-colors ${
                   draft === v
-                    ? "bg-violet-600 text-white"
-                    : "bg-gray-100 text-gray-500 hover:bg-violet-50 hover:text-violet-600"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-500 hover:bg-indigo-50 hover:text-indigo-600"
                 }`}
               >
                 {v}
@@ -124,7 +124,7 @@ export default function MonObjectif() {
               <circle
                 cx={48} cy={48} r={R}
                 fill="none"
-                stroke={done ? "#10b981" : "#7c3aed"}
+                stroke={done ? "#10b981" : "#6366f1"}
                 strokeWidth={7}
                 strokeLinecap="round"
                 strokeDasharray={C}
@@ -146,7 +146,7 @@ export default function MonObjectif() {
               <div
                 key={i}
                 className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-                  activeDays[i] ? "bg-violet-600 text-white" : "bg-gray-100 text-gray-400"
+                  activeDays[i] ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-400"
                 }`}
               >
                 {activeDays[i] ? "✓" : d}
@@ -155,9 +155,9 @@ export default function MonObjectif() {
           </div>
 
           {/* Today's progress */}
-          <div className="w-full rounded-xl bg-violet-50 px-4 py-3 flex items-center justify-between">
+          <div className="w-full rounded-xl bg-indigo-50 px-4 py-3 flex items-center justify-between">
             <span className="text-xs text-gray-600 font-medium">Aujourd'hui</span>
-            <span className="text-xs font-black text-violet-600 tabular-nums">
+            <span className="text-xs font-black text-indigo-600 tabular-nums">
               {todayMin} / {goalMin} min
             </span>
           </div>

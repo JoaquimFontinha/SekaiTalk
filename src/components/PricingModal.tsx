@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { setTutoStep } from "@/lib/tutorial";
@@ -30,9 +30,9 @@ const PLANS = [
     name: "Voyageur",
     price: "9,99 €",
     per: "/ mois",
-    color: "#7c3aed",
-    border: "rgba(124,58,237,0.5)",
-    bg: "rgba(124,58,237,0.1)",
+    color: "#6366f1",
+    border: "rgba(99,102,241,0.5)",
+    bg: "rgba(99,102,241,0.1)",
     badge: "Populaire",
     features: [
       "Conversations illimitées",
@@ -42,7 +42,7 @@ const PLANS = [
       "Suivi de progression",
     ],
     cta: "Commencer l'essai gratuit",
-    ctaStyle: { background: "linear-gradient(135deg,#7c3aed,#6d28d9)", border: "none", color: "#fff", boxShadow: "0 4px 20px rgba(124,58,237,0.4)" },
+    ctaStyle: { background: "linear-gradient(135deg,#6366f1,#4f46e5)", border: "none", color: "#fff", boxShadow: "0 4px 20px rgba(99,102,241,0.4)" },
   },
   {
     id: "immersion",

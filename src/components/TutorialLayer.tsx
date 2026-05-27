@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -241,7 +241,7 @@ function HighlightTooltip({
         {hasDismiss && (
           <button onClick={onDismiss} style={{
             width: "100%", padding: "7px", borderRadius: 9,
-            background: "rgba(124,58,237,0.35)", border: "1px solid rgba(124,58,237,0.55)",
+            background: "rgba(99,102,241,0.35)", border: "1px solid rgba(99,102,241,0.55)",
             color: "#c4b5fd", fontSize: 12, fontWeight: 700,
             cursor: "pointer", fontFamily: "system-ui, sans-serif",
           }}>
@@ -290,8 +290,8 @@ function GuideDialogue({ step, onNext }: { step: TutorialStep; onNext: () => voi
       }}>
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 8,
-          background: "rgba(124,58,237,0.25)", borderRadius: 99, padding: "2px 12px",
-          border: "1px solid rgba(124,58,237,0.4)",
+          background: "rgba(99,102,241,0.25)", borderRadius: 99, padding: "2px 12px",
+          border: "1px solid rgba(99,102,241,0.4)",
         }}>
           <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#a78bfa", boxShadow: "0 0 6px #a78bfa" }}/>
           <span style={{ fontSize: 11, fontWeight: 700, color: "#c4b5fd", letterSpacing: "0.06em" }}>GUIDE</span>
@@ -317,11 +317,11 @@ function GuideDialogue({ step, onNext }: { step: TutorialStep; onNext: () => voi
             </div>
             <button onClick={onNext} style={{
               padding: "7px 20px", borderRadius: 99,
-              background: (isFree || isCta) ? "linear-gradient(135deg,#7c3aed,#6d28d9)" : "rgba(124,58,237,0.35)",
-              border: "1px solid rgba(124,58,237,0.55)",
+              background: (isFree || isCta) ? "linear-gradient(135deg,#6366f1,#4f46e5)" : "rgba(99,102,241,0.35)",
+              border: "1px solid rgba(99,102,241,0.55)",
               color: "#ddd6fe", fontSize: 13, fontWeight: 700,
               cursor: "pointer", fontFamily: "system-ui, sans-serif",
-              boxShadow: (isFree || isCta) ? "0 4px 16px rgba(124,58,237,0.4)" : "none",
+              boxShadow: (isFree || isCta) ? "0 4px 16px rgba(99,102,241,0.4)" : "none",
             }}>
               {isLast ? "Allons-y ! 🏃" : isFree ? "C'est parti ! 🗾" : isCta ? "Allons-y ! →" : "Suivant →"}
             </button>

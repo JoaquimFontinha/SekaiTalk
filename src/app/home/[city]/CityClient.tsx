@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
+import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { signOut } from "next-auth/react";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Bell, User, Flame, MapPin, Users, BookOpen, Sparkles, ArrowLeft, X, Loader2, CheckCircle, CheckCircle2, Circle, Settings, ChevronLeft, ChevronRight, GraduationCap, Compass, MessageCircle } from "lucide-react";
+import { Bell, User, Flame, ArrowLeft, X, Loader2, CheckCircle, CheckCircle2, Circle, Settings, ChevronLeft, ChevronRight, GraduationCap, Compass, MessageCircle } from "lucide-react";
 import RevisionOverlay from "@/components/RevisionOverlay";
 import SnsOverlay from "@/components/SnsOverlay";
 import MonObjectif from "@/components/MonObjectif";
@@ -54,12 +56,17 @@ type Contact = {
 
 const CITY_JP: Record<string, string> = { tokyo: "東京", osaka: "大阪", kyoto: "京都" };
 
-const SIDEBAR_BUTTONS: { panel: Exclude<SidebarPanel, null>; Icon: React.ElementType; label: string; enabled: boolean }[] = [
-  { panel: "guidage",    Icon: Compass,   label: "Guidage",    enabled: true  },
-  { panel: "lieux",      Icon: MapPin,    label: "Lieux",      enabled: true  },
-  { panel: "contacts",   Icon: Users,     label: "Contacts",   enabled: true  },
-  { panel: "evenements", Icon: Sparkles,  label: "Évènements", enabled: true  },
-  { panel: "revision",   Icon: BookOpen,  label: "Révision",   enabled: true  },
+const SIDEBAR_BUTTONS: { panel: Exclude<SidebarPanel, null>; label: string; enabled: boolean; color: string; svg: React.ReactNode }[] = [
+  { panel: "guidage",    label: "Guidage",    enabled: true,  color: "#f97316",
+    svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg> },
+  { panel: "lieux",      label: "Lieux",      enabled: true,  color: "#6366f1",
+    svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> },
+  { panel: "contacts",   label: "Contacts",   enabled: true,  color: "#0d9488",
+    svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+  { panel: "evenements", label: "Évènements", enabled: true,  color: "#d97706",
+    svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
+  { panel: "revision",   label: "Révision",   enabled: true,  color: "#2563eb",
+    svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> },
 ];
 
 const DAILY_GOALS = [
@@ -115,7 +122,7 @@ function MapClickBlocker() { useMapEvents({}); return null; }
 export default function CityClient({ citySlug, initialCity }: { citySlug: string; initialCity?: import("@/lib/cities").CityData | null }) {
   const router       = useRouter();
   const searchParams = useSearchParams();
-  const { activeType, setActiveType, poiClickRef, mapBgClickRef, mapRef } = useMapCtx();
+  const { activeType, poiClickRef, mapBgClickRef, mapRef } = useMapCtx();
 
   // Modal state
   const [selectedPoi, setSelectedPoi]     = useState<POI | null>(null);
@@ -127,6 +134,9 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
   // Sidebar state
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [showRevision, setShowRevision]       = useState(false);
+  const [showStreakPopover, setShowStreakPopover]   = useState(false);
+  const [showNotifPopover, setShowNotifPopover]    = useState(false);
+  const [showProfilePopover, setShowProfilePopover] = useState(false);
   const [showSns, setShowSns]                 = useState(false);
   const [snsConversation, setSnsConversation] = useState<SnsConversation | null>(null);
   const [sidebarPanel, setSidebarPanel]   = useState<SidebarPanel>(null);
@@ -372,11 +382,8 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
           /* ── État déployé ── */
           <div className="flex flex-col h-full overflow-y-auto">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 pt-7 pb-7 shrink-0">
-              <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-3xl">🗾</div>
-                <span className="text-xl font-black tracking-tight text-gray-800 leading-none">SekaiTalk</span>
-              </div>
+            <div className="flex items-center justify-between px-6 pt-3 pb-2 shrink-0 border-b border-gray-200">
+              <img src="/logo_sekai_talk.png" alt="SekaiTalk" className="h-[120px] object-contain" />
               <button
                 onClick={() => { setSidebarExpanded(false); setSidebarPanel(null); }}
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
@@ -385,16 +392,23 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
               </button>
             </div>
 
+            {/* Mon Objectif */}
+            <div className="px-5 pb-2 shrink-0">
+              <MonObjectif />
+            </div>
+
+            <div className="mx-7 h-px bg-gray-100 shrink-0" />
+
             {/* Objectifs du jour */}
             <div className="px-7 pb-8 shrink-0">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Objectifs du jour</span>
-                <span className="text-xs font-semibold text-violet-500 bg-violet-50 px-2.5 py-1 rounded-full">0 / {DAILY_GOALS.length}</span>
+                <span className="text-xs font-semibold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full">0 / {DAILY_GOALS.length}</span>
               </div>
               <div className="flex flex-col gap-2.5">
                 {DAILY_GOALS.map((g, i) => (
                   <div key={i} className="flex items-center gap-3.5 rounded-xl bg-gray-50 px-4 py-3.5">
-                    {g.done ? <CheckCircle2 className="h-5 w-5 shrink-0 text-violet-500" /> : <Circle className="h-5 w-5 shrink-0 text-gray-300" />}
+                    {g.done ? <CheckCircle2 className="h-5 w-5 shrink-0 text-indigo-500" /> : <Circle className="h-5 w-5 shrink-0 text-gray-300" />}
                     <span className={`text-sm font-medium ${g.done ? "line-through text-gray-400" : "text-gray-600"}`}>{g.label}</span>
                   </div>
                 ))}
@@ -407,42 +421,45 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
             <div className="px-5 pt-8 pb-8 flex-1">
               <span className="px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Navigation</span>
               <div className="mt-3 flex flex-col gap-1">
-                {SIDEBAR_BUTTONS.map(({ panel, Icon, label, enabled }, i) => (
-                  <>
-                    <button
-                      key={panel}
-                      id={`tut-sidebar-${panel}`}
-                      onClick={() => {
-                        if (!enabled) return;
-                        if (panel === "revision") { setShowRevision(true); return; }
-                        setSidebarPanel(prev => prev === panel ? null : panel);
-                      }}
-                      className={`flex items-center gap-4 rounded-xl px-4 py-4 text-left transition-colors ${
-                        !enabled ? "cursor-default opacity-40"
-                        : sidebarPanel === panel ? "bg-violet-50"
-                        : "hover:bg-gray-50"
-                      }`}
+                {SIDEBAR_BUTTONS.map(({ panel, svg, color, label, enabled }) => (
+                  <button
+                    key={panel}
+                    id={`tut-sidebar-${panel}`}
+                    onClick={() => {
+                      if (!enabled) return;
+                      if (panel === "revision") { setShowRevision(true); return; }
+                      setSidebarPanel(prev => prev === panel ? null : panel);
+                    }}
+                    className={`group flex items-center gap-3.5 rounded-xl px-3 py-3 text-left transition-colors ${
+                      !enabled ? "cursor-default opacity-40"
+                      : sidebarPanel === panel ? "bg-gray-100"
+                      : "hover:bg-gray-100"
+                    }`}
+                  >
+                    <div
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-2 transition-transform group-hover:scale-105"
+                      style={{ background: color }}
                     >
-                      <Icon className={`h-5 w-5 shrink-0 ${sidebarPanel === panel && enabled ? "text-violet-500" : "text-gray-500"}`} />
-                      <span className={`text-base font-medium ${sidebarPanel === panel && enabled ? "text-violet-600" : "text-gray-600"}`}>{label}</span>
-                    </button>
-                  </>
+                      {svg}
+                    </div>
+                    <span className="text-[15px] font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">{label}</span>
+                    <ChevronRight className="ml-auto h-4 w-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
                 ))}
               </div>
             </div>
 
             <div className="mx-7 h-px bg-gray-100 shrink-0" />
 
-            {/* Mon Objectif */}
-            <MonObjectif />
-
-            <div className="mx-7 h-px bg-gray-100 shrink-0" />
-
             {/* Paramètres */}
             <div className="px-5 pt-5 pb-6 shrink-0">
-              <button className="flex w-full cursor-default items-center gap-4 rounded-xl px-4 py-4 opacity-40">
-                <Settings className="h-5 w-5 shrink-0 text-gray-500" />
-                <span className="text-base font-medium text-gray-600">Paramètres</span>
+              <button
+                onClick={() => router.push("/home/settings")}
+                className="group flex w-full items-center gap-4 rounded-xl px-4 py-4 hover:bg-gray-50 transition-colors"
+              >
+                <Settings className="h-5 w-5 shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                <span className="text-base font-medium text-gray-500 group-hover:text-gray-700 transition-colors">Paramètres</span>
+                <ChevronRight className="ml-auto h-4 w-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
             </div>
           </div>
@@ -451,11 +468,11 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
           <div className="flex flex-col items-center h-full py-4 gap-1">
             <button
               onClick={() => setSidebarExpanded(true)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600 text-lg mb-2"
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600 text-lg mb-2"
             >
               🗾
             </button>
-            {SIDEBAR_BUTTONS.map(({ panel, Icon, label, enabled }) => (
+            {SIDEBAR_BUTTONS.map(({ panel, svg, color, label, enabled }) => (
               <button
                 key={panel}
                 title={label}
@@ -465,13 +482,16 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                   setSidebarExpanded(true);
                   setSidebarPanel(panel);
                 }}
-                className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${
-                  !enabled ? "opacity-40 cursor-default"
-                  : sidebarPanel === panel ? "bg-violet-50 text-violet-500"
-                  : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                className={`flex h-10 w-10 items-center justify-center rounded-xl p-2 transition-colors ${
+                  !enabled ? "opacity-40 cursor-default" : "hover:scale-105"
                 }`}
+                style={{ background: sidebarPanel === panel ? color : "transparent",
+                         opacity: !enabled ? 0.4 : sidebarPanel === panel ? 1 : 0.55 }}
               >
-                <Icon className="h-5 w-5" />
+                <div className="flex h-full w-full items-center justify-center"
+                  style={{ filter: sidebarPanel === panel ? "none" : "saturate(0) brightness(0.4)" }}>
+                  {svg}
+                </div>
               </button>
             ))}
             <div className="flex-1" />
@@ -493,45 +513,137 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
           className="pointer-events-auto absolute top-5 z-[1000] flex items-center gap-5 rounded-2xl border border-gray-200 bg-white px-6 py-4 shadow-md transition-all duration-300 ease-in-out"
           style={{ right: selectedPoi ? 420 + 20 : 20 }}
         >
-          {/* Tickets journaliers */}
-          <div className="flex flex-col items-center gap-1">
+          {/* Cluster 1 — Tickets journaliers */}
+          <div className="flex flex-col items-center gap-2 px-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Tickets</span>
             <div className="flex items-center gap-1">
-              {[0,1,2,3,4].map(i => (
-                <div key={i} className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50 text-lg">🎫</div>
+              {[0, 1, 2, 3, 4].map(i => (
+                <svg key={i} width="18" height="18" viewBox="0 0 1792 1792" fill="#6366f1" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M1024 452l316 316-572 572-316-316zm-211 979l618-618q19-19 19-45t-19-45l-362-362q-18-18-45-18t-45 18l-618 618q-19 19-19 45t19 45l362 362q18 18 45 18t45-18zm889-637l-907 908q-37 37-90.5 37t-90.5-37l-126-126q56-56 56-136t-56-136-136-56-136 56l-125-126q-37-37-37-90.5t37-90.5l907-906q37-37 90.5-37t90.5 37l125 125q-56 56-56 136t56 136 136 56 136-56l126 125q37 37 37 90.5t-37 90.5z"/>
+                </svg>
               ))}
-              <button className="ml-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-gray-200 text-gray-400 hover:border-violet-400 hover:text-violet-500 transition-colors text-sm font-bold">+</button>
+              <button className="ml-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-dashed border-gray-300 text-gray-400 hover:border-indigo-400 hover:text-indigo-500 transition-colors text-xs font-bold">
+                +
+              </button>
             </div>
-            <span className="flex items-center gap-1 text-[10px] text-gray-400 leading-none">
-              <span>⏱</span><span className="tabular-nums">10h 28min</span>
-            </span>
+            <span className="text-[10px] text-gray-400 tabular-nums">⏱ 10h 28min</span>
           </div>
-          <div className="w-px h-9 bg-gray-100" />
-          <button className="flex items-center gap-2 text-gray-400 hover:text-orange-400 transition-colors">
-            <Flame className="h-6 w-6 text-orange-300" />
-            <span className="text-base font-semibold text-gray-600">0</span>
-          </button>
-          <button className="text-gray-400 hover:text-gray-700 transition-colors">
-            <Bell className="h-6 w-6" />
-          </button>
-          {/* Avatar + XP ring */}
-          <div className="flex flex-col items-center gap-1.5">
-            <div className="relative" style={{ width: 64, height: 64 }}>
-              <svg width={64} height={64} style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }}>
-                <circle cx={32} cy={32} r={28} fill="none" stroke="#e5e7eb" strokeWidth={4.5} />
-                <circle cx={32} cy={32} r={28} fill="none" stroke="#7c3aed" strokeWidth={4.5}
-                  strokeLinecap="round"
-                  strokeDasharray={2 * Math.PI * 28}
-                  strokeDashoffset={2 * Math.PI * 28 * (1 - (userStats?.percent ?? 0) / 100)}
-                  style={{ transition: "stroke-dashoffset 0.7s ease" }}
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400">
-                  <User className="h-5 w-5" />
+
+          <div className="w-px h-12 bg-gray-100" />
+
+          {/* Cluster 2 — Streak */}
+          <div className="relative flex items-center">
+            <button
+              className="flex items-center gap-2"
+              onClick={() => setShowStreakPopover(v => !v)}
+            >
+              <Flame className={`h-8 w-8 shrink-0 ${0 > 0 ? "text-orange-400" : "text-gray-300"}`} />
+              <span className={`text-3xl font-black tabular-nums ${0 > 0 ? "text-orange-500" : "text-gray-300"}`}>0</span>
+            </button>
+
+            {showStreakPopover && (
+              <>
+                <div className="fixed inset-0 z-[1010]" onClick={() => setShowStreakPopover(false)} />
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 z-[1011] w-52 rounded-2xl bg-white border border-gray-100 shadow-xl p-4 flex flex-col gap-3">
+                  <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-white border-l border-t border-gray-100" />
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-gray-400">Meilleure série</span>
+                    <div className="flex items-center gap-1">
+                      <Flame className="h-4 w-4 text-gray-300" />
+                      <span className="text-sm font-black text-gray-400 tabular-nums">0</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-gray-400">Freeze restants</span>
+                    <div className="flex items-center gap-1">
+                      <span className="text-base leading-none">🧊</span>
+                      <span className="text-sm font-black text-gray-400 tabular-nums">0</span>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              </>
+            )}
+          </div>
+
+          <div className="w-px h-12 bg-gray-100" />
+
+          {/* Cluster 3 — Bell + Avatar */}
+          <div className="flex items-center gap-4 px-1">
+            <div className="relative flex items-center">
+              <button
+                className="text-gray-300 hover:text-gray-500 transition-colors"
+                onClick={() => setShowNotifPopover(v => !v)}
+              >
+                <Bell className="h-6 w-6" />
+              </button>
+              {showNotifPopover && (
+                <>
+                  <div className="fixed inset-0 z-[1010]" onClick={() => setShowNotifPopover(false)} />
+                  <div className="absolute top-full right-0 mt-3 z-[1011] w-64 rounded-2xl bg-white border border-gray-100 shadow-xl p-4">
+                    <div className="absolute -top-1.5 right-3 w-3 h-3 rotate-45 bg-white border-l border-t border-gray-100" />
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">Notifications</p>
+                    <p className="text-sm text-gray-400 text-center py-2">Aucune nouvelle notification</p>
+                  </div>
+                </>
+              )}
             </div>
-            <span className="text-xs font-bold text-gray-700 tabular-nums">Lv. {userStats?.level ?? "—"}</span>
+            <div className="relative flex flex-col items-center gap-1">
+              <button
+                onClick={() => setShowProfilePopover(v => !v)}
+                className="relative focus:outline-none"
+                style={{ width: 60, height: 60 }}
+              >
+                <svg width={60} height={60} style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }}>
+                  <circle cx={30} cy={30} r={26} fill="none" stroke="#e5e7eb" strokeWidth={4} />
+                  <circle
+                    cx={30} cy={30} r={26}
+                    fill="none"
+                    stroke="#6366f1"
+                    strokeWidth={4}
+                    strokeLinecap="round"
+                    strokeDasharray={2 * Math.PI * 26}
+                    strokeDashoffset={2 * Math.PI * 26 * (1 - (userStats?.percent ?? 0) / 100)}
+                    style={{ transition: "stroke-dashoffset 0.7s ease" }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-400 hover:bg-gray-200 transition-colors">
+                    <User className="h-5 w-5" />
+                  </div>
+                </div>
+              </button>
+              <span className="text-[11px] font-bold text-gray-700 tabular-nums">Lv. {userStats?.level ?? "—"}</span>
+              {showProfilePopover && (
+                <>
+                  <div className="fixed inset-0 z-[1010]" onClick={() => setShowProfilePopover(false)} />
+                  <div className="absolute top-full right-0 mt-3 z-[1011] w-56 rounded-2xl bg-white border border-gray-100 shadow-xl overflow-hidden">
+                    <div className="absolute -top-1.5 right-6 w-3 h-3 rotate-45 bg-white border-l border-t border-gray-100" />
+                    <button
+                      onClick={() => { setShowProfilePopover(false); router.push("/home/settings"); }}
+                      className="flex w-full items-center gap-3 px-4 py-3.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      <User className="h-4 w-4 text-gray-400" />
+                      Modifier le profil
+                    </button>
+                    <div className="mx-4 h-px bg-gray-100" />
+                    <button
+                      className="flex w-full items-center gap-3 px-4 py-3.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50 transition-colors"
+                    >
+                      <svg className="h-4 w-4 text-indigo-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                      Passer au forfait supérieur
+                    </button>
+                    <div className="mx-4 h-px bg-gray-100" />
+                    <button
+                      onClick={() => signOut({ callbackUrl: "/login" })}
+                      className="flex w-full items-center gap-3 px-4 py-3.5 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                      Se déconnecter
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -561,9 +673,9 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                 )}
               </p>
               <div className="mt-2 flex items-center gap-2">
-                <div className="h-px w-10 bg-violet-400" />
-                <span className="font-mono text-sm tabular-nums text-violet-300/85">{tokyoTime}</span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-violet-400/50">JST</span>
+                <div className="h-px w-10 bg-indigo-400" />
+                <span className="font-mono text-sm tabular-nums text-indigo-300/85">{tokyoTime}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-400/50">JST</span>
               </div>
             </div>
 
@@ -589,7 +701,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                     onClick={() => { if (!tutoRestrictFilters) setLieuxType(null); }}
                     className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-xs font-semibold transition-all ${
                       lieuxType === null
-                        ? "bg-violet-50 text-violet-600"
+                        ? "bg-indigo-50 text-indigo-600"
                         : "text-gray-500 hover:bg-gray-50 hover:text-gray-700"
                     }`}
                     style={tutoRestrictFilters ? { opacity: 0.3, pointerEvents: "none" } : undefined}
@@ -707,7 +819,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                 <div className="shrink-0 border-b border-gray-100 px-5 py-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-violet-500">Parcours guidé</span>
+                      <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-500">Parcours guidé</span>
                       <h3 className="mt-0.5 text-lg font-black text-gray-900">Guidage</h3>
                     </div>
                     <button onClick={() => setSidebarPanel(null)} className="text-gray-400 transition-colors hover:text-gray-600">
@@ -750,7 +862,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                               setSidebarPanel(null);
                               handlePoiClick(poi.id);
                             }}
-                            className="flex items-center gap-3 border-b border-gray-50 px-5 py-3 text-left transition-colors hover:bg-violet-50/40"
+                            className="flex items-center gap-3 border-b border-gray-50 px-5 py-3 text-left transition-colors hover:bg-indigo-50/40"
                           >
                             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors"
                               style={{ background: isDone ? "#22c55e" : "#f3f4f6", color: isDone ? "white" : "#9ca3af" }}>
@@ -819,7 +931,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
 
               {contactsLoading ? (
                 <div className="flex flex-1 items-center justify-center">
-                  <Loader2 className="h-5 w-5 animate-spin text-violet-500" />
+                  <Loader2 className="h-5 w-5 animate-spin text-indigo-500" />
                 </div>
               ) : contacts.length === 0 ? (
                 <p className="px-5 py-8 text-center text-[11px] text-gray-400">
@@ -869,8 +981,8 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                             onClick={() => setRdvOpenId(isRdvOpen ? null : contact.id)}
                             className={`shrink-0 rounded-xl border px-3 py-2 text-[10px] font-bold transition-all ${
                               isRdvOpen
-                                ? "border-violet-400 bg-violet-50 text-violet-600"
-                                : "border-gray-200 bg-white text-gray-500 hover:border-violet-400 hover:bg-violet-50 hover:text-violet-600"
+                                ? "border-indigo-400 bg-indigo-50 text-indigo-600"
+                                : "border-gray-200 bg-white text-gray-500 hover:border-indigo-400 hover:bg-indigo-50 hover:text-indigo-600"
                             }`}
                           >
                             📍 RDV
@@ -912,7 +1024,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                 {filteredPois.map(poi => (
                   <Marker key={poi.id} position={[poi.lat, poi.lng]} icon={createMarkerIcon(poi.name, poi.type)} eventHandlers={{ click: () => handlePoiClick(poi.id) }}>
                     <Popup>
-                      <button onClick={() => handlePoiClick(poi.id)} className="mt-1 rounded-full bg-violet-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-violet-700">
+                      <button onClick={() => handlePoiClick(poi.id)} className="mt-1 rounded-full bg-indigo-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white hover:bg-indigo-700">
                         Voir
                       </button>
                     </Popup>
@@ -1018,8 +1130,8 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                   ) : (
                     <div className="rounded-xl border border-white/8 bg-white/4 p-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-500/20">
-                          <GraduationCap className="h-4.5 w-4.5 text-violet-300" />
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/20">
+                          <GraduationCap className="h-4.5 w-4.5 text-indigo-300" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-bold text-white truncate">{lessonData.title}</p>
@@ -1051,7 +1163,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                         className={`mt-3 w-full rounded-lg py-2.5 text-xs font-bold transition-all ${
                           lessonData.validated
                             ? "border border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60"
-                            : "border border-violet-500/50 bg-violet-600/80 text-white hover:bg-violet-500"
+                            : "border border-indigo-500/50 bg-indigo-600/80 text-white hover:bg-indigo-500"
                         }`}
                       >
                         {lessonData.validated ? "🔄 Refaire la leçon" : lessonData.score > 0 ? "🔄 Réessayer" : "🎓 Commencer la leçon"}
@@ -1066,7 +1178,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                 <p className="mb-3 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">Quêtes</p>
                 {questsLoading ? (
                   <div className="flex justify-center py-4">
-                    <Loader2 className="h-5 w-5 animate-spin text-violet-400" />
+                    <Loader2 className="h-5 w-5 animate-spin text-indigo-400" />
                   </div>
                 ) : poiQuests.length > 0 ? (
                   <div className="flex flex-col gap-2">
@@ -1096,7 +1208,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                           {(quest.xpReward > 0 || quest.yenReward > 0) && (
                             <div className="mt-2 flex items-center gap-1.5">
                               {quest.xpReward > 0 && (
-                                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${isDone || isReplay ? "border-white/10 text-white/25" : "border-violet-500/40 bg-violet-500/10 text-violet-300"}`}>
+                                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${isDone || isReplay ? "border-white/10 text-white/25" : "border-indigo-500/40 bg-indigo-500/10 text-indigo-300"}`}>
                                   +{quest.xpReward} XP
                                 </span>
                               )}
@@ -1122,7 +1234,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                             className={`mt-3 w-full rounded-lg py-2.5 text-xs font-bold transition-all ${
                               isDone || isReplay ? "border border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60"
                               : isResume ? "border border-yellow-400/30 bg-yellow-400/15 text-yellow-400 hover:bg-yellow-400/25"
-                              : "border border-violet-500/50 bg-violet-600/80 text-white hover:bg-violet-500"
+                              : "border border-indigo-500/50 bg-indigo-600/80 text-white hover:bg-indigo-500"
                             }`}
                           >
                             {isDone || isReplay ? "🔄 Refaire (sans récompense)" : isResume ? `▶ Continuer (tâche ${doneTasks + 1}/${quest.tasks.length})` : "▶ Faire la quête"}
@@ -1230,7 +1342,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                       {quest.tasks.length} tâche{quest.tasks.length > 1 ? "s" : ""}
                     </span>
                     {quest.xpReward > 0 && (
-                      <span className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-bold text-violet-600">
+                      <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-600">
                         +{quest.xpReward} XP
                       </span>
                     )}
@@ -1276,8 +1388,8 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                           </div>
                         ))}
                       </div>
-                      <div className="rounded-xl bg-violet-50 border border-violet-100 px-4 py-2.5 text-center">
-                        <p className="text-xs text-violet-600 font-medium">
+                      <div className="rounded-xl bg-indigo-50 border border-indigo-100 px-4 py-2.5 text-center">
+                        <p className="text-xs text-indigo-600 font-medium">
                           Ces mots seront détectés dans ta prononciation 🎯
                         </p>
                       </div>
@@ -1305,7 +1417,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                       closeModal();
                       router.push(`/home/${citySlug}/${poi.id}?quest=${quest.id}`);
                     }}
-                    className="flex-1 rounded-xl bg-violet-600 py-3 text-sm font-bold text-white hover:bg-violet-500 transition-colors"
+                    className="flex-1 rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white hover:bg-indigo-500 transition-colors"
                   >
                     Commencer →
                   </button>

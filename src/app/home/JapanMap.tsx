@@ -1,10 +1,12 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Map, { Marker } from "react-map-gl/mapbox";
+import type { MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { useRouter } from "next/navigation";
 import staticCities from "@/lib/cities";
+import { useMapCtx } from "./MapContext";
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
@@ -16,6 +18,21 @@ function toCityList(cities: Record<string, { name: string; center: [number,numbe
     slug, name: data.name, lng: data.center[1], lat: data.center[0], levelRequired: data.levelRequired ?? 0,
   }));
 }
+
+const JAPAN_REGIONS_GEOJSON = {
+  type: "FeatureCollection" as const,
+  features: [
+    { type: "Feature" as const, geometry: { type: "Point" as const, coordinates: [142.8, 43.5] }, properties: { name: "HOKKAIDŌ" } },
+    { type: "Feature" as const, geometry: { type: "Point" as const, coordinates: [140.8, 39.2] }, properties: { name: "TŌHOKU" } },
+    { type: "Feature" as const, geometry: { type: "Point" as const, coordinates: [139.6, 36.0] }, properties: { name: "KANTŌ" } },
+    { type: "Feature" as const, geometry: { type: "Point" as const, coordinates: [137.2, 36.6] }, properties: { name: "CHŪBU" } },
+    { type: "Feature" as const, geometry: { type: "Point" as const, coordinates: [135.4, 34.9] }, properties: { name: "KANSAI" } },
+    { type: "Feature" as const, geometry: { type: "Point" as const, coordinates: [133.0, 34.8] }, properties: { name: "CHŪGOKU" } },
+    { type: "Feature" as const, geometry: { type: "Point" as const, coordinates: [133.6, 33.6] }, properties: { name: "SHIKOKU" } },
+    { type: "Feature" as const, geometry: { type: "Point" as const, coordinates: [130.5, 33.0] }, properties: { name: "KYŪSHŪ" } },
+    { type: "Feature" as const, geometry: { type: "Point" as const, coordinates: [127.7, 26.4] }, properties: { name: "OKINAWA" } },
+  ],
+};
 
 const MAP_STYLE = {
   version: 8 as const,
@@ -29,6 +46,10 @@ const MAP_STYLE = {
       type: "raster-dem" as const,
       url: "mapbox://mapbox.mapbox-terrain-dem-v1",
       tileSize: 512,
+    },
+    "japan-regions": {
+      type: "geojson" as const,
+      data: JAPAN_REGIONS_GEOJSON,
     },
   },
   layers: [
@@ -60,11 +81,42 @@ const MAP_STYLE = {
       filter: ["!=", ["get", "iso_3166_1"], "JP"],
       paint: { "fill-color": "#1a3568", "fill-opacity": 1 },
     },
+    {
+      id: "japan-region-labels",
+      type: "symbol" as const,
+      source: "japan-regions",
+      minzoom: 5.8,
+      layout: {
+        "text-field": ["get", "name"],
+        "text-font": ["DIN Offc Pro Bold", "Arial Unicode MS Bold"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 5.8, 9, 9, 13],
+        "text-letter-spacing": 0.18,
+        "text-anchor": "center" as const,
+        "text-allow-overlap": false,
+      },
+      paint: {
+        "text-color": "rgba(255,255,255,0.55)",
+        "text-halo-color": "rgba(0,0,0,0.3)",
+        "text-halo-width": 1,
+        "text-opacity": ["interpolate", ["linear"], ["zoom"], 5.8, 0, 6.5, 1],
+      },
+    },
   ],
 };
 
+const CITY_LOGOS: Record<string, string> = {
+  tokyo: "/images/cities/tokyo_home.svg",
+};
+
+const CENTER_LNG  = 136.5;
+const CENTER_LAT  = 36.8;
+const INIT_ZOOM   = 5.4;
+const SIDEBAR_PX  = 468; // sidebar width (448) + left offset (20)
+
 export default function JapanMap() {
   const router = useRouter();
+  const mapRef = useRef<MapRef>(null);
+  const { japanFlyToRef } = useMapCtx();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [cityList, setCityList] = useState<CityEntry[]>(toCityList(staticCities));
 
@@ -87,22 +139,35 @@ export default function JapanMap() {
       background: "radial-gradient(ellipse farthest-corner at 54% 50%, #3a5fa0 0%, #1a3568 100%)",
     }}>
     <Map
+      ref={mapRef}
       mapboxAccessToken={MAPBOX_TOKEN}
       mapStyle={MAP_STYLE}
       initialViewState={{
-        longitude: 134.0,
-        latitude: 36.8,
-        zoom: 5.4,
+        longitude: CENTER_LNG,
+        latitude: CENTER_LAT,
+        zoom: INIT_ZOOM,
         pitch: 30,
         bearing: 0,
       }}
-      dragPan={false}
+      onLoad={() => {
+        const map = mapRef.current?.getMap();
+        if (!map) return;
+        map.setPadding({ left: SIDEBAR_PX, top: 0, right: 0, bottom: 0 });
+        map.jumpTo({ center: [CENTER_LNG, CENTER_LAT], zoom: INIT_ZOOM });
+        japanFlyToRef.current = (lng, lat, zoom = 7) => {
+          map.flyTo({ center: [lng, lat], zoom, duration: 1200, essential: true });
+        };
+      }}
+      minZoom={5.4}
+      maxZoom={9}
+      maxBounds={[[122, 23], [155, 47]]}
+      dragPan={true}
       dragRotate={false}
-      scrollZoom={false}
-      touchZoomRotate={false}
-      doubleClickZoom={false}
+      scrollZoom={true}
+      touchZoomRotate={true}
+      doubleClickZoom={true}
       keyboard={false}
-        attributionControl={false}
+      attributionControl={false}
       style={{ width: "100%", height: "100%" }}
     >
       {cityList.map(city => {
@@ -120,12 +185,15 @@ export default function JapanMap() {
             }}
           >
             <div
-              className={`gm3d-poi${isLocked ? " gm3d-poi--locked" : ""}`}
-              style={{ "--pc": isLocked ? "#888" : "#7c3aed" } as React.CSSProperties}
+              className={`gm3d-poi japan-poi${isLocked ? " gm3d-poi--locked" : ""}`}
+              style={{ "--pc": isLocked ? "#888" : "#6366f1" } as React.CSSProperties}
             >
               <div className="gm3d-badge">
                 <div className="gm3d-icon-wrap">
-                  <span className="gm3d-icon">{isLocked ? "🔒" : "🗾"}</span>
+                  {!isLocked && CITY_LOGOS[city.slug]
+                    ? <img src={CITY_LOGOS[city.slug]} alt={city.name} style={{ width: 30, height: 30, objectFit: "contain" }} />
+                    : <span className="gm3d-icon">{isLocked ? "🔒" : "🗾"}</span>
+                  }
                 </div>
                 <span className="gm3d-name">
                   {isLocked ? (city.levelRequired >= 99 ? "Bientôt" : `Nv.${city.levelRequired} requis`) : city.name}

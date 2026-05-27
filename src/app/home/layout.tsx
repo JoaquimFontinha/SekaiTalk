@@ -110,6 +110,30 @@ function HomeShell({ children }: { children: React.ReactNode }) {
       <div style={{ position: "relative", zIndex: 1, pointerEvents: (isOnCityPage || isOnHomePage) ? "none" : "auto" }}>
         {children}
       </div>
+      {/* Footer links */}
+      <div style={{
+        position: "fixed", bottom: 16, right: 20,
+        zIndex: 10, pointerEvents: "auto",
+        display: "flex", alignItems: "center", gap: 16,
+        flexWrap: "wrap", justifyContent: "flex-end",
+      }}>
+        {["À propos", "Blog", "Efficacité", "Termes", "Confidentialité"].map(label => (
+          <a
+            key={label}
+            href="#"
+            style={{
+              fontSize: 11, fontWeight: 500, letterSpacing: "0.03em",
+              color: "rgba(255,255,255,0.45)",
+              textDecoration: "none",
+              transition: "color 0.15s",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.85)")}
+            onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.45)")}
+          >
+            {label}
+          </a>
+        ))}
+      </div>
     </>
   );
 }

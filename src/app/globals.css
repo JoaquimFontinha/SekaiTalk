@@ -249,6 +249,28 @@ body {
   margin-left: -1.5px;
 }
 
+/* ── Japan Map — larger pins ────────────────────────────────── */
+.japan-poi .gm3d-badge {
+  padding: 5px;
+}
+.japan-poi .gm3d-icon-wrap {
+  width: 36px;
+  height: 36px;
+}
+.japan-poi .gm3d-icon {
+  font-size: 18px;
+}
+.japan-poi .gm3d-name {
+  font-size: 12px;
+}
+.japan-poi:hover .gm3d-name {
+  max-width: 180px;
+  padding: 0 11px 0 6px;
+}
+.japan-poi .gm3d-stem {
+  height: 10px;
+}
+
 /* ── Japan Map — city label (always visible) ────────────────── */
 .gm3d-city-label {
   margin-top: 5px;

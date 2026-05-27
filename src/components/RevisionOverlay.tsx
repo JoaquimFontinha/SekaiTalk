@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { X, BookOpen, ChevronRight, RotateCcw, Trophy, Loader2 } from "lucide-react";
@@ -340,7 +340,7 @@ function KanaPanel({ onClose }: { onClose: () => void }) {
     return (
       <div className="pointer-events-auto fixed inset-0 z-[2010] flex flex-col bg-white">
         <div className="h-2 shrink-0 bg-gray-100">
-          <div className="h-full bg-violet-400 transition-all duration-500" style={{ width: `${(idx / session.length) * 100}%` }} />
+          <div className="h-full bg-indigo-400 transition-all duration-500" style={{ width: `${(idx / session.length) * 100}%` }} />
         </div>
         <div className="shrink-0 flex items-center justify-between border-b border-gray-100 px-8 py-4">
           <span className="text-[11px] font-bold uppercase tracking-widest text-gray-400">{idx + 1} / {session.length}</span>
@@ -378,7 +378,7 @@ function KanaPanel({ onClose }: { onClose: () => void }) {
           <div className="flex flex-col gap-3 w-full">
             <div className="grid grid-cols-2 gap-3">
               {ex.choices.map((choice, ci) => {
-                let cls = "border-gray-200 bg-white text-gray-700 hover:border-violet-300 hover:bg-violet-50";
+                let cls = "border-gray-200 bg-white text-gray-700 hover:border-indigo-300 hover:bg-indigo-50";
                 if (isAnswered) {
                   if (choice === ex.correct)  cls = "border-emerald-400 bg-emerald-50 text-emerald-700";
                   else if (choice === kSel)    cls = "border-red-400 bg-red-50 text-red-700";
@@ -442,8 +442,8 @@ function KanaPanel({ onClose }: { onClose: () => void }) {
       <div className="pointer-events-auto fixed inset-0 z-[2010] flex flex-col items-center justify-center overflow-y-auto bg-white px-8 py-12">
         <div className="w-full max-w-lg text-center">
           <div className="flex justify-center mb-6">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-violet-100">
-              <Trophy className="h-10 w-10 text-violet-600" />
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-indigo-100">
+              <Trophy className="h-10 w-10 text-indigo-600" />
             </div>
           </div>
           <h2 className="text-3xl font-black text-gray-900 mb-2">Session terminée !</h2>
@@ -472,7 +472,7 @@ function KanaPanel({ onClose }: { onClose: () => void }) {
               <RotateCcw className="h-4 w-4" /> Refaire
             </button>
             <button onClick={() => setKanaView("table")}
-              className="flex-1 rounded-xl bg-violet-600 py-3 text-sm font-bold text-white hover:bg-violet-500 transition-colors">
+              className="flex-1 rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white hover:bg-indigo-500 transition-colors">
               Retour au tableau
             </button>
           </div>
@@ -493,7 +493,7 @@ function KanaPanel({ onClose }: { onClose: () => void }) {
       <div className="shrink-0 flex gap-1 px-4 pt-3 pb-2">
         {(["hiragana", "katakana"] as const).map(s => (
           <button key={s} onClick={() => { setTableScript(s); if (practiceScript !== "both") setPracticeScript(s); }}
-            className={`flex-1 rounded-lg py-2 text-[13px] font-bold transition-colors ${tableScript === s ? "bg-violet-600 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
+            className={`flex-1 rounded-lg py-2 text-[13px] font-bold transition-colors ${tableScript === s ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}>
             {s === "hiragana" ? "Hiragana　ひ" : "Katakana　カ"}
           </button>
         ))}
@@ -525,7 +525,7 @@ function KanaPanel({ onClose }: { onClose: () => void }) {
           <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Groupes :</span>
           {([["basic","Basiques"], ["dakuten","Accent"], ["combo","Combinaisons"]] as [KanaGroup, string][]).map(([g, lbl]) => (
             <label key={g} className="flex items-center gap-1.5 cursor-pointer select-none">
-              <input type="checkbox" checked={groups.has(g)} onChange={() => toggleGroup(g)} className="accent-violet-600" />
+              <input type="checkbox" checked={groups.has(g)} onChange={() => toggleGroup(g)} className="accent-indigo-600" />
               <span className="text-[12px] text-gray-600">{lbl}</span>
             </label>
           ))}
@@ -537,7 +537,7 @@ function KanaPanel({ onClose }: { onClose: () => void }) {
             ["both", "Les deux mélangés"],
           ] as [KanaScript | "both", string][]).map(([s, lbl]) => (
             <label key={s} className="flex items-center gap-1.5 cursor-pointer select-none">
-              <input type="radio" name="pScript" checked={practiceScript === s} onChange={() => setPracticeScript(s)} className="accent-violet-600" />
+              <input type="radio" name="pScript" checked={practiceScript === s} onChange={() => setPracticeScript(s)} className="accent-indigo-600" />
               <span className="text-[12px] text-gray-600">{lbl}</span>
             </label>
           ))}
@@ -550,13 +550,13 @@ function KanaPanel({ onClose }: { onClose: () => void }) {
             ["mixed",          "Aléatoire"],
           ] as [KanaMode, string][]).map(([m, lbl]) => (
             <label key={m} className="flex items-center gap-1.5 cursor-pointer select-none">
-              <input type="radio" name="kMode" checked={kanaMode === m} onChange={() => setKanaMode(m)} className="accent-violet-600" />
+              <input type="radio" name="kMode" checked={kanaMode === m} onChange={() => setKanaMode(m)} className="accent-indigo-600" />
               <span className="text-[12px] text-gray-600">{lbl}</span>
             </label>
           ))}
         </div>
         <button onClick={startKana} disabled={poolCount < 2}
-          className="w-full rounded-xl bg-violet-600 py-3 text-sm font-bold text-white hover:bg-violet-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white hover:bg-indigo-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
           Commencer les flashcards · {poolCount} caractères
         </button>
       </div>
@@ -724,7 +724,7 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
         {/* Header */}
         <div className="shrink-0 flex items-center justify-between border-b border-gray-100 px-8 py-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600">
               <BookOpen className="h-4 w-4 text-white" />
             </div>
             <h1 className="text-2xl font-black text-gray-900">Révision</h1>
@@ -741,7 +741,7 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
         <div className="shrink-0 flex border-b border-gray-100">
           {([["vocab","📖  Vocabulaire"],["kana","あ  Kana"]] as ["vocab"|"kana", string][]).map(([t, lbl]) => (
             <button key={t} onClick={() => setTab(t)}
-              className={`flex-1 py-3 text-[13px] font-bold transition-colors border-b-2 ${tab === t ? "text-violet-600 border-violet-500" : "text-gray-400 border-transparent hover:text-gray-600"}`}>
+              className={`flex-1 py-3 text-[13px] font-bold transition-colors border-b-2 ${tab === t ? "text-indigo-600 border-indigo-500" : "text-gray-400 border-transparent hover:text-gray-600"}`}>
               {lbl}
             </button>
           ))}
@@ -753,7 +753,7 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
           </div>
         ) : loading ? (
           <div className="flex flex-1 items-center justify-center">
-            <Loader2 className="h-6 w-6 animate-spin text-violet-500" />
+            <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
           </div>
         ) : words.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
@@ -764,7 +764,7 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
             </p>
             <button
               onClick={onClose}
-              className="mt-2 rounded-xl bg-violet-600 px-6 py-3 text-sm font-bold text-white hover:bg-violet-500 transition-colors"
+              className="mt-2 rounded-xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white hover:bg-indigo-500 transition-colors"
             >
               Retour
             </button>
@@ -805,7 +805,7 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
                 <select
                   value={filter}
                   onChange={e => setFilter(e.target.value)}
-                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-300"
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-300"
                 >
                   <option value="all">Tous ({words.length})</option>
                   <option value="toWork">À travailler ({stats.toWork})</option>
@@ -935,7 +935,7 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
                     ? isCorrect
                       ? "border-emerald-400 bg-emerald-50 text-emerald-700"
                       : "border-red-400 bg-red-50 text-red-700"
-                    : "border-gray-200 bg-white text-gray-900 focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                    : "border-gray-200 bg-white text-gray-900 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
                   }`}
               />
               {!isAnswered && (
@@ -943,7 +943,7 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
                   <button
                     onClick={() => { if (writtenInput.trim()) handleAnswer(writtenInput.trim()); }}
                     disabled={!writtenInput.trim()}
-                    className="w-full rounded-xl bg-violet-600 px-8 py-3 text-sm font-bold text-white transition-colors hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="w-full rounded-xl bg-indigo-600 px-8 py-3 text-sm font-bold text-white transition-colors hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     Vérifier
                   </button>
@@ -960,7 +960,7 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
             <div className="flex flex-col gap-3 w-full">
               <div className="grid grid-cols-2 gap-3">
                 {exercise.choices.map(choice => {
-                  let cls = "border-gray-200 bg-white text-gray-700 hover:border-violet-300 hover:bg-violet-50";
+                  let cls = "border-gray-200 bg-white text-gray-700 hover:border-indigo-300 hover:bg-indigo-50";
                   if (isAnswered) {
                     if (choice === exercise.correct)   cls = "border-emerald-400 bg-emerald-50 text-emerald-700";
                     else if (choice === selected)       cls = "border-red-400 bg-red-50 text-red-700";
@@ -1051,8 +1051,8 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
     <div className="pointer-events-auto fixed inset-0 z-[2000] flex flex-col items-center justify-center overflow-y-auto bg-white px-8 py-12">
       <div className="w-full max-w-lg text-center">
         <div className="flex justify-center mb-6">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-violet-100">
-            <Trophy className="h-10 w-10 text-violet-600" />
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-indigo-100">
+            <Trophy className="h-10 w-10 text-indigo-600" />
           </div>
         </div>
 
@@ -1098,7 +1098,7 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
           </button>
           <button
             onClick={onClose}
-            className="flex-1 rounded-xl bg-violet-600 py-3 text-sm font-bold text-white hover:bg-violet-500 transition-colors"
+            className="flex-1 rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white hover:bg-indigo-500 transition-colors"
           >
             Terminer
           </button>

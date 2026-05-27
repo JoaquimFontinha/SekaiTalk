@@ -174,16 +174,16 @@ export default function ConversationOverlay({ character, onClose }: Props) {
 
       {/* Sprite */}
       <div className="absolute bottom-[230px] left-1/2 -translate-x-1/2 transition-all duration-300"
-        style={{ filter: isSpeaking ? "drop-shadow(0 0 22px rgba(124,58,237,0.8))" : "drop-shadow(0 4px 14px rgba(0,0,0,0.45))" }}>
+        style={{ filter: isSpeaking ? "drop-shadow(0 0 22px rgba(99,102,241,0.8))" : "drop-shadow(0 4px 14px rgba(0,0,0,0.45))" }}>
         <img src={character.image} alt={character.name}
           className="h-[340px] w-auto select-none object-contain" draggable={false} />
       </div>
 
       {/* Dialogue */}
       <div className="relative z-10 w-full max-w-2xl px-4 pb-6">
-        <div className="mb-1 inline-flex items-center gap-2 rounded-t-lg bg-violet-700 px-4 py-1.5">
+        <div className="mb-1 inline-flex items-center gap-2 rounded-t-lg bg-indigo-700 px-4 py-1.5">
           <span className="text-xs font-bold uppercase tracking-widest text-white">{character.name}</span>
-          <span className="text-[10px] text-violet-200">{character.nameJp}</span>
+          <span className="text-[10px] text-indigo-200">{character.nameJp}</span>
         </div>
 
         <div className="rounded-b-xl rounded-tr-xl bg-white/95 p-4 shadow-2xl backdrop-blur-sm">
@@ -214,7 +214,7 @@ export default function ConversationOverlay({ character, onClose }: Props) {
               value={selectedDevice}
               onChange={e => setSelectedDevice(e.target.value)}
               disabled={isRecording}
-              className="mt-2 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] text-gray-600 outline-none focus:border-violet-400 disabled:opacity-50"
+              className="mt-2 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] text-gray-600 outline-none focus:border-indigo-400 disabled:opacity-50"
             >
               {devices.map(d => (
                 <option key={d.deviceId} value={d.deviceId}>
@@ -228,16 +228,16 @@ export default function ConversationOverlay({ character, onClose }: Props) {
             <input type="text" value={textInput}
               onChange={e => setTextInput(e.target.value)} onKeyDown={handleKey}
               disabled={isBusy || isRecording} placeholder="Écris ton message…"
-              className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 disabled:opacity-50" />
+              className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 disabled:opacity-50" />
             <button onClick={handleSendText} disabled={isBusy || isRecording || !textInput.trim()}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-600 text-white hover:bg-violet-700 disabled:opacity-40">
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-40">
               <Send className="h-4 w-4" />
             </button>
             <button onClick={toggleMic} disabled={isBusy}
               className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-all disabled:opacity-50 ${
                 isRecording
                   ? "animate-pulse bg-red-500 text-white shadow-lg shadow-red-300"
-                  : "bg-gray-100 text-gray-600 hover:bg-violet-100 hover:text-violet-600"
+                  : "bg-gray-100 text-gray-600 hover:bg-indigo-100 hover:text-indigo-600"
               }`}>
               {isRecording ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </button>

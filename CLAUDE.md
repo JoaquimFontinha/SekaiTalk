@@ -199,16 +199,15 @@ Helper server-side (uniquement `import` côté serveur / route handlers / `page.
 
 La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), largeur 448px étendue / 60px collapsée. Transition CSS `transition-all duration-200`. `position: fixed, left: 20px, top: 50%, translateY(-50%)`, hauteur `calc(100vh - 40px)`, `rounded-2xl bg-white`.
 
-**État étendu (448px)** — contenu identique à `HomeClient` :
-- Header : logo 🗾 violet + "SekaiTalk" + bouton `ChevronLeft` (collapse + `setSidebarPanel(null)`)
+**État étendu (448px)** :
+- Header : `<img src="/logo_sekai_talk.png">` (h-[120px]) + bouton `ChevronLeft` (collapse + `setSidebarPanel(null)`) — même logo que HomeClient
+- **Mon Objectif** : `<MonObjectif />` en haut juste après le header (avant les objectifs du jour)
 - Objectifs du jour : 3 tâches avec `CheckCircle2`/`Circle`
-- Navigation : `SIDEBAR_BUTTONS` = [Guidage, Lieux, Contacts, Évènements, Révision `disabled`]. Section `flex-1`. Le bouton **Téléphone** a été supprimé — les conversations SNS sont dans le drawer POI.
-- Mes stats : grille 3 colonnes (statiques)
-- Paramètres : footer `opacity-40`
+- Navigation : `SIDEBAR_BUTTONS` = [Guidage, Lieux, Contacts, Évènements, Révision] — **tous enabled: true**. Icônes SVG colorées inline (pas de lucide-react). Type `{ panel, label, enabled, color, svg: React.ReactNode }`. Section `flex-1`.
+- Paramètres : footer fonctionnel → `router.push("/home/settings")`, hover avec `ChevronRight`
 
 **État collapsé (60px)** :
-- Logo 🗾 violet (clic → expand)
-- 4 icônes nav (clic → `setSidebarExpanded(true)` + `setSidebarPanel(panel)`)
+- 4 icônes nav colorées (fond coloré si actif, grayscale sinon)
 - `ChevronRight` en bas (expand)
 
 **Panneaux flottants** (`z-[1000]`, `left: 484`, `top: 20`, `height: calc(100vh - 40px)`, `rounded-2xl bg-white`, même shadow que la sidebar). Toujours affichés avec la sidebar étendue (collapse ferme le panneau).
@@ -229,7 +228,7 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 
 **Panneau Révision** — désactivé dans `CityClient` (`enabled: false`), à implémenter. Actif dans `HomeClient` via bouton "Révision" dans la sidebar (ouvre `RevisionOverlay`).
 
-**HUD top-right** — identique à `HomeClient` : tickets 🎫×5 + timer + flame + bell + avatar SVG XP ring. Positionnement : `right: selectedPoi ? 440 : 20`.
+**HUD top-right** — identique à `HomeClient` (voir section ci-dessous). Positionnement : `right: selectedPoi ? 440 : 20`.
 
 **Titre ville** : `position: absolute, top: 20`, `left: sidebarPanel ? 864 : sidebarExpanded ? 488 : 96` — se décale dynamiquement selon l'état sidebar/panneau.
 
@@ -250,68 +249,86 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 
 ### Carte Japon (`/home`) — `JapanMap.tsx`
 
-`src/app/home/JapanMap.tsx` — carte overview statique du Japon, montée une seule fois dans `layout.tsx` (jamais démontée, `visibility` toggle).
+`src/app/home/JapanMap.tsx` — carte overview **interactive** du Japon, montée une seule fois dans `layout.tsx` (jamais démontée, `visibility` toggle).
 
-**Style Mapbox** : style JSON inline (pas d'URL Mapbox) avec 3 layers seulement :
-- `japan-fill` — polygone Japon (`mapbox://mapbox.country-boundaries-v1`, filtre `iso_3166_1 = JP`), couleur `#b8a07a`
-- `japan-hillshade` — relief (`mapbox://mapbox.mapbox-terrain-dem-v1`), exaggeration 0.45, lumière 335°
-- `non-japan-mask` — recouvre tous les autres pays en `#1e3d72` pour masquer le hillshade étranger
+**Style Mapbox** : style JSON inline (pas d'URL Mapbox) avec 4 layers + 3 sources :
+- Sources : `country-boundaries` (v1), `terrain-dem`, `japan-regions` (GeoJSON hardcodé)
+- `japan-fill` — polygone Japon, couleur `#b8a07a`
+- `japan-hillshade` — relief, exaggeration 0.45, lumière 335°
+- `non-japan-mask` — recouvre tous les autres pays en `#1a3568`
+- `japan-region-labels` — labels des 9 grandes régions (`JAPAN_REGIONS_GEOJSON`) : Hokkaidō, Tōhoku, Kantō, Chūbu, Kansai, Chūgoku, Shikoku, Kyūshū, Okinawa. GeoJSON hardcodé (source `japan-regions`). `minzoom: 5.8`, fade-in entre 5.8 et 6.5. Texte blanc semi-transparent (`rgba(255,255,255,0.55)`), `DIN Offc Pro Bold`, letter-spacing 0.18.
 
-**Canvas transparent** : pas de layer background → pixels WebGL transparents en dehors du Japon → le `background` CSS du container (gradient radial) est visible à travers. Overrides CSS obligatoires dans `globals.css` :
+**Interactivité** : `dragPan`, `scrollZoom`, `touchZoomRotate` activés. `minZoom=5.4` (zoom initial = minimum), `maxZoom=9`, `maxBounds=[[122,23],[155,47]]`. Plus de navigation hors du Japon.
+
+**Centrage avec sidebar** : `onLoad` → `map.setPadding({ left: 468 })` + `map.jumpTo({ center: [136.5, 36.8], zoom: 5.4 })`. Le `setPadding` décale le centre optique de Mapbox pour compenser la sidebar. `initialViewState` seul ne suffit pas car la map est persistante (montée une fois). `CENTER_LNG=136.5`, `CENTER_LAT=36.8`, `INIT_ZOOM=5.4`, `SIDEBAR_PX=468`.
+
+**`japanFlyToRef`** : enregistré dans `onLoad` → `japanFlyToRef.current = (lng, lat, zoom=7) => map.flyTo(...)`. Appelé par `HomeClient` (panneau Lieux) pour zoomer sur une ville.
+
+**Canvas transparent** : override CSS dans `globals.css` :
 ```css
 .mapboxgl-map, .mapboxgl-canvas-container, .mapboxgl-canvas { background: transparent !important; }
 .mapboxgl-ctrl-logo, .mapboxgl-ctrl-attrib { display: none !important; }
 ```
 
-**Vagues Hokusai** : SVG `position: absolute, z-index: 0` positionné AVANT le `<Map>` dans le DOM. Le canvas Mapbox (`z-index: 1`) est opaque sur la terre → masque les vagues là où il y a de la terre. Vagues visibles uniquement sur l'océan (pixels transparents du canvas).
-
-**Overflow crop** : `overflow: hidden` sur le container + `bottom: -80px` sur le Map → coupe le bas (Okinawa).
-
 **Gradient** : `background: radial-gradient(ellipse farthest-corner at 54% 50%, #3a5fa0, #1a3568)` sur le container.
 
-**Centrage** : `initialViewState` → `longitude: 134.0, latitude: 34.5, zoom: 5.2, pitch: 55, bearing: -12` — vue isométrique légèrement de côté, latitude abaissée pour compenser la perspective.
+**Pins** : classe `gm3d-poi japan-poi` (double classe — `japan-poi` applique des overrides CSS plus grands : badge 36×36px, icône 30px, texte 12px). `CITY_LOGOS: Record<string, string> = { tokyo: "/images/cities/tokyo_home.svg" }` — affiche le SVG de la tour si disponible, sinon emoji 🗾.
 
-**Pins** : classe CSS `gm3d-poi` réutilisée depuis la city map. `gm3d-city-label` = label toujours visible sous chaque pin (blanc 8.5px, letter-spacing 0.22em). Villes verrouillées : `gm3d-poi--locked` (opacity 0.6, grayscale, pas d'hover lift).
+**`gm3d-city-label`** : pill sombre `background: rgba(0,0,0,0.48)`, `padding: 3px 7px`, `border-radius: 4px` — assure la lisibilité sur le fond beige/terre.
 
 **Lock logic** : `city.levelRequired > (userStats?.level ?? 0)` — `?? 0` garantit que les villes `levelRequired: 99` restent verrouillées même sans session.
 
-**Cities coming soon** (`levelRequired: 99`) : Nara, Hiroshima, Sapporo, Nikkō, Nagoya, Fukuoka, Beppu — affichent `"Nv.99 requis"` ou `"Bientôt"` selon implémentation du moment.
+**Cities coming soon** (`levelRequired: 99`) : Nara, Hiroshima, Sapporo, Nikkō, Nagoya, Fukuoka, Beppu.
 
 **Architecture persistante** — `PersistentJapanMap` dans `src/app/home/layout.tsx` :
 ```tsx
-// Visible uniquement sur /home (parts.length === 0)
 <div style={{ position:"fixed", inset:0, zIndex:0,
   visibility: isOnHomePage ? "visible" : "hidden",
   pointerEvents: isOnHomePage ? "auto" : "none" }}>
   <JapanMap />
 </div>
 ```
-Le wrapper `children` dans `HomeShell` a `pointerEvents: none` quand une map Mapbox est visible (`isOnCityPage || isOnHomePage`) — les éléments UI interactifs (sidebar, HUD) ont `pointer-events-auto` explicite.
+
+**Footer links** : `HomeShell` dans `layout.tsx` rend un `div` fixe `bottom: 16, right: 20` avec 5 liens semi-transparents : À propos, Blog, Efficacité, Termes, Confidentialité. `pointer-events: auto` explicite. Visibles sur toutes les pages `/home/*`.
 
 ### Page `/home` — `HomeClient.tsx`
 
 `src/app/home/HomeClient.tsx` — UI overlay de la page d'accueil (carte Japon). Deux éléments principaux :
 
 **Sidebar flottante** (`position: fixed, left: 20px, top: 50%, translateY(-50%)`)
-- Toujours déployée (pas de toggle), largeur 448px, hauteur `calc(100vh - 40px)` — s'étire sur toute la hauteur disponible
+- Toujours déployée (pas de toggle), largeur 448px, hauteur `calc(100vh - 40px)`
 - `overflow-y: auto` pour les petits écrans
-- 5 sections séparées par des dividers `h-px bg-gray-100` avec `mx-7` :
-  1. **Header** — logo 🗾 violet 56px + "SekaiTalk" bold
-  2. **Objectifs du jour** (`id="tut-home-daily"`) — 3 tâches quotidiennes avec `CheckCircle2` / `Circle` (statiques pour l'instant)
-  3. **Navigation** (`id="tut-home-nav"`) — 3 items `opacity-40 cursor-default` (Lieux, Contacts, Évènements) + bouton **Révision** actif (ouvre `RevisionOverlay`). Section `flex-1`.
-  4. **Mon Objectif** (`id="tut-home-objectif"`) — wrapper autour de `<MonObjectif />`
-  5. **Paramètres** (`id="tut-home-settings"`) — footer, `opacity-40 cursor-default`
-- `pointer-events-auto` explicite — le wrapper `children` dans `HomeShell` est `pointer-events-none`
+- Sections :
+  1. **Header** — `<img src="/logo_sekai_talk.png">` `h-[120px]`, `border-b border-gray-200`
+  2. **Objectifs du jour** (`id="tut-home-daily"`) — 3 tâches avec `CheckCircle2` / `Circle` (statiques)
+  3. **Navigation** (`id="tut-home-nav"`) — icônes SVG colorées inline. **Lieux** enabled → ouvre panneau flottant `showLieux`. Contacts/Évènements disabled. **Révision** enabled → ouvre `RevisionOverlay`. Section `flex-1`.
+  4. **Mon Objectif** (`id="tut-home-objectif"`) — `<MonObjectif />`
+  5. **Paramètres** (`id="tut-home-settings"`) — fonctionnel → `router.push("/home/settings")`, hover `ChevronRight`
+- `pointer-events-auto` explicite
 
-**HUD top-right** (`position: absolute, top: 20px, right: 20px, z-20`) — toujours visible :
-- **Tickets journaliers** (`id="tut-home-tickets"`) : 5 icônes 🎫 (bg amber-50, 32×32px) + bouton `+` arrondi pointillé + timer `⏱ 10h 28min` (visuels uniquement)
-- Séparateur vertical `h-9 w-px bg-gray-100`
-- **Flame** (`id="tut-home-flame"`) `h-6 w-6 text-orange-300` + streak `0`
-- **Bell** `h-6 w-6`
-- **Avatar XP ring** (`id="tut-home-xp"`) (style Pokémon GO) : SVG 64px avec `strokeDashoffset` calculé sur `userStats.percent`, rotated `-90deg`. Avatar intérieur `h-11 w-11 bg-gray-100`. Label `Lv. {level}` en dessous.
-- Taille globale : `px-6 py-4`, gap `gap-5`
+**Panneau Lieux** (floating, `left: 488px`, même hauteur/shadow que sidebar, 380px) — s'ouvre quand `showLieux`. Liste toutes les villes depuis `/api/content/cities` (fetchées dans `dbCities`). Logo city (`CITY_LOGOS[slug]`) ou emoji 🗾. Clic → `japanFlyToRef.current?.(lng, lat, 9)`.
+
+**Paramètres** : navigates vers `/home/settings` (page dans le layout home — pas de rechargement de carte).
+
+**HUD top-right** (`position: absolute, top: 20px, right: 20px, z-20`) — structure en 3 clusters séparés par `w-px h-12 bg-gray-100` :
+- **Cluster 1 — Tickets** (`id="tut-home-tickets"`) : label "TICKETS" + 5 SVG ticket path indigo (`fill="#6366f1"`, viewBox `0 0 1792 1792`) + bouton `+` pointillé + timer `⏱ 10h 28min`
+- **Cluster 2 — Streak** (`id="tut-home-flame"`) : `Flame h-8 w-8` + chiffre `text-3xl font-black` — gris (`text-gray-300`) si streak = 0, orange sinon. Clic → `showStreakPopover`. Popover : Meilleure série (Flame gris + 0) + Freeze restants (🧊 + 0). Arrow CSS avec `rotate-45 border-l border-t`
+- **Cluster 3 — Bell + Avatar** (`id="tut-home-xp"`) :
+  - Bell `h-6 w-6` cliquable → `showNotifPopover` → "Aucune nouvelle notification"
+  - Avatar XP ring : SVG 60px, `r=26`, stroke `#6366f1`, `strokeDashoffset` sur `userStats.percent`. **Cliquable** → `showProfilePopover` → menu : **Modifier le profil** (→ settings), **Passer au forfait supérieur** (étoile indigo), **Se déconnecter** (`signOut({ callbackUrl: "/login" })`)
+- `px-6 py-4`, gap `gap-5`
+
+**`signOut`** : importé de `next-auth/react`.
 
 **Tutorial** : `<TutorialLayer onAdvance={(step) => { if (step === "pricing") setShowPricing(true); }} />` monté directement. `showPricing` state — ouvert aussi si `getTutoStep() === "pricing"` au mount. `PricingModal` close → `storeTutoStep("complete")`.
+
+### Page `/home/settings` — `SettingsClient.tsx`
+
+`src/app/home/settings/` — page paramètres dans le layout home (pas de rechargement de la carte persistante). Route : `page.tsx` (server) + `SettingsClient.tsx` (client).
+
+- Header : bouton retour (`router.back()`) + titre "Paramètres"
+- 3 sections : **Compte** (Profil + Sécurité, disabled), **Préférences** (3 items, disabled), **Session** (Se déconnecter → `signOut({ callbackUrl: "/login" })`, fonctionnel)
+- Accessible depuis le bouton Paramètres dans HomeClient et CityClient
 
 ### Système tutorial / onboarding (`src/lib/tutorial.ts` + `src/components/TutorialLayer.tsx`)
 

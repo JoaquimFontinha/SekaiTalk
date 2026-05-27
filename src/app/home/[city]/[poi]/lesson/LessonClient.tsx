@@ -233,7 +233,7 @@ function IntroStep({ data, onNext }: { data: IntroStepData; onNext: () => void }
       <div className="w-full max-w-sm rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
         {/* Colored area */}
         <div className="relative flex items-center justify-center"
-          style={{ height: 200, background: "linear-gradient(135deg, #6d28d9 0%, #4f46e5 100%)" }}>
+          style={{ height: 200, background: "linear-gradient(135deg, #4f46e5 0%, #4f46e5 100%)" }}>
           <span className="text-[72px] select-none">🏪</span>
         </div>
 
@@ -243,7 +243,7 @@ function IntroStep({ data, onNext }: { data: IntroStepData; onNext: () => void }
         {/* Word info */}
         <div className="px-5 pb-5 text-center">
           <p className="text-xl font-bold text-gray-900">
-            {data.romaji} / <span className="text-violet-600">{data.word}</span>
+            {data.romaji} / <span className="text-indigo-600">{data.word}</span>
           </p>
           <p className="mt-1 text-sm text-gray-500">{data.translation}</p>
           {data.example && (
@@ -279,7 +279,7 @@ function TrueFalseStep({ data, onAnswer }: {
 
       <div className="w-full max-w-sm rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
         <div className="relative flex items-center justify-center"
-          style={{ height: 200, background: "linear-gradient(135deg, #0ea5e9 0%, #6d28d9 100%)" }}>
+          style={{ height: 200, background: "linear-gradient(135deg, #0ea5e9 0%, #4f46e5 100%)" }}>
           <span className="text-[72px]">🧠</span>
         </div>
 
@@ -628,13 +628,13 @@ function PronunciationStep({ data, onAnswer }: {
       {/* Target word card */}
       <div className="w-full max-w-sm rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="flex items-center justify-center"
-          style={{ height: 140, background: "linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)" }}>
+          style={{ height: 140, background: "linear-gradient(135deg, #6366f1 0%, #2563eb 100%)" }}>
           <span className="text-[60px]">🎤</span>
         </div>
         <div className="px-5 py-4 text-center">
           <p className="text-3xl font-black text-gray-900">{data.word}</p>
           {data.kana !== data.word && (
-            <p className="mt-0.5 text-base text-violet-500">{data.kana}</p>
+            <p className="mt-0.5 text-base text-indigo-500">{data.kana}</p>
           )}
           <p className="mt-0.5 text-sm font-medium text-gray-400">{data.romaji}</p>
           <p className="mt-1.5 text-sm text-gray-500">{data.translation}</p>
@@ -683,7 +683,7 @@ function PronunciationStep({ data, onAnswer }: {
 
         {phase === "processing" && (
           <>
-            <div className="h-[72px] w-[72px] rounded-full border-4 border-gray-200 border-t-violet-500 animate-spin" />
+            <div className="h-[72px] w-[72px] rounded-full border-4 border-gray-200 border-t-indigo-500 animate-spin" />
             <p className="text-sm text-gray-400">Analyse de ta prononciation…</p>
           </>
         )}
