@@ -480,18 +480,58 @@ type KanaMasteryStore = Record<string, KanaMasteryEntry>;
 // clé mastery = `${script[0]}:${romaji}` ex: "h:ka", "k:chi"
 ```
 
+### MapContext (`src/app/home/MapContext.tsx`)
+
+État partagé entre `layout.tsx` (monte les maps persistantes) et `CityClient` / `HomeClient` (UI overlay). Tous les champs sont des refs ou états React exposés via `useMapCtx()`.
+
+| Champ | Type | Rôle |
+|---|---|---|
+| `mapRef` | `RefObject<any>` | Référence à la map Mapbox 3D (GameMap3D) |
+| `activeType` / `setActiveType` | `POIType \| null` | Filtre de type POI actif sur la city map |
+| `poiClickRef` | `MutableRefObject<(id) => void>` | Handler clic POI enregistré par CityClient |
+| `mapBgClickRef` | `MutableRefObject<() => void>` | Handler clic fond carte enregistré par CityClient |
+| `japanFlyToRef` | `MutableRefObject<(lng, lat, zoom?) => void>` | FlyTo Japan map enregistré par JapanMap, appelé par HomeClient |
+| `editMode` / `setEditMode` | `boolean` | Mode placement admin (drag POIs) |
+| `poiMoveRef` | `MutableRefObject<(id, lat, lng) => void>` | Handler déplacement POI enregistré par CityClient → appelle PUT API |
+| `poiPositionOverrides` | `Record<string, {lat, lng}>` | Coordonnées overridées post-drag, prioritaires sur `city.pois` |
+| `updatePoiPosition` | `(id, lat, lng) => void` | Met à jour `poiPositionOverrides` immédiatement (avant réponse API) |
+
 ### Carte 3D Tokyo (`GameMap3D`)
 
 `src/app/home/[city]/GameMap3D.tsx` — carte 3D interactive pour les villes avec `use3DMap: true` dans `cities.ts`.
 - **Rendu** : Mapbox GL JS + react-map-gl v8 (`react-map-gl/mapbox`), style `mapbox://styles/mapbox/standard`
-- **Architecture persistante** : la map est montée une seule fois dans `src/app/home/layout.tsx` (jamais démontée) → 1 seul Map Load par session. CSS `visibility` toggle pour afficher/masquer. État partagé via `src/app/home/MapContext.tsx` (`mapRef`, `activeType`, `poiClickRef`, `mapBgClickRef`)
-- **Clic fond de carte** : `onMapBgClick` prop sur `GameMap3D` → `onClick` sur `<Map>` (les markers ont `stopPropagation`). Enregistré par `CityClient` via `mapBgClickRef` → ferme le panneau sidebar actif (`setSidebarPanel(null)`)
+- **Architecture persistante** : la map est montée une seule fois dans `src/app/home/layout.tsx` (jamais démontée) → 1 seul Map Load par session. CSS `visibility` toggle pour afficher/masquer. État partagé via `src/app/home/MapContext.tsx`
+- **Clic fond de carte** : `onMapBgClick` prop → `onClick` sur `<Map>` (markers ont `stopPropagation`). Enregistré via `mapBgClickRef` → ferme le panneau sidebar actif
 - **Import SSR** : `dynamic(() => import("./[city]/GameMap3D"), { ssr: false })` dans `home/layout.tsx`
 - **Style** : `setConfigProperty("basemap", "lightPreset", "dusk")` + tous les labels masqués
 - **Modèle Skytree + Tokyo Tower** : `public/models/tokyo_skytree.glb` + `public/models/tokyo_tower.glb` rendus via custom Three.js layer
 - **Animations canvas** : eau ("water-anim" 128×128) et herbe ("grass-anim" 32×32) via `map.addImage()` avec `render()` + `triggerRepaint()`
 - **Contraintes caméra** : `minZoom=14`, `maxPitch=85`, `minPitch=20`, `maxBounds` Tokyo + Haneda (`[139.58, 35.52]` → `[139.85, 35.75]`), bearing clampé ±25° autour de −20°
-- **Pins** : classe CSS `gm3d-poi` avec `--pc` (couleur par type). Logo POI via `POI_LOGOS[poi.id]` → `<img>` sinon emoji. Hover expand via `max-width` transition
+- **Pins** : classe CSS `gm3d-poi` avec `--pc` (couleur par type). Logo POI via `POI_LOGOS[poi.id]` → `<img>` sinon emoji. Hover expand via `max-width` transition. En mode placement : classe `gm3d-poi--edit` (bordure orange pointillée, curseur `grab`)
+- **Props** : `editMode?: boolean`, `onPoiMove?: (id, lat, lng) => void`. Coordonnées des markers : `poiPositionOverrides[poi.id] ?? poi.lat/lng` (override context prioritaire sur les données statiques)
+
+### Mode placement admin (`editMode`)
+
+Permet aux admins de repositionner les POIs directement sur la carte par drag & drop.
+
+**Architecture** :
+- `MapContext` expose : `editMode: boolean`, `setEditMode`, `poiMoveRef`, `poiPositionOverrides: Record<string, {lat,lng}>`, `updatePoiPosition(id, lat, lng)`
+- `layout.tsx` passe `editMode` + `onPoiMove` à `GameMap3D`
+- `GameMap3D` lit `poiPositionOverrides` depuis `useMapCtx()` — les coordonnées overridées sont utilisées immédiatement au drag end, sans attendre la DB
+
+**Flux** :
+1. Admin clique "Placement" (bouton orange à côté de "Retour", visible si `isAdmin`)
+2. Tous les markers passent en `draggable={true}`, style `gm3d-poi--edit`, clic désactivé
+3. Drag end → `updatePoiPosition(id, lat, lng)` (mise à jour locale immédiate) + `onPoiMove(id, lat, lng)`
+4. `poiMoveRef.current` dans `CityClient` → `PUT /api/admin/pois/${poiId}` avec `{ lat, lng }`
+5. Toast de confirmation 2.5s (`moveToast` state)
+6. Quitter le mode → markers gardent leurs nouvelles positions (via `poiPositionOverrides`)
+
+**Bannière** : `fixed bottom-6 left-1/2` orange, visible tant que `editMode` est actif.
+
+**Sécurité** : bouton visible uniquement si `(session?.user as any)?.isAdmin === true`. L'API vérifie aussi `isAdmin` côté serveur via `checkAdmin()`.
+
+**Note** : `poiPositionOverrides` persiste en mémoire pour la session courante. Un refresh re-charge les coordonnées depuis la DB (qui est déjà à jour).
 
 ### Écrans de chargement
 

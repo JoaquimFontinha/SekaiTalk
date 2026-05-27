@@ -5,6 +5,7 @@ import Map, { Marker, type MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { CityData, POIType } from "@/lib/cities";
 import POI_LOGOS from "@/lib/poi-logos";
+import { useMapCtx } from "../MapContext";
 
 const STYLE_URL    = "mapbox://styles/mapbox/standard";
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
@@ -48,15 +49,20 @@ export default function GameMap3D({
   onPoiClick,
   onMapBgClick,
   mapRef: externalRef,
+  editMode = false,
+  onPoiMove,
 }: {
   city: CityData;
   activeType: POIType | null;
   onPoiClick: (poiId: string) => void;
   onMapBgClick?: () => void;
   mapRef?: React.RefObject<any>;
+  editMode?: boolean;
+  onPoiMove?: (id: string, lat: number, lng: number) => void;
 }) {
   const internalRef = useRef<MapRef>(null);
   const mapRef = (externalRef ?? internalRef) as React.RefObject<MapRef>;
+  const { poiPositionOverrides, updatePoiPosition } = useMapCtx();
   const pois = activeType ? city.pois.filter(p => p.type === activeType) : city.pois;
 
   useEffect(() => () => { mapRef.current?.getMap()?.removeImage?.("water-anim"); }, []);
@@ -230,16 +236,26 @@ export default function GameMap3D({
       style={{ width: "100%", height: "100%", position: "absolute", inset: 0 }}
       onLoad={handleLoad}
     >
-      {pois.map(poi => (
+      {pois.map(poi => {
+        const lat = poiPositionOverrides[poi.id]?.lat ?? poi.lat;
+        const lng = poiPositionOverrides[poi.id]?.lng ?? poi.lng;
+        return (
         <Marker
           key={poi.id}
-          longitude={poi.lng}
-          latitude={poi.lat}
+          longitude={lng}
+          latitude={lat}
           anchor="bottom"
-          onClick={e => { e.originalEvent?.stopPropagation(); onPoiClick(poi.id); }}
+          draggable={editMode}
+          onClick={e => { e.originalEvent?.stopPropagation(); if (!editMode) onPoiClick(poi.id); }}
+          onDragEnd={e => {
+            if (editMode) {
+              updatePoiPosition(poi.id, e.lngLat.lat, e.lngLat.lng);
+              onPoiMove?.(poi.id, e.lngLat.lat, e.lngLat.lng);
+            }
+          }}
         >
           <div
-            className="gm3d-poi"
+            className={`gm3d-poi${editMode ? " gm3d-poi--edit" : ""}`}
             style={{ "--pc": POI_COLORS[poi.type] } as React.CSSProperties}
           >
             <div className="gm3d-badge">
@@ -254,7 +270,8 @@ export default function GameMap3D({
             <div className="gm3d-stem" />
           </div>
         </Marker>
-      ))}
+        );
+      })}
     </Map>
   );
 }

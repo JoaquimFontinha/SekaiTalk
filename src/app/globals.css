@@ -289,6 +289,18 @@ body {
   color: rgba(180, 180, 200, 0.45);
 }
 
+/* ── Admin edit mode POI ─────────────────────────────────────── */
+.gm3d-poi--edit {
+  cursor: grab;
+}
+.gm3d-poi--edit:active {
+  cursor: grabbing;
+}
+.gm3d-poi--edit .gm3d-badge {
+  border: 2px dashed #f97316 !important;
+  box-shadow: 0 0 0 3px rgba(249,115,22,0.25), 0 2px 8px rgba(0,0,0,0.22) !important;
+}
+
 /* ── Japan Map — locked city variant ────────────────────────── */
 .gm3d-poi--locked {
   cursor: default;

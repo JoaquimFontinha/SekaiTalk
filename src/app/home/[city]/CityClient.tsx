@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -122,7 +122,9 @@ function MapClickBlocker() { useMapEvents({}); return null; }
 export default function CityClient({ citySlug, initialCity }: { citySlug: string; initialCity?: import("@/lib/cities").CityData | null }) {
   const router       = useRouter();
   const searchParams = useSearchParams();
-  const { activeType, poiClickRef, mapBgClickRef, mapRef } = useMapCtx();
+  const { activeType, poiClickRef, mapBgClickRef, mapRef, editMode, setEditMode, poiMoveRef } = useMapCtx();
+  const { data: session } = useSession();
+  const isAdmin = (session?.user as any)?.isAdmin === true;
 
   // Modal state
   const [selectedPoi, setSelectedPoi]     = useState<POI | null>(null);
@@ -137,6 +139,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
   const [showStreakPopover, setShowStreakPopover]   = useState(false);
   const [showNotifPopover, setShowNotifPopover]    = useState(false);
   const [showProfilePopover, setShowProfilePopover] = useState(false);
+  const [moveToast, setMoveToast] = useState<string | null>(null);
   const [showSns, setShowSns]                 = useState(false);
   const [snsConversation, setSnsConversation] = useState<SnsConversation | null>(null);
   const [sidebarPanel, setSidebarPanel]   = useState<SidebarPanel>(null);
@@ -314,6 +317,26 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
     mapBgClickRef.current = () => setSidebarPanel(null);
     return () => { mapBgClickRef.current = null; };
   }, [mapBgClickRef]);
+
+  // Register POI move handler (admin edit mode)
+  useEffect(() => {
+    poiMoveRef.current = async (poiId: string, lat: number, lng: number) => {
+      try {
+        const res = await fetch(`/api/admin/pois/${poiId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat, lng }),
+        });
+        if (!res.ok) throw new Error();
+        setMoveToast(`✓ ${poiId} repositionné`);
+        setTimeout(() => setMoveToast(null), 2500);
+      } catch {
+        setMoveToast("✗ Erreur de sauvegarde");
+        setTimeout(() => setMoveToast(null), 2500);
+      }
+    };
+    return () => { poiMoveRef.current = null; };
+  }, [poiMoveRef]);
 
   // Fetch quest counts for all POIs when Lieux panel opens
   useEffect(() => {
@@ -653,14 +676,30 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
             style={{ left: sidebarPanel ? 864 : sidebarExpanded ? 488 : 96 }}
           >
 
-            {/* Back pill */}
-            <button
-              onClick={() => router.push("/home")}
-              className="pointer-events-auto flex w-fit items-center gap-2 rounded-full border border-white/15 bg-black/35 px-4 py-2 text-white/55 backdrop-blur-sm transition-all hover:border-white/30 hover:bg-black/55 hover:text-white/80"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Retour</span>
-            </button>
+            {/* Back pill + edit mode toggle */}
+            <div className="pointer-events-auto flex items-center gap-2">
+              <button
+                onClick={() => router.push("/home")}
+                className="flex w-fit items-center gap-2 rounded-full border border-white/15 bg-black/35 px-4 py-2 text-white/55 backdrop-blur-sm transition-all hover:border-white/30 hover:bg-black/55 hover:text-white/80"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Retour</span>
+              </button>
+
+              {isAdmin && (
+                <button
+                  onClick={() => setEditMode(!editMode)}
+                  className={`flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-[10px] font-bold uppercase tracking-[0.15em] backdrop-blur-sm transition-all ${
+                    editMode
+                      ? "border-orange-400/60 bg-orange-500/80 text-white hover:bg-orange-600/80"
+                      : "border-white/15 bg-black/35 text-white/55 hover:border-orange-400/40 hover:bg-black/55 hover:text-orange-300"
+                  }`}
+                >
+                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                  {editMode ? "Mode placement actif" : "Placement"}
+                </button>
+              )}
+            </div>
 
             {/* Info */}
             <div>
@@ -1286,6 +1325,21 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
       {showRevision && <RevisionOverlay onClose={() => setShowRevision(false)} />}
       {showSns && snsConversation && (
         <SnsOverlay conversation={snsConversation} onClose={() => setShowSns(false)} />
+      )}
+
+      {/* ── Admin edit mode banner + toast ── */}
+      {editMode && (
+        <div className="pointer-events-none fixed bottom-6 left-1/2 -translate-x-1/2 z-[1500] flex flex-col items-center gap-2">
+          <div className="flex items-center gap-2 rounded-full border border-orange-400/40 bg-orange-500/90 px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-lg backdrop-blur-sm">
+            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+            Mode placement — glissez les POIs pour les repositionner
+          </div>
+        </div>
+      )}
+      {moveToast && (
+        <div className="pointer-events-none fixed bottom-20 left-1/2 -translate-x-1/2 z-[1500] rounded-full bg-gray-900/90 px-5 py-2 text-xs font-semibold text-white shadow-lg backdrop-blur-sm">
+          {moveToast}
+        </div>
       )}
 
       <TutorialLayer

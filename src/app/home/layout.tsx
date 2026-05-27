@@ -11,7 +11,7 @@ const JapanMap   = dynamic(() => import("./JapanMap"),         { ssr: false });
 
 function PersistentMap() {
   const pathname = usePathname();
-  const { mapRef, activeType, poiClickRef, mapBgClickRef } = useMapCtx();
+  const { mapRef, activeType, poiClickRef, mapBgClickRef, editMode, poiMoveRef } = useMapCtx();
   const [dbCities, setDbCities] = useState<Record<string, CityData>>(staticCities);
   const fetchedRef = useRef(false);
 
@@ -68,6 +68,8 @@ function PersistentMap() {
         activeType={activeType}
         onPoiClick={(id) => poiClickRef.current?.(id)}
         onMapBgClick={() => mapBgClickRef.current?.()}
+        editMode={editMode}
+        onPoiMove={(id, lat, lng) => poiMoveRef.current?.(id, lat, lng)}
       />
     </div>
   );
