@@ -29,7 +29,6 @@ type PoiQuest = {
   title: string;
   description: string | null;
   xpReward: number;
-  yenReward: number;
   vocab: VocabEntry[];
   tasks: { id: string }[];
   userProgress: { id: string; status: string; firstCompletedAt: string | null; taskProgress: { taskId: string; status: string }[] }[];
@@ -38,7 +37,7 @@ type PoiQuest = {
 type SidebarPanel = "lieux" | "contacts" | "evenements" | "revision" | "guidage" | null;
 
 type UserStats = {
-  xp: number; yens: number; level: number;
+  xp: number; level: number;
   xpInLevel: number; xpNeeded: number | null; percent: number;
 };
 
@@ -57,7 +56,7 @@ type Contact = {
 const CITY_JP: Record<string, string> = { tokyo: "東京", osaka: "大阪", kyoto: "京都" };
 
 const SIDEBAR_BUTTONS: { panel: Exclude<SidebarPanel, null>; label: string; enabled: boolean; color: string; svg: React.ReactNode }[] = [
-  { panel: "guidage",    label: "Guidage",    enabled: true,  color: "#f97316",
+  { panel: "guidage",    label: "Thèmes",     enabled: true,  color: "#f97316",
     svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg> },
   { panel: "lieux",      label: "Lieux",      enabled: true,  color: "#6366f1",
     svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> },
@@ -145,6 +144,9 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
   const [sidebarPanel, setSidebarPanel]   = useState<SidebarPanel>(null);
   const [lieuxType, setLieuxType]         = useState<POIType | null>(null);
   const [poiQuestData, setPoiQuestData]   = useState<Record<string, { done: number; total: number }>>({});
+  const [collapsedThemes, setCollapsedThemes] = useState<Set<string>>(
+    () => new Set((CITY_GUIDAGE[citySlug] ?? []).map(t => t.id))
+  );
 
   // Contacts state
   const [contacts, setContacts]             = useState<Contact[]>([]);
@@ -817,7 +819,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                               : <span className="text-lg leading-none">{POI_META[poi.type].icon}</span>
                             }
                             <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-gray-700 transition-colors group-hover:text-gray-900">
+                              <p className="text-sm font-semibold leading-tight text-gray-700 transition-colors group-hover:text-gray-900">
                                 {poi.name}
                               </p>
                               {qd !== undefined && qd.total > 0 ? (
@@ -859,33 +861,43 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-500">Parcours guidé</span>
-                      <h3 className="mt-0.5 text-lg font-black text-gray-900">Guidage</h3>
+                      <h3 className="mt-0.5 text-lg font-black text-gray-900">Thèmes</h3>
                     </div>
                     <button onClick={() => setSidebarPanel(null)} className="text-gray-400 transition-colors hover:text-gray-600">
                       <X className="h-4 w-4" />
                     </button>
                   </div>
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-gray-400">
-                    Suis ce parcours pour apprendre le japonais de manière progressive, du plus simple au plus complexe.
-                  </p>
                 </div>
 
                 {/* Themes */}
-                <div className="flex flex-col overflow-y-auto">
+                <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
                   {themes.map((theme, ti) => (
                     <div key={theme.id}>
                       {/* Theme header */}
-                      <div className="flex items-center gap-3 border-t border-gray-100 bg-gray-50/80 px-5 py-3">
-                        <span className="text-xl">{theme.emoji}</span>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[9px] font-bold uppercase tracking-[0.15em] text-gray-400">Thème {ti + 1}</p>
-                          <p className="text-sm font-bold text-gray-800">{theme.title}</p>
-                          <p className="mt-0.5 text-[10px] text-gray-400">{theme.description}</p>
+                      <button
+                        className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition-opacity hover:opacity-80"
+                        style={{ background: "linear-gradient(to right, #f5f3ff, #eef2ff)" }}
+                        onClick={() => setCollapsedThemes(prev => {
+                          const next = new Set(prev);
+                          next.has(theme.id) ? next.delete(theme.id) : next.add(theme.id);
+                          return next;
+                        })}
+                      >
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg" style={{ background: "#ede9fe" }}>
+                          {theme.emoji}
                         </div>
-                      </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-indigo-400">Thème {ti + 1}</p>
+                          <p className="text-sm font-extrabold text-gray-900 leading-tight">{theme.title}</p>
+                        </div>
+                        <ChevronRight
+                          className="h-4 w-4 shrink-0 text-indigo-300 transition-transform duration-200"
+                          style={{ transform: collapsedThemes.has(theme.id) ? "rotate(0deg)" : "rotate(90deg)" }}
+                        />
+                      </button>
 
                       {/* POIs */}
-                      {theme.poiIds.map((poiId, pi) => {
+                      {!collapsedThemes.has(theme.id) && theme.poiIds.map((poiId, pi) => {
                         const poi = city.pois.find(p => p.id === poiId);
                         if (!poi) return null;
                         const meta = POI_META[poi.type];
@@ -901,7 +913,8 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                               setSidebarPanel(null);
                               handlePoiClick(poi.id);
                             }}
-                            className="flex items-center gap-3 border-b border-gray-50 px-5 py-3 text-left transition-colors hover:bg-indigo-50/40"
+                            className="flex w-full items-center gap-3 border-b border-gray-50 px-5 text-left transition-colors hover:bg-indigo-50/40"
+                            style={{ height: 56, minHeight: 56, flexShrink: 0 }}
                           >
                             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors"
                               style={{ background: isDone ? "#22c55e" : "#f3f4f6", color: isDone ? "white" : "#9ca3af" }}>
@@ -1117,14 +1130,8 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={selectedPoi.image} alt={selectedPoi.name} className="h-full w-full object-cover" />
               ) : (
-                <div
-                  className="h-full w-full"
-                  style={{
-                    background: selectedPoi
-                      ? `linear-gradient(135deg, ${POI_META[selectedPoi.type].color}12 0%, ${POI_META[selectedPoi.type].color}30 100%)`
-                      : "transparent",
-                  }}
-                />
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src="/background_placeholder.png" alt="" className="h-full w-full object-cover" />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/20 to-transparent" />
               <button
@@ -1244,18 +1251,11 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                               </span>
                             )}
                           </div>
-                          {(quest.xpReward > 0 || quest.yenReward > 0) && (
+                          {quest.xpReward > 0 && (
                             <div className="mt-2 flex items-center gap-1.5">
-                              {quest.xpReward > 0 && (
-                                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${isDone || isReplay ? "border-white/10 text-white/25" : "border-indigo-500/40 bg-indigo-500/10 text-indigo-300"}`}>
-                                  +{quest.xpReward} XP
-                                </span>
-                              )}
-                              {quest.yenReward > 0 && (
-                                <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${isDone || isReplay ? "border-white/10 text-white/25" : "border-yellow-500/40 bg-yellow-500/10 text-yellow-300"}`}>
-                                  +¥{quest.yenReward}
-                                </span>
-                              )}
+                              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${isDone || isReplay ? "border-white/10 text-white/25" : "border-indigo-500/40 bg-indigo-500/10 text-indigo-300"}`}>
+                                +{quest.xpReward} XP
+                              </span>
                               {(isDone || isReplay) && <span className="text-[10px] italic text-white/20">déjà obtenu</span>}
                             </div>
                           )}
@@ -1398,11 +1398,6 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                     {quest.xpReward > 0 && (
                       <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-600">
                         +{quest.xpReward} XP
-                      </span>
-                    )}
-                    {quest.yenReward > 0 && (
-                      <span className="rounded-full border border-yellow-200 bg-yellow-50 px-3 py-1 text-xs font-bold text-yellow-600">
-                        +¥{quest.yenReward}
                       </span>
                     )}
                   </div>

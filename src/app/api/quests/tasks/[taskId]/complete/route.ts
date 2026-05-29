@@ -56,21 +56,18 @@ export async function POST(
   // ── Quête terminée ──────────────────────────────────────────────────────────
   const isFirstCompletion = !questProgress.firstCompletedAt;
   let xpGained = 0;
-  let yensGained = 0;
   let leveledUp = false;
   let newLevel = 1;
 
   if (isFirstCompletion) {
-    const { xpReward, yenReward } = questProgress.quest;
-    xpGained = xpReward;
-    yensGained = yenReward;
+    xpGained = questProgress.quest.xpReward;
 
-    if (xpGained > 0 || yensGained > 0) {
+    if (xpGained > 0) {
       const user = await prisma.user.findUnique({ where: { id: userId }, select: { xp: true } });
       const oldLevel = getLevel(user?.xp ?? 0);
       const updatedUser = await prisma.user.update({
         where: { id: userId },
-        data: { xp: { increment: xpGained }, yens: { increment: yensGained } },
+        data: { xp: { increment: xpGained } },
         select: { xp: true },
       });
       newLevel = getLevel(updatedUser.xp);
@@ -89,5 +86,5 @@ export async function POST(
     });
   }
 
-  return NextResponse.json({ questCompleted: true, nextTask: null, xpGained, yensGained, leveledUp, newLevel, isReplay: !isFirstCompletion });
+  return NextResponse.json({ questCompleted: true, nextTask: null, xpGained, leveledUp, newLevel, isReplay: !isFirstCompletion });
 }

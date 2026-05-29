@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 interface Choice { id?: string; text: string; isCorrect: boolean; order: number; }
 interface Task { id?: string; order: number; instruction: string; aiContext: string; suggestions: any; choices: Choice[]; expanded?: boolean; isNew?: boolean; }
-interface Quest { id: string; poiId: string; title: string; description?: string; order: number; xpReward: number; yenReward: number; isActive: boolean; vocab: any; tasks: Task[]; }
+interface Quest { id: string; poiId: string; title: string; description?: string; order: number; xpReward: number; isActive: boolean; vocab: any; tasks: Task[]; }
 interface POI { id: string; name: string; cityId: string; }
 
 export default function EditQuestPage({ params }: { params: { id: string } }) {
@@ -16,7 +16,7 @@ export default function EditQuestPage({ params }: { params: { id: string } }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  const [form, setForm] = useState({ poiId: "", title: "", description: "", order: 1, xpReward: 50, yenReward: 100, isActive: true });
+  const [form, setForm] = useState({ poiId: "", title: "", description: "", order: 1, xpReward: 50, isActive: true });
   const [vocabJson, setVocabJson] = useState("[]");
   const [vocabError, setVocabError] = useState("");
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -28,7 +28,7 @@ export default function EditQuestPage({ params }: { params: { id: string } }) {
     ]).then(([q, ps]) => {
       setQuest(q);
       setPois(ps);
-      setForm({ poiId: q.poiId, title: q.title, description: q.description ?? "", order: q.order, xpReward: q.xpReward, yenReward: q.yenReward, isActive: q.isActive });
+      setForm({ poiId: q.poiId, title: q.title, description: q.description ?? "", order: q.order, xpReward: q.xpReward, isActive: q.isActive });
       setVocabJson(JSON.stringify(q.vocab ?? [], null, 2));
       setTasks((q.tasks ?? []).map((t: Task) => ({ ...t, expanded: false })));
       setLoading(false);
@@ -140,8 +140,8 @@ export default function EditQuestPage({ params }: { params: { id: string } }) {
           <textarea rows={2} className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
             value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
         </div>
-        <div className="grid grid-cols-3 gap-4">
-          {[["order","Ordre"],["xpReward","XP"],["yenReward","Yens"]].map(([k,l]) => (
+        <div className="grid grid-cols-2 gap-4">
+          {[["order","Ordre"],["xpReward","XP"]].map(([k,l]) => (
             <div key={k}>
               <label className="block text-sm font-medium text-gray-700 mb-1">{l}</label>
               <input type="number" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"

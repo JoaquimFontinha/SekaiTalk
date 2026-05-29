@@ -10,7 +10,6 @@ interface Quest {
   title: string;
   order: number;
   xpReward: number;
-  yenReward: number;
   taskCount: number;
   isActive: boolean;
 }
@@ -75,7 +74,6 @@ export default function QuestsPage() {
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Ordre</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Tâches</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">XP</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Yens</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Actif</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Actions</th>
               </tr>
@@ -90,7 +88,6 @@ export default function QuestsPage() {
                     <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs">{quest.taskCount}</span>
                   </td>
                   <td className="px-4 py-3 text-yellow-600">{quest.xpReward} XP</td>
-                  <td className="px-4 py-3 text-green-600">¥{quest.yenReward}</td>
                   <td className="px-4 py-3">
                     <span className={`text-xs font-medium ${quest.isActive ? "text-green-600" : "text-gray-400"}`}>
                       {quest.isActive ? "Actif" : "Inactif"}

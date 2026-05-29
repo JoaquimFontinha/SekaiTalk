@@ -32,7 +32,7 @@ type Suggestion  = { fr: string; jp: string; romaji: string };
 type QuestTask   = { id: string; order: number; instruction: string; aiContext: string | null; suggestions: Suggestion[]; choices: TaskChoice[] };
 type QuestData  = {
   id: string; title: string; description: string | null;
-  xpReward: number; yenReward: number;
+  xpReward: number;
   vocab: VocabEntry[];
   tasks: QuestTask[];
   userProgress: { id: string; status: string; taskProgress: { taskId: string; status: string }[] }[];
@@ -46,11 +46,10 @@ type ActiveQuest = {
   currentTaskIndex: number;
   vocab: VocabEntry[];
   xpReward: number;
-  yenReward: number;
 };
 
 type CompletedQuestInfo = {
-  xpGained: number; yensGained: number; leveledUp: boolean; newLevel: number;
+  xpGained: number; leveledUp: boolean; newLevel: number;
   isReplay: boolean; questId: string; vocab: VocabEntry[];
 };
 
@@ -257,7 +256,7 @@ export default function POIClient({
   const [activeQuest, setActiveQuest]         = useState<ActiveQuest | null>(null);
   const [showQuiz, setShowQuiz]               = useState(false);
   const [choiceResult, setChoiceResult]       = useState<{ id: string; correct: boolean } | null>(null);
-  const [questReward, setQuestReward]         = useState<{ xpGained: number; yensGained: number; leveledUp: boolean; newLevel: number; isReplay: boolean } | null>(null);
+  const [questReward, setQuestReward]         = useState<{ xpGained: number; leveledUp: boolean; newLevel: number; isReplay: boolean } | null>(null);
   const [completedQuestInfo, setCompletedQuestInfo] = useState<CompletedQuestInfo | null>(null);
   const [showQuestComplete, setShowQuestComplete]   = useState(false);
   const [showSessionSummary, setShowSessionSummary] = useState(false);
@@ -642,7 +641,7 @@ export default function POIClient({
           const data = await r.json();
           if (data.questCompleted) {
             const info: CompletedQuestInfo = {
-              xpGained: data.xpGained, yensGained: data.yensGained,
+              xpGained: data.xpGained,
               leveledUp: data.leveledUp, newLevel: data.newLevel,
               isReplay: data.isReplay, questId: aq.questId, vocab: aq.vocab,
             };
@@ -658,7 +657,7 @@ export default function POIClient({
 
     if (isLast) {
       const info: CompletedQuestInfo = {
-        xpGained: 0, yensGained: 0, leveledUp: false, newLevel: 1,
+        xpGained: 0, leveledUp: false, newLevel: 1,
         isReplay: false, questId: aq.questId, vocab: aq.vocab,
       };
       setActiveQuest(null);
@@ -754,7 +753,6 @@ export default function POIClient({
               currentTaskIndex,
               vocab: (quest.vocab ?? []) as VocabEntry[],
               xpReward: quest.xpReward ?? 0,
-              yenReward: quest.yenReward ?? 0,
             };
 
             if (!existing || isCompleted) {
@@ -1043,18 +1041,11 @@ export default function POIClient({
           <p className="text-base font-black text-gray-900">
             {questReward.isReplay ? "🔄 Quête refaite !" : "🎉 Quête terminée !"}
           </p>
-          {!questReward.isReplay && (questReward.xpGained > 0 || questReward.yensGained > 0) && (
+          {!questReward.isReplay && questReward.xpGained > 0 && (
             <div className="flex items-center gap-3 mt-0.5">
-              {questReward.xpGained > 0 && (
-                <span className="rounded-full bg-indigo-500/25 border border-indigo-500/50 px-3 py-0.5 text-xs font-bold text-indigo-700">
-                  +{questReward.xpGained} XP
-                </span>
-              )}
-              {questReward.yensGained > 0 && (
-                <span className="rounded-full bg-yellow-500/20 border border-yellow-500/40 px-3 py-0.5 text-xs font-bold text-yellow-700">
-                  +¥{questReward.yensGained}
-                </span>
-              )}
+              <span className="rounded-full bg-indigo-500/25 border border-indigo-500/50 px-3 py-0.5 text-xs font-bold text-indigo-700">
+                +{questReward.xpGained} XP
+              </span>
             </div>
           )}
           {questReward.leveledUp && (
@@ -1308,18 +1299,11 @@ export default function POIClient({
                 <p className="text-xl font-black text-gray-900">
                   {completedQuestInfo.isReplay ? "Quête refaite !" : "Quête terminée !"}
                 </p>
-                {!completedQuestInfo.isReplay && (completedQuestInfo.xpGained > 0 || completedQuestInfo.yensGained > 0) && (
+                {!completedQuestInfo.isReplay && completedQuestInfo.xpGained > 0 && (
                   <div className="flex items-center justify-center gap-3 mt-3">
-                    {completedQuestInfo.xpGained > 0 && (
-                      <span className="rounded-full bg-indigo-500/25 border border-indigo-500/50 px-3 py-1 text-sm font-bold text-indigo-700">
-                        +{completedQuestInfo.xpGained} XP
-                      </span>
-                    )}
-                    {completedQuestInfo.yensGained > 0 && (
-                      <span className="rounded-full bg-yellow-500/20 border border-yellow-500/40 px-3 py-1 text-sm font-bold text-yellow-700">
-                        +¥{completedQuestInfo.yensGained}
-                      </span>
-                    )}
+                    <span className="rounded-full bg-indigo-500/25 border border-indigo-500/50 px-3 py-1 text-sm font-bold text-indigo-700">
+                      +{completedQuestInfo.xpGained} XP
+                    </span>
                   </div>
                 )}
                 {completedQuestInfo.isReplay && (

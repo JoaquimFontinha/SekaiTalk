@@ -171,7 +171,6 @@ async function main() {
         description: "Entraîne-toi à demander des informations sur les produits dans un konbini",
         order: 1,
         xpReward: 50,
-        yenReward: 120,
         tasks: {
           create: [
             {
@@ -919,12 +918,12 @@ async function main() {
   // ── Quêtes Tokyo ─────────────────────────────────────────────────────────────
 
   type QTask = { id: string; order: number; instruction: string; aiContext: string; choices: { order: number; text: string; isCorrect: boolean }[] };
-  type QSeed = { id: string; poiId: string; title: string; description: string; order: number; xp: number; yen: number; tasks: QTask[] };
+  type QSeed = { id: string; poiId: string; title: string; description: string; order: number; xp: number; tasks: QTask[] };
 
   const TOKYO_QUESTS: QSeed[] = [
     // ── Thème 1 : Transport ────────────────────────────────────────────────────
     {
-      id: "quest-haneda-1", poiId: "haneda-airport", order: 1, xp: 60, yen: 0,
+      id: "quest-haneda-1", poiId: "haneda-airport", order: 1, xp: 60,
       title: "Passer l'immigration",
       description: "Franchis le contrôle des passeports et explique le but de ton séjour.",
       tasks: [
@@ -940,7 +939,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-haneda-2", poiId: "haneda-airport", order: 2, xp: 50, yen: 0,
+      id: "quest-haneda-2", poiId: "haneda-airport", order: 2, xp: 50,
       title: "Rejoindre le centre-ville",
       description: "Demande comment prendre le bus limousine jusqu'à Shinjuku.",
       tasks: [
@@ -956,7 +955,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-shinkansen-1", poiId: "tokyo-station-shinkansen", order: 1, xp: 70, yen: 0,
+      id: "quest-shinkansen-1", poiId: "tokyo-station-shinkansen", order: 1, xp: 70,
       title: "Acheter un billet Shinkansen",
       description: "Achète un billet pour Kyoto en Shinkansen, siège fenêtre non-fumeur.",
       tasks: [
@@ -972,7 +971,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-jr-1", poiId: "jr-shinjuku", order: 1, xp: 55, yen: 0,
+      id: "quest-jr-1", poiId: "jr-shinjuku", order: 1, xp: 55,
       title: "S'orienter à Shinjuku",
       description: "Trouve la bonne sortie et achète une carte IC pour les transports.",
       tasks: [
@@ -989,7 +988,7 @@ async function main() {
     },
     // ── Thème 2 : Hébergement ───────────────────────────────────────────────────
     {
-      id: "quest-ninehours-1", poiId: "nine-hours-shinjuku", order: 1, xp: 50, yen: 100,
+      id: "quest-ninehours-1", poiId: "nine-hours-shinjuku", order: 1, xp: 50,
       title: "Check-in au Nine Hours",
       description: "Effectue ton check-in dans ce capsule hôtel design de Shinjuku.",
       tasks: [
@@ -1005,7 +1004,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-hyatt-1", poiId: "grand-hyatt-tokyo", order: 1, xp: 80, yen: 200,
+      id: "quest-hyatt-1", poiId: "grand-hyatt-tokyo", order: 1, xp: 80,
       title: "Séjour au Grand Hyatt",
       description: "Check-in dans ce palace de Roppongi et commande le room service.",
       tasks: [
@@ -1022,7 +1021,7 @@ async function main() {
     },
     // ── Thème 3 : Quotidien ─────────────────────────────────────────────────────
     {
-      id: "quest-7eleven-1", poiId: "7eleven-shinjuku", order: 1, xp: 45, yen: 150,
+      id: "quest-7eleven-1", poiId: "7eleven-shinjuku", order: 1, xp: 45,
       title: "Café et snacks au 7-Eleven",
       description: "Commande un café fraîchement torréfié et des snacks japonais.",
       tasks: [
@@ -1038,7 +1037,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-familymart-1", poiId: "familymart-shibuya", order: 1, xp: 45, yen: 120,
+      id: "quest-familymart-1", poiId: "familymart-shibuya", order: 1, xp: 45,
       title: "Le bento du midi",
       description: "Choisis et achète un bento, paie et redemande des baguettes.",
       tasks: [
@@ -1054,7 +1053,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-lawson-1", poiId: "lawson-harajuku", order: 1, xp: 45, yen: 100,
+      id: "quest-lawson-1", poiId: "lawson-harajuku", order: 1, xp: 45,
       title: "Les desserts du Lawson",
       description: "Découvre les fameux desserts Uchi Café de Lawson.",
       tasks: [
@@ -1070,7 +1069,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-matsumoto-1", poiId: "matsumoto-kiyoshi-akiba", order: 1, xp: 55, yen: 0,
+      id: "quest-matsumoto-1", poiId: "matsumoto-kiyoshi-akiba", order: 1, xp: 55,
       title: "À la pharmacie",
       description: "Décris tes symptômes et achète le bon médicament.",
       tasks: [
@@ -1086,7 +1085,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-post-1", poiId: "tokyo-central-post", order: 1, xp: 50, yen: 0,
+      id: "quest-post-1", poiId: "tokyo-central-post", order: 1, xp: 50,
       title: "Envoyer un colis au Japon",
       description: "Envoie un colis en EMS vers la France depuis la poste centrale.",
       tasks: [
@@ -1103,7 +1102,7 @@ async function main() {
     },
     // ── Thème 4 : Manger & Boire ────────────────────────────────────────────────
     {
-      id: "quest-starbucks-1", poiId: "starbucks-shibuya", order: 1, xp: 45, yen: 100,
+      id: "quest-starbucks-1", poiId: "starbucks-shibuya", order: 1, xp: 45,
       title: "Commander chez Starbucks",
       description: "Commande un café customisé au Starbucks du Scramble Crossing.",
       tasks: [
@@ -1119,7 +1118,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-mcdo-1", poiId: "mcdonalds-shibuya", order: 1, xp: 40, yen: 100,
+      id: "quest-mcdo-1", poiId: "mcdonalds-shibuya", order: 1, xp: 40,
       title: "Commander au McDonald's japonais",
       description: "Découvre les spécialités japonaises du MacDo et passe ta commande.",
       tasks: [
@@ -1135,7 +1134,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-asahi-1", poiId: "asahi-super-dry-hall", order: 1, xp: 60, yen: 150,
+      id: "quest-asahi-1", poiId: "asahi-super-dry-hall", order: 1, xp: 60,
       title: "Soirée à l'Asahi Super Dry Hall",
       description: "Commande des bières et des petites assiettes avec vue sur la Skytree.",
       tasks: [
@@ -1152,7 +1151,7 @@ async function main() {
     },
     // ── Thème 5 : Shopping ──────────────────────────────────────────────────────
     {
-      id: "quest-loft-1", poiId: "loft-shibuya", order: 1, xp: 50, yen: 120,
+      id: "quest-loft-1", poiId: "loft-shibuya", order: 1, xp: 50,
       title: "Trouver un cadeau au Loft",
       description: "Cherche un cadeau original au Loft Shibuya et fais-le emballer.",
       tasks: [
@@ -1168,7 +1167,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-109-1", poiId: "shibuya-109", order: 1, xp: 55, yen: 150,
+      id: "quest-109-1", poiId: "shibuya-109", order: 1, xp: 55,
       title: "Shopping mode au SHIBUYA109",
       description: "Essaie une tenue tendance et découvre les tailles japonaises.",
       tasks: [
@@ -1184,7 +1183,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-donki-1", poiId: "donquijote-shibuya", order: 1, xp: 50, yen: 100,
+      id: "quest-donki-1", poiId: "donquijote-shibuya", order: 1, xp: 50,
       title: "Chasse aux bonnes affaires chez Donki",
       description: "Navigue dans le labyrinthe de Don Quijote et compare les prix.",
       tasks: [
@@ -1200,7 +1199,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-yodobashi-1", poiId: "yodobashi-akiba", order: 1, xp: 60, yen: 100,
+      id: "quest-yodobashi-1", poiId: "yodobashi-akiba", order: 1, xp: 60,
       title: "Acheter un appareil photo",
       description: "Compare deux appareils photo et achète le meilleur pour ton budget.",
       tasks: [
@@ -1216,7 +1215,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-lumine-1", poiId: "lumine-est-shinjuku", order: 1, xp: 45, yen: 80,
+      id: "quest-lumine-1", poiId: "lumine-est-shinjuku", order: 1, xp: 45,
       title: "Trouver son chemin dans Lumine",
       description: "Navigue dans Lumine Est et trouve le restaurant qui te correspond.",
       tasks: [
@@ -1233,7 +1232,7 @@ async function main() {
     },
     // ── Thème 6 : Découvrir Tokyo ───────────────────────────────────────────────
     {
-      id: "quest-skytree-1", poiId: "tokyo-skytree", order: 1, xp: 65, yen: 0,
+      id: "quest-skytree-1", poiId: "tokyo-skytree", order: 1, xp: 65,
       title: "Monter au Tokyo Skytree",
       description: "Achète ton billet et monte aux 350m au-dessus de Tokyo.",
       tasks: [
@@ -1249,7 +1248,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-tokyotower-1", poiId: "tokyo-tower", order: 1, xp: 60, yen: 0,
+      id: "quest-tokyotower-1", poiId: "tokyo-tower", order: 1, xp: 60,
       title: "La Tour de Tokyo",
       description: "Visite la tour emblématique inspirée de la Tour Eiffel.",
       tasks: [
@@ -1265,7 +1264,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-meiji-1", poiId: "meiji-jingu", order: 1, xp: 55, yen: 0,
+      id: "quest-meiji-1", poiId: "meiji-jingu", order: 1, xp: 55,
       title: "Se recueillir au Meiji Jingū",
       description: "Apprends les codes du sanctuaire shinto et prie correctement.",
       tasks: [
@@ -1281,7 +1280,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-sensoji-1", poiId: "sensoji", order: 1, xp: 60, yen: 0,
+      id: "quest-sensoji-1", poiId: "sensoji", order: 1, xp: 60,
       title: "Visite du Sensō-ji",
       description: "Explore le plus vieux temple de Tokyo et tire ton omikuji.",
       tasks: [
@@ -1297,7 +1296,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-museum-1", poiId: "tokyo-national-museum", order: 1, xp: 55, yen: 0,
+      id: "quest-museum-1", poiId: "tokyo-national-museum", order: 1, xp: 55,
       title: "Au Musée National de Tokyo",
       description: "Découvre les trésors de l'art japonais au plus grand musée du pays.",
       tasks: [
@@ -1313,7 +1312,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-theater-1", poiId: "tokyo-metro-theatre", order: 1, xp: 55, yen: 0,
+      id: "quest-theater-1", poiId: "tokyo-metro-theatre", order: 1, xp: 55,
       title: "Au Théâtre Métropolitain",
       description: "Achète des billets pour un spectacle et découvre la culture musicale tokyoïte.",
       tasks: [
@@ -1329,7 +1328,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-karaoke-1", poiId: "big-echo-kabukicho", order: 1, xp: 65, yen: 200,
+      id: "quest-karaoke-1", poiId: "big-echo-kabukicho", order: 1, xp: 65,
       title: "Nuit karaoké à Kabukichō",
       description: "Réserve une salle, chante en japonais et profite du free-time.",
       tasks: [
@@ -1345,7 +1344,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-maidcafe-1", poiId: "at-home-cafe-akihabara", order: 1, xp: 70, yen: 200,
+      id: "quest-maidcafe-1", poiId: "at-home-cafe-akihabara", order: 1, xp: 70,
       title: "L'expérience maid café",
       description: "Découvre l'univers des maid cafés d'Akihabara et commande un plat magique.",
       tasks: [
@@ -1361,7 +1360,7 @@ async function main() {
       ],
     },
     {
-      id: "quest-hospital-1", poiId: "keio-hospital", order: 1, xp: 70, yen: 0,
+      id: "quest-hospital-1", poiId: "keio-hospital", order: 1, xp: 70,
       title: "Consultation à l'hôpital Keio",
       description: "Décris tes symptômes en japonais et naviguer dans le système de santé.",
       tasks: [
@@ -1384,7 +1383,7 @@ async function main() {
       await prisma.quest.create({
         data: {
           id: q.id, poiId: q.poiId, title: q.title, description: q.description,
-          order: q.order, xpReward: q.xp, yenReward: q.yen, isActive: true,
+          order: q.order, xpReward: q.xp, isActive: true,
           tasks: {
             create: q.tasks.map(t => ({
               id: t.id, order: t.order, instruction: t.instruction, aiContext: t.aiContext,
@@ -2171,7 +2170,6 @@ async function main() {
         description: "Entraîne-toi à passer le contrôle douanier à l'aéroport de Tokyo",
         order:       1,
         xpReward:    80,
-        yenReward:   0,
         tasks: {
           create: [
             {

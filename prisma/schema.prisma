@@ -23,7 +23,6 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   xp                Int                  @default(0)
-  yens              Int                  @default(0)
   dailyGoalMinutes  Int                  @default(10)
   accounts          Account[]
   sessions          Session[]
@@ -142,7 +141,6 @@ model Quest {
   order        Int                 @default(0)
   isActive     Boolean             @default(true)
   xpReward     Int                 @default(0)
-  yenReward    Int                 @default(0)
   vocab        Json                @default("[]")
   tasks        QuestTask[]
   userProgress UserQuestProgress[]

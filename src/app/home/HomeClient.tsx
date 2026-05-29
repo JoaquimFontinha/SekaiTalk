@@ -18,7 +18,7 @@ const CITY_LOGOS: Record<string, string> = {
 };
 
 type UserStats = {
-  xp: number; yens: number; level: number;
+  xp: number; level: number;
   xpInLevel: number; xpNeeded: number | null; percent: number;
 };
 
