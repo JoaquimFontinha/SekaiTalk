@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect, useState } from "react";
 import Map, { Marker, type MapRef } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import type { CityData, POIType } from "@/lib/cities";
@@ -64,6 +64,7 @@ export default function GameMap3D({
   const mapRef = (externalRef ?? internalRef) as React.RefObject<MapRef>;
   const { poiPositionOverrides, updatePoiPosition } = useMapCtx();
   const pois = activeType ? city.pois.filter(p => p.type === activeType) : city.pois;
+  const [pinnedPoiId, setPinnedPoiId] = useState<string | null>(null);
 
   useEffect(() => () => { mapRef.current?.getMap()?.removeImage?.("water-anim"); }, []);
 
@@ -218,7 +219,8 @@ export default function GameMap3D({
       ref={mapRef}
       mapboxAccessToken={MAPBOX_TOKEN}
       mapStyle={STYLE_URL}
-      onClick={() => onMapBgClick?.()}
+      onClick={() => { setPinnedPoiId(null); onMapBgClick?.(); }}
+      onDragStart={() => setPinnedPoiId(null)}
       initialViewState={{
         longitude: city.center[1],
         latitude:  city.center[0],
@@ -246,7 +248,7 @@ export default function GameMap3D({
           latitude={lat}
           anchor="bottom"
           draggable={editMode}
-          onClick={e => { e.originalEvent?.stopPropagation(); if (!editMode) onPoiClick(poi.id); }}
+          onClick={e => { e.originalEvent?.stopPropagation(); if (!editMode) { setPinnedPoiId(poi.id); onPoiClick(poi.id); } }}
           onDragEnd={e => {
             if (editMode) {
               updatePoiPosition(poi.id, e.lngLat.lat, e.lngLat.lng);
@@ -255,7 +257,7 @@ export default function GameMap3D({
           }}
         >
           <div
-            className={`gm3d-poi${editMode ? " gm3d-poi--edit" : ""}`}
+            className={`gm3d-poi${editMode ? " gm3d-poi--edit" : ""}${pinnedPoiId === poi.id ? " gm3d-poi--pinned" : ""}`}
             style={{ "--pc": POI_COLORS[poi.type] } as React.CSSProperties}
           >
             <div className="gm3d-badge">

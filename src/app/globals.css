@@ -183,12 +183,15 @@ body {
     transform    0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.gm3d-poi:hover .gm3d-badge {
-  transform: translateY(-4px) scale(1.06);
+.gm3d-poi:hover .gm3d-badge,
+.gm3d-poi--pinned .gm3d-badge {
+  transform: translateY(-6px) scale(1.14);
+  background: rgba(255, 255, 255, 1);
   box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.28),
-    0 0 0 3px color-mix(in srgb, var(--pc) 22%, transparent);
-  border-color: color-mix(in srgb, var(--pc) 50%, white);
+    0 12px 32px rgba(0, 0, 0, 0.32),
+    0 0 0 3px color-mix(in srgb, var(--pc) 35%, transparent),
+    0 0 20px color-mix(in srgb, var(--pc) 30%, transparent);
+  border-color: color-mix(in srgb, var(--pc) 70%, white);
 }
 
 .gm3d-icon-wrap {
@@ -198,6 +201,20 @@ body {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border-radius: 50%;
+  transition: width 0.22s ease, height 0.22s ease, background 0.22s ease;
+}
+
+.gm3d-poi:hover .gm3d-icon-wrap,
+.gm3d-poi--pinned .gm3d-icon-wrap {
+  width: 32px;
+  height: 32px;
+  background: color-mix(in srgb, var(--pc) 14%, transparent);
+}
+
+.gm3d-poi:hover .gm3d-icon-wrap--logo,
+.gm3d-poi--pinned .gm3d-icon-wrap--logo {
+  background: transparent;
 }
 
 .gm3d-icon {
@@ -205,6 +222,12 @@ body {
   line-height: 1;
   user-select: none;
   pointer-events: none;
+  transition: font-size 0.22s ease;
+}
+
+.gm3d-poi:hover .gm3d-icon,
+.gm3d-poi--pinned .gm3d-icon {
+  font-size: 16px;
 }
 
 
@@ -215,6 +238,13 @@ body {
   border-radius: 5px;
   pointer-events: none;
   user-select: none;
+  transition: width 0.22s ease, height 0.22s ease;
+}
+
+.gm3d-poi:hover .gm3d-logo,
+.gm3d-poi--pinned .gm3d-logo {
+  width: 28px;
+  height: 28px;
 }
 
 .gm3d-name {
@@ -231,7 +261,8 @@ body {
   user-select: none;
 }
 
-.gm3d-poi:hover .gm3d-name {
+.gm3d-poi:hover .gm3d-name,
+.gm3d-poi--pinned .gm3d-name {
   max-width: 160px;
   padding: 0 9px 0 5px;
 }
@@ -241,6 +272,12 @@ body {
   height: 7px;
   background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0.08));
   border-radius: 1px;
+  transition: height 0.22s ease;
+}
+
+.gm3d-poi:hover .gm3d-stem,
+.gm3d-poi--pinned .gm3d-stem {
+  height: 10px;
 }
 
 .gm3d-stem::after {
