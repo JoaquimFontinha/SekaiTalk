@@ -265,6 +265,8 @@ export default function POIClient({
   const [sessionSuggestionsUsed, setSessionSuggestionsUsed] = useState(0);
   const [sessionPracticedVocab, setSessionPracticedVocab]   = useState<Set<string>>(new Set());
   const [sessionAllDetectedVocab, setSessionAllDetectedVocab] = useState<Set<string>>(new Set());
+  const [taskBanner, setTaskBanner] = useState<{ index: number; total: number; instruction: string } | null>(null);
+  const taskBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [messages, setMessages]           = useState<Message[]>([]);
   const [currentReply, setCurrentReply]   = useState<AIReply | null>(null);
@@ -288,6 +290,8 @@ export default function POIClient({
   const [micMuted, setMicMuted]               = useState(false);
   const [speakKey, setSpeakKey]               = useState(0);
   const [showMenu, setShowMenu]               = useState(false);
+  const [voiceVolume, setVoiceVolume]         = useState(80);
+  const voiceVolumeRef = useRef(80);
   const [showBackConfirm, setShowBackConfirm] = useState(false);
   const [historyIndex, setHistoryIndex]       = useState(0);
   const [poiTutoHint, setPoiTutoHint]         = useState<0 | 1 | 2>(poiId === "tutorial-douane" ? 1 : 0);
@@ -297,6 +301,12 @@ export default function POIClient({
   const systemRef       = useRef("");
   const characterIdRef  = useRef<string | null>(null);
   const activeQuestRef  = useRef<ActiveQuest | null>(null);
+
+  const triggerTaskBanner = useCallback((index: number, total: number, instruction: string) => {
+    if (taskBannerTimerRef.current) clearTimeout(taskBannerTimerRef.current);
+    setTaskBanner({ index, total, instruction });
+    taskBannerTimerRef.current = setTimeout(() => setTaskBanner(null), 3500);
+  }, []);
   const recorderRef     = useRef<MediaRecorder | null>(null);
   const chunksRef       = useRef<Blob[]>([]);
   const streamRef       = useRef<MediaStream | null>(null);
@@ -360,7 +370,7 @@ export default function POIClient({
 
     if (!vId) {
       const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = "ja-JP"; utter.rate = 0.85;
+      utter.lang = "ja-JP"; utter.rate = 0.85; utter.volume = voiceVolumeRef.current / 100;
       const go = () => {
         if (controller.signal.aborted) return;
         const jp = window.speechSynthesis.getVoices().find(v => v.lang.startsWith("ja"));
@@ -389,6 +399,7 @@ export default function POIClient({
       setHasAudio(true);
       const url   = URL.createObjectURL(blob);
       const audio = new Audio(url);
+      audio.volume = voiceVolumeRef.current / 100;
       audioRef.current = audio;
       audio.onended = () => {
         setIsSpeaking(false);
@@ -668,6 +679,8 @@ export default function POIClient({
       const updated: ActiveQuest = { ...aq, currentTaskIndex: aq.currentTaskIndex + 1 };
       setActiveQuest(updated);
       activeQuestRef.current = updated;
+      const nextTask = updated.tasks[updated.currentTaskIndex];
+      if (nextTask) triggerTaskBanner(updated.currentTaskIndex + 1, updated.tasks.length, nextTask.instruction);
     }
   }, []);
 
@@ -773,6 +786,10 @@ export default function POIClient({
 
         setActiveQuest(initQuest);
         activeQuestRef.current = initQuest;
+        if (initQuest) {
+          const firstTask = initQuest.tasks[initQuest.currentTaskIndex];
+          if (firstTask) triggerTaskBanner(initQuest.currentTaskIndex + 1, initQuest.tasks.length, firstTask.instruction);
+        }
 
         const suggestions = initQuest
           ? ["Bonjour !", "Excusez-moi…", "Pouvez-vous m'aider ?"]
@@ -897,21 +914,6 @@ export default function POIClient({
         />
       </div>
 
-      {/* Speech bubble */}
-      {isSpeaking && (
-        <div
-          className="absolute z-20 pointer-events-none"
-          style={{ right: "49%", top: "16%", animation: "screen-fadein 0.15s ease-out" }}
-        >
-          <div className="relative bg-white rounded-2xl px-3 py-2 shadow-md border border-gray-100 flex items-center gap-1.5">
-            {[0, 1, 2].map(i => (
-              <div key={i} className="h-2 w-2 rounded-full bg-gray-400"
-                style={{ animation: `dot-pulse 1s ${i * 0.2}s ease-in-out infinite` }} />
-            ))}
-            <div className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-t border-r border-gray-100 rotate-45" />
-          </div>
-        </div>
-      )}
 
       {/* Top bar — left | center pause | right */}
       <div className="absolute top-0 left-0 right-0 z-50 flex items-start justify-between px-5 pt-4">
@@ -1388,9 +1390,9 @@ export default function POIClient({
                   ))}
                 </div>
 
-                {/* Vocab by JLPT level */}
+                {/* Vocab by JLPT level — only practiced words */}
                 {([5, 4, 3, 2, 1] as const).map(jlpt => {
-                  const words = summaryVocabProgress.filter(v => v.jlpt === jlpt);
+                  const words = summaryVocabProgress.filter(v => v.jlpt === jlpt && v.practiced);
                   if (!words.length) return null;
                   const jlptLabel = ({ 5: "N5", 4: "N4", 3: "N3", 2: "N2", 1: "N1" } as Record<number, string>)[jlpt];
                   return (
@@ -1405,7 +1407,7 @@ export default function POIClient({
                         {words.map(v => {
                           const cfg = MASTERY_CONFIG[v.mastery];
                           return (
-                            <div key={v.jp} className={`rounded-xl border px-4 py-3 flex items-center gap-3 transition-opacity ${v.practiced ? "bg-gray-50 border-gray-100" : "border-gray-50 opacity-40"}`}>
+                            <div key={v.jp} className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 flex items-center gap-3">
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-baseline gap-2 flex-wrap">
                                   <span className="text-lg font-bold text-gray-900 leading-none">{v.jp}</span>
@@ -1511,6 +1513,21 @@ export default function POIClient({
         </div>
       )}
 
+      {/* ── Task banner ── */}
+      {taskBanner && (
+        <div
+          key={`${taskBanner.index}-${taskBanner.instruction}`}
+          className="pointer-events-none fixed inset-x-0 top-1/3 z-[60]"
+          style={{ animation: "taskBannerIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both, taskBannerOut 0.5s ease 3s both" }}
+        >
+          <div className="flex flex-col items-center justify-center bg-white px-16 py-10 text-center shadow-lg"
+            style={{ borderTop: "1px solid #e5e7eb", borderBottom: "1px solid #e5e7eb" }}>
+            <p className="mb-2 text-2xl font-black text-gray-900">Objectif {taskBanner.index}</p>
+            <p className="text-base text-gray-500">{taskBanner.instruction}</p>
+          </div>
+        </div>
+      )}
+
       {/* ── Menu modal ── */}
       {showMenu && (
         <div
@@ -1534,17 +1551,25 @@ export default function POIClient({
 
             <div className="flex flex-col p-3 gap-1.5">
 
-              {/* Volume — non fonctionnel */}
+              {/* Volume voix */}
               <div className="flex items-center gap-3 rounded-xl px-4 py-3 bg-gray-50 border border-gray-100">
                 <span className="text-lg">🔊</span>
                 <div className="flex-1">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400">Volume voix</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Volume voix</p>
+                    <span className="text-[11px] font-semibold text-indigo-500">{voiceVolume}%</span>
+                  </div>
                   <input
-                    type="range" min={0} max={100} defaultValue={80} disabled
-                    className="w-full mt-1 accent-indigo-500 opacity-40 cursor-not-allowed"
+                    type="range" min={0} max={100} value={voiceVolume}
+                    className="w-full accent-indigo-500"
+                    onChange={e => {
+                      const v = Number(e.target.value);
+                      setVoiceVolume(v);
+                      voiceVolumeRef.current = v;
+                      if (audioRef.current) audioRef.current.volume = v / 100;
+                    }}
                   />
                 </div>
-                <span className="text-[10px] text-gray-300 font-medium">Bientôt</span>
               </div>
 
               <div className="flex items-center gap-3 rounded-xl px-4 py-3 bg-gray-50 border border-gray-100">

@@ -102,6 +102,7 @@ function HomeShell({ children }: { children: React.ReactNode }) {
   const city = citySlug ? staticCities[citySlug] : null;
   const isOnCityPage = !!city?.use3DMap && parts.length === 1;
   const isOnHomePage = parts.length === 0;
+  const isOnPoiPage  = parts.length >= 2;
 
   return (
     <>
@@ -119,7 +120,7 @@ function HomeShell({ children }: { children: React.ReactNode }) {
         display: "flex", alignItems: "center", gap: 16,
         flexWrap: "wrap", justifyContent: "flex-end",
       }}>
-        {["À propos", "Blog", "Efficacité", "Termes", "Confidentialité"].map(label => (
+        {!isOnPoiPage && ["À propos", "Blog", "Efficacité", "Termes", "Confidentialité"].map(label => (
           <a
             key={label}
             href="#"
@@ -135,6 +136,21 @@ function HomeShell({ children }: { children: React.ReactNode }) {
             {label}
           </a>
         ))}
+        <a
+          href="https://github.com/JoaquimFontinha/SekaiTalk/issues/new"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            fontSize: 11, fontWeight: 500, letterSpacing: "0.03em",
+            color: "rgba(255,255,255,0.45)",
+            textDecoration: "none",
+            transition: "color 0.15s",
+          }}
+          onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.85)")}
+          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.45)")}
+        >
+          Signaler un bug
+        </a>
       </div>
     </>
   );
