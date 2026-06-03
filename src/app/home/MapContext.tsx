@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useRef, useState } from "react";
 import type { POIType } from "@/lib/cities";
+import type { ActiveEvent } from "@/lib/events";
 
 type MapCtx = {
   mapRef: React.RefObject<any>;
@@ -15,6 +16,8 @@ type MapCtx = {
   poiMoveRef: React.MutableRefObject<((id: string, lat: number, lng: number) => void) | null>;
   poiPositionOverrides: Record<string, { lat: number; lng: number }>;
   updatePoiPosition: (id: string, lat: number, lng: number) => void;
+  activeEvents: ActiveEvent[];
+  setActiveEvents: (events: ActiveEvent[]) => void;
 };
 
 const Ctx = createContext<MapCtx | null>(null);
@@ -24,6 +27,7 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
   const [activeType, setActiveType] = useState<POIType | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [poiPositionOverrides, setPoiPositionOverrides] = useState<Record<string, { lat: number; lng: number }>>({});
+  const [activeEvents, setActiveEvents] = useState<ActiveEvent[]>([]);
   const poiClickRef = useRef<((id: string) => void) | null>(null);
   const mapBgClickRef = useRef<(() => void) | null>(null);
   const japanFlyToRef = useRef<((lng: number, lat: number, zoom?: number) => void) | null>(null);
@@ -31,7 +35,7 @@ export function MapProvider({ children }: { children: React.ReactNode }) {
   const updatePoiPosition = (id: string, lat: number, lng: number) =>
     setPoiPositionOverrides(prev => ({ ...prev, [id]: { lat, lng } }));
   return (
-    <Ctx.Provider value={{ mapRef, activeType, setActiveType, poiClickRef, mapBgClickRef, japanFlyToRef, editMode, setEditMode, poiMoveRef, poiPositionOverrides, updatePoiPosition }}>
+    <Ctx.Provider value={{ mapRef, activeType, setActiveType, poiClickRef, mapBgClickRef, japanFlyToRef, editMode, setEditMode, poiMoveRef, poiPositionOverrides, updatePoiPosition, activeEvents, setActiveEvents }}>
       {children}
     </Ctx.Provider>
   );

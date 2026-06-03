@@ -12,6 +12,7 @@ import TutorialLayer from "@/components/TutorialLayer";
 import { getTutoStep, setTutoStep as storeTutoStep } from "@/lib/tutorial";
 import { useMapCtx } from "./MapContext";
 import staticCities from "@/lib/cities";
+import { useDailyGoals } from "@/hooks/useDailyGoals";
 
 const CITY_LOGOS: Record<string, string> = {
   tokyo: "/images/cities/tokyo_home.svg",
@@ -41,11 +42,6 @@ const NAV_ITEMS: { label: string; enabled: boolean; color: string; svg: React.Re
   },
 ];
 
-const DAILY_GOALS = [
-  { label: "Lance une conversation",   done: false },
-  { label: "Apprends 5 nouveaux mots", done: false },
-  { label: "Complète une quête",       done: false },
-];
 
 function CompassRose() {
   return (
@@ -70,6 +66,7 @@ export default function HomeClient() {
   const { japanFlyToRef } = useMapCtx();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [showRevision, setShowRevision] = useState(false);
+  const { goals: dailyGoals, doneCount: goalsDone } = useDailyGoals();
   const [showPricing, setShowPricing] = useState(false);
   const [showStreakPopover, setShowStreakPopover] = useState(false);
   const [showNotifPopover, setShowNotifPopover] = useState(false);
@@ -124,19 +121,23 @@ export default function HomeClient() {
           <div className="flex items-center justify-between mb-3">
             <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Objectifs du jour</span>
             <span className="text-xs font-semibold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full">
-              0 / {DAILY_GOALS.length}
+              {goalsDone} / {dailyGoals.length || 3}
             </span>
           </div>
           <div className="flex flex-col gap-2">
-            {DAILY_GOALS.map((g, i) => (
-              <div key={i} className="flex items-center gap-3 rounded-xl bg-gray-50 px-4 py-3">
+            {dailyGoals.map((g) => (
+              <div key={g.type} className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-colors ${g.done ? "bg-indigo-50" : "bg-gray-50"}`}>
                 {g.done
                   ? <CheckCircle2 className="h-4 w-4 shrink-0 text-indigo-500" />
                   : <Circle className="h-4 w-4 shrink-0 text-gray-300" />
                 }
-                <span className={`text-sm font-medium ${g.done ? "line-through text-gray-400" : "text-gray-600"}`}>
+                <span className="text-lg shrink-0 leading-none">{g.icon}</span>
+                <span className={`flex-1 text-sm font-medium ${g.done ? "line-through text-gray-400" : "text-gray-600"}`}>
                   {g.label}
                 </span>
+                {g.target > 1 && !g.done && (
+                  <span className="text-[11px] font-bold text-gray-400 shrink-0">{g.progress}/{g.target}</span>
+                )}
               </div>
             ))}
           </div>

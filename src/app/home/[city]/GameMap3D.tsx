@@ -6,6 +6,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import type { CityData, POIType } from "@/lib/cities";
 import POI_LOGOS from "@/lib/poi-logos";
 import { useMapCtx } from "../MapContext";
+import type { ActiveEvent } from "@/lib/events";
 
 const STYLE_URL    = "mapbox://styles/mapbox/standard";
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
@@ -62,9 +63,25 @@ export default function GameMap3D({
 }) {
   const internalRef = useRef<MapRef>(null);
   const mapRef = (externalRef ?? internalRef) as React.RefObject<MapRef>;
-  const { poiPositionOverrides, updatePoiPosition } = useMapCtx();
-  const pois = activeType ? city.pois.filter(p => p.type === activeType) : city.pois;
+  const { poiPositionOverrides, updatePoiPosition, activeEvents } = useMapCtx();
   const [pinnedPoiId, setPinnedPoiId] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  // Tick every minute pour mettre à jour l'expiry des events
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Events dont le timer n'est pas encore expiré
+  const visibleEvents: ActiveEvent[] = activeEvents.filter(ev => new Date(ev.expiresAt).getTime() > now);
+
+  // IDs des POIs d'event → exclus du rendu normal
+  const eventPoiIds = new Set(visibleEvents.map(ev => ev.poiId));
+
+  // POIs normaux (filtre type ET exclut les event-POIs)
+  const pois = (activeType ? city.pois.filter(p => p.type === activeType) : city.pois)
+    .filter(p => !eventPoiIds.has(p.id));
 
   useEffect(() => () => { mapRef.current?.getMap()?.removeImage?.("water-anim"); }, []);
 
@@ -272,6 +289,36 @@ export default function GameMap3D({
             <div className="gm3d-stem" />
           </div>
         </Marker>
+        );
+      })}
+
+      {/* ── Event markers ─────────────────────────────────────── */}
+      {visibleEvents.map(ev => {
+        const poi = city.pois.find(p => p.id === ev.poiId);
+        if (!poi) return null;
+        const isPinned = pinnedPoiId === ev.poiId;
+        return (
+          <Marker
+            key={ev.id}
+            longitude={poi.lng}
+            latitude={poi.lat}
+            anchor="bottom"
+            onClick={e => { e.originalEvent?.stopPropagation(); setPinnedPoiId(ev.poiId); onPoiClick(ev.poiId); }}
+          >
+            <div
+              className={`gm3d-poi gm3d-poi--event${isPinned ? " gm3d-poi--pinned" : ""}`}
+              style={{ "--pc": ev.color } as React.CSSProperties}
+            >
+              <div className="gm3d-event-wrap">
+                <div className="gm3d-event-pulse" />
+                <div className="gm3d-badge">
+                  <div className="gm3d-event-icon">{ev.emoji}</div>
+                  <span className="gm3d-name">{ev.title}</span>
+                </div>
+              </div>
+              <div className="gm3d-stem" />
+            </div>
+          </Marker>
         );
       })}
     </Map>

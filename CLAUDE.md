@@ -79,6 +79,7 @@ Deux fichiers d'env :
 - `LessonStep` — étape d'une leçon, ordonnée par `order`. Champs : `type: StepType` (enum), `data: Json` (shape selon le type). Cascade delete depuis `Lesson`
 - `UserLessonProgress` — progression utilisateur sur une leçon. Clé `@@unique([userId, lessonId])`. Champs : `score`, `validated` (bool), `completedAt?`, `firstValidatedAt?`. Ne repasse pas `validated` à `false` si une nouvelle tentative échoue
 - `SnsConversation` — conversation SNS/texto simulée pour un POI. Champs : `id` stable (ex: `"sns-konbini-shinjuku"`), `poiId`, `title`, `context` (affiché à l'intro), `xpReward`, `contact` (Json — `{ name, handle, avatar, image?, relation }`), `steps` (Json — `SnsStep[]` avec choix embarqués), `isActive`. Types TypeScript dans `src/lib/sns-conversations.ts` (fichier types uniquement, plus de données statiques). Géré via admin `/admin/sns`, lu par le jeu via `GET /api/sns/poi/[poiId]`.
+- `Event` — évènement lié à un POI dédié. Enum `EventType` : `SEASONAL` (plage mensuelle récurrente), `DAILY_TEMPLATE` (template pour génération quotidienne), `DAILY_INSTANCE` (instance générée, dure 24h). Champs saisonniers : `startMonth`, `startDay`, `endMonth`, `endDay` (null pour daily). Champs daily : `startAt`, `endAt` (null pour seasonal). Champs communs : `poiId` (POI dédié décalé de ~80-100m par rapport aux POIs existants pour éviter le chevauchement), `emoji`, `color`, `xpReward`, `questId?`, `lessonId?`, `isActive`, `templateId?` (DAILY_INSTANCE → DAILY_TEMPLATE.id). Types partagés dans `src/lib/events.ts` (`ActiveEvent`, `EventsResponse`, `formatExpiry`).
 
 ### Seed
 
@@ -93,6 +94,7 @@ Deux fichiers d'env :
 - **Leçons** : `findUnique` + `create` pour la `Lesson`, puis `deleteMany` + `createMany` pour les `LessonStep` (idempotent, les étapes sont recréées à chaque seed pour rester à jour). **28 leçons** au total — tous les POIs Tokyo (27) + konbini-shinjuku. Chaque leçon a 7 steps : 2 INTRO → PRONUNCIATION → TRUE_FALSE ou CHOOSE_ANSWER → CULTURE_NOTE → MATCH_PAIRS → CHOOSE_ANSWER.
 - **CityRecord + POIRecord** : upsert de toutes les villes et POIs depuis `cities.ts` à la fin du seed. 10 villes (tokyo, osaka, kyoto + 7 coming-soon) et 44 POIs Tokyo. Idempotent via `upsert({ where: { id }, create, update })`. Ces enregistrements servent de source de vérité pour le jeu via `getCityFromDB()`.
 - **SnsConversation** : upsert des 7 conversations SNS à la fin du seed (`upsert({ where: { id }, update, create })`). IDs stables : `sns-konbini-shinjuku`, `sns-familymart-shibuya`, `sns-donquijote-shibuya`, `sns-starbucks-shibuya`, `sns-jr-shinjuku`, `sns-at-home-cafe-akihabara`, `sns-tokyo-skytree`.
+- **Events** : 5 events seedés (2 saisonniers + 3 daily templates), chacun avec un POI dédié (upsert coordonnées décalées ~80-100m), 1 quête 2 tâches et 1 leçon 4 steps. IDs : `event-sakura-ueno`, `event-halloween-shibuya`, `event-daily-lost-tourist`, `event-daily-lost-wallet`, `event-daily-photo`. Helpers internes : `upsertEventQuest(id, poiId, title, xpReward, tasks, vocab)` et `upsertEventLesson(poiId, title, steps)` → `findFirst` + `create` + `deleteMany/createMany` pour les steps.
 
 ### Navigation et routes
 
@@ -147,6 +149,7 @@ Deux fichiers d'env :
 | `/api/session/complete` | POST | Sauvegarde `SessionRecord` + upsert `UserVocabProgress` pour **tous** les mots du vocab de la quête (pas uniquement les mots prononcés). Mots pratiqués : `encounters+1, correctCount+1`. Mots non pratiqués existants : inchangés. Nouveaux mots non pratiqués : `encounters:1, correctCount:0`. Retourne `{ vocabWithMastery }` — chaque mot enrichi de `mastery`, `encounters`, `practiced` |
 | `/api/lessons/poi/[poiId]` | GET | Récupère la leçon d'un POI avec ses steps ordonnés et la progression de l'utilisateur connecté (`userProgress` ou `null`) |
 | `/api/lessons/[lessonId]/complete` | POST | Reçoit `{ score }`, calcule `validated = score >= 80`, upsert `UserLessonProgress` (ne repasse pas `validated` à `false`), **puis upsert `UserVocabProgress`** pour chaque step INTRO de la leçon (`update: {}` préserve la progression existante, `create` avec `encounters:1, correctCount:0`), retourne `{ validated, score }` |
+| `/api/daily-goals` | GET | Public. Retourne `{ date, goals: GoalResult[] }`. Si non authentifié : goals avec `done: false`. Si auth : vérifie depuis minuit UTC — `UserQuestProgress.completedAt`, `UserLessonProgress.completedAt+validated`, `UserVocabProgress.lastSeenAt`, `UserSnsProgress.completedAt`, `SessionRecord.createdAt`. 3 objectifs déterministes depuis `src/lib/daily-goals.ts` (même goals pour tous les utilisateurs le même jour). |
 | `/api/revision/vocab` | GET | Retourne `{ words: RevisionWord[], stats: { toWork, toReview, acquired } }` — tous les mots de l'utilisateur (`encounters > 0`), triés par `lastSeenAt desc`, enrichis du niveau `mastery`. `toWork` = never/new/learning, `toReview` = almost/acquired, `acquired` = perfect |
 | `/api/revision/result` | POST | Reçoit `{ results: [{ wordJp, correct }] }`, incrémente `encounters` + `correctCount`/`errorCount` + `lastSeenAt` via la clé `userId_wordJp` |
 | `/api/content/cities` | GET | Public (pas d'auth). Retourne `Record<string, CityData>` depuis la DB via `getAllCitiesFromDB()`. `revalidate = 0` (toujours frais). Utilisé par `layout.tsx` et `JapanMap.tsx` pour afficher les villes admin |
@@ -164,6 +167,9 @@ Deux fichiers d'env :
 | `/api/admin/lessons/[id]/steps/[stepId]` | PUT/DELETE | Mise à jour / suppression step |
 | `/api/admin/sns` | GET/POST | CRUD conversations SNS (SnsConversation) |
 | `/api/admin/sns/[id]` | GET/PUT/DELETE | Détail, mise à jour, suppression conversation SNS |
+| `/api/events` | GET | Public. Retourne `{ seasonal: ActiveEvent[], daily: ActiveEvent[] }`. Génère lazily 1-2 instances daily depuis les DAILY_TEMPLATE si `endAt > now` count < 2 (upsert idempotent clé `daily-{templateId}-{YYYY-MM-DD}`). Filtre les SEASONAL par date courante (comparaison mois×100+jour). Enrichit chaque event avec `poiName` (depuis `getAllCitiesFromDB()`), `expiresAt` ISO. |
+| `/api/admin/events` | GET/POST | Admin. Liste tous les events (orderBy type+createdAt) / crée un event. |
+| `/api/admin/events/[id]` | GET/PUT/DELETE | Admin. Détail, mise à jour partielle, suppression event. |
 | `/api/admin/users` | GET | Liste des utilisateurs (admin) |
 | `/api/admin/users/[id]` | GET/PATCH | Détail utilisateur, modification `isAdmin` |
 
@@ -215,7 +221,7 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 **État étendu (448px)** :
 - Header : `<img src="/logo_sekai_talk.png">` (h-[120px]) + bouton `ChevronLeft` (collapse + `setSidebarPanel(null)`) — même logo que HomeClient
 - **Mon Objectif** : `<MonObjectif />` en haut juste après le header (avant les objectifs du jour)
-- Objectifs du jour : 3 tâches avec `CheckCircle2`/`Circle`
+- Objectifs du jour : 3 objectifs dynamiques via hook `useDailyGoals()` (`src/hooks/useDailyGoals.ts`). Icône emoji + label + compteur `X/Y` pour les objectifs multi-étapes. Fond `bg-indigo-50` quand terminé. Compteur `doneCount / 3` en haut.
 - Navigation : `SIDEBAR_BUTTONS` = [Guidage, Lieux, Contacts, Évènements, Révision] — **tous enabled: true**. Icônes SVG colorées inline (pas de lucide-react). Type `{ panel, label, enabled, color, svg: React.ReactNode }`. Section `flex-1`.
 - Paramètres : footer fonctionnel → `router.push("/home/settings")`, hover avec `ChevronRight`
 
@@ -235,7 +241,10 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 - Fetche `GET /api/contacts` une seule fois. Carte par personnage avec niveau d'amitié (0=Étranger, 1-2=Connaissance, 3-5=Ami, 6+=Proche).
 - Bouton "📍 RDV" → toggle `rdvOpenId` → liste des lieux (bouton "Inviter →" désactivé).
 
-**Panneau Évènements** (`sidebarPanel === "evenements"`, 380px) — placeholder vide.
+**Panneau Évènements** (`sidebarPanel === "evenements"`, 380px) — peuplé depuis `GET /api/events` (fetch au mount de CityClient, résultat stocké dans `events` local + context `activeEvents`).
+- Deux sections : "Saisonniers" et "Aujourd'hui" (daily instances). Composant `EventCard` (défini dans CityClient avant le `export default`).
+- `EventCard` : badge emoji coloré, description tronquée 2 lignes, countdown `⏱ encore Xh Ymin` (daily) ou `📅 jusqu'au DD mois` (seasonal) via `formatExpiry()`, badge XP, POI name. `tick` prop (`eventsTick` state incrémenté chaque minute) force le re-render du countdown.
+- Clic carte → `handleEventClick(ev)` : ferme le panneau (`setSidebarPanel(null)`) + `handlePoiClick(ev.poiId)` → fly map + ouvre drawer du POI event.
 
 **Panneau Thèmes** (`sidebarPanel === "guidage"`, 380px) — premier item de navigation (libellé "Thèmes"). Affiche le système de guidage contextuel (`src/lib/guidage.ts`).
 - Sélecteur de niveau en haut du panneau : **Tous | N5 | N4 | N3**. State `themesLevel` dans CityClient.
@@ -254,7 +263,7 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 - Hero image ou gradient par type. Titre, description, leçon (si disponible) puis quêtes avec barre de progression.
 - **Section Leçon** : fetche `GET /api/lessons/poi/${poiId}` en parallèle avec les quêtes. État `lessonData` : `null` (chargement) | `"none"` (aucune leçon) | `{ id, title, validated, score }`. Affiche un spinner puis une carte avec GraduationCap, statut ("Non commencée" / score précédent / "Validée ✓") et bouton "🎓 Commencer la leçon" / "🔄 Réessayer" / "🔄 Refaire la leçon". Navigue vers `/home/${citySlug}/${poi.id}/lesson`.
 - Bouton "▶ Faire la quête" / "🔄 Refaire" → ouvre `questPreview` (état local).
-- **Section SNS** : si `snsConversation` (state, fetchée via `GET /api/sns/poi/[poiId]` à la sélection du POI) est non-null, affiche une carte verte "Discussion SNS" avec l'avatar/nom du contact, le contexte et les XP. Clic → `setShowSns(true)` → `SnsOverlay`. State `snsConversation` réinitialisée à `null` à chaque changement de POI.
+- **Section SNS** : si `snsConversation` (state, fetchée via `GET /api/sns/poi/[poiId]` à la sélection du POI) est non-null, affiche une carte verte "Discussion SNS" avec l'avatar/nom du contact, le contexte et les XP. Badge **"Beta"** amber affiché à côté du label "Discussion SNS" (`text-[9px] bg-amber-400/20 text-amber-300 border border-amber-400/30 rounded-full`). Clic → `setShowSns(true)` → `SnsOverlay`. State `snsConversation` réinitialisée à `null` à chaque changement de POI.
 - Pas de bouton "Conversation libre" — toute navigation vers un POI requiert un `questId`.
 
 **Modale prévisualisation quête** (`questPreview` state)
@@ -321,7 +330,7 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 - `overflow-y: auto` pour les petits écrans
 - Sections :
   1. **Header** — `<img src="/logo_sekai_talk.png">` `h-[120px]`, `border-b border-gray-200`
-  2. **Objectifs du jour** (`id="tut-home-daily"`) — 3 tâches avec `CheckCircle2` / `Circle` (statiques)
+  2. **Objectifs du jour** (`id="tut-home-daily"`) — 3 objectifs dynamiques via `useDailyGoals()`. Icône emoji + label + compteur `X/Y` pour objectifs multi-étapes. Fond indigo quand terminé.
   3. **Navigation** (`id="tut-home-nav"`) — icônes SVG colorées inline. **Lieux** enabled → ouvre panneau flottant `showLieux`. Contacts/Évènements disabled. **Révision** enabled → ouvre `RevisionOverlay`. Section `flex-1`.
   4. **Mon Objectif** (`id="tut-home-objectif"`) — `<MonObjectif />`
   5. **Paramètres** (`id="tut-home-settings"`) — fonctionnel → `router.push("/home/settings")`, hover `ChevronRight`
@@ -516,6 +525,7 @@ type KanaMasteryStore = Record<string, KanaMasteryEntry>;
 | `poiMoveRef` | `MutableRefObject<(id, lat, lng) => void>` | Handler déplacement POI enregistré par CityClient → appelle PUT API |
 | `poiPositionOverrides` | `Record<string, {lat, lng}>` | Coordonnées overridées post-drag, prioritaires sur `city.pois` |
 | `updatePoiPosition` | `(id, lat, lng) => void` | Met à jour `poiPositionOverrides` immédiatement (avant réponse API) |
+| `activeEvents` / `setActiveEvents` | `ActiveEvent[]` | Events actifs (seasonal + daily instances) partagés entre CityClient et GameMap3D. Peuplé au mount de CityClient via `GET /api/events`. |
 
 ### Carte 3D Tokyo (`GameMap3D`)
 
@@ -531,6 +541,7 @@ type KanaMasteryStore = Record<string, KanaMasteryEntry>;
 - **Pins** : classe CSS `gm3d-poi` avec `--pc` (couleur par type). Logo POI via `POI_LOGOS[poi.id]` → `<img>` sinon emoji. Hover expand via `max-width` transition. En mode placement : classe `gm3d-poi--edit` (bordure orange pointillée, curseur `grab`)
 - **Props** : `editMode?: boolean`, `onPoiMove?: (id, lat, lng) => void`. Coordonnées des markers : `poiPositionOverrides[poi.id] ?? poi.lat/lng` (override context prioritaire sur les données statiques)
 - **`pinnedPoiId`** : state local dans `GameMap3D` — persiste l'état "ouvert" du badge après un clic. Clic POI → `setPinnedPoiId(poi.id)` (badge reste ouvert). Clic fond → `setPinnedPoiId(null)`. Drag carte → `onDragStart` → `setPinnedPoiId(null)`. Classe CSS `gm3d-poi--pinned` — mêmes styles que `:hover`. Note : `onMoveStart` NON utilisé (déclenche aussi sur `flyTo` programmatique) → `onDragStart` uniquement.
+- **Event markers** : lit `activeEvents` depuis `useMapCtx()`. Calcule `visibleEvents = activeEvents.filter(ev => new Date(ev.expiresAt) > now)` (tick toutes les 60s → disparition automatique). Les POI IDs des events visibles sont dans `eventPoiIds` → exclus du rendu normal des POIs. Rendu séparé avec classe `gm3d-poi--event` : badge fond coloré (`var(--pc)`), texte blanc, grand emoji 34px, anneau beacon pulsant (`gm3d-event-pulse` — double ring via `::before`, `@keyframes eventPulse` 2.6s décalé 1.3s). Clic → `onPoiClick(ev.poiId)` (ouvre drawer POI normal du POI event).
 
 ### Mode placement admin (`editMode`)
 
@@ -764,6 +775,7 @@ Accessible uniquement aux utilisateurs avec `User.isAdmin = true`. Protégée pa
 /admin/quests             → Liste des quêtes
 /admin/sns                → Liste des conversations SNS (SnsConversation)
 /admin/sns/[id]           → Éditeur conversation SNS (métadonnées + contact JSON + steps JSON)
+/admin/events             → Liste des évènements (seasonal + daily templates + instances). Filtres par type, toggle isActive, suppression. Badges Quête/Leçon.
 /admin/characters         → Liste des personnages
 /admin/users              → Liste des utilisateurs
 /admin/export-import      → Export JSON + Import JSON
@@ -786,6 +798,62 @@ Accessible uniquement aux utilisateurs avec `User.isAdmin = true`. Protégée pa
 4. Le JSON contient : cityRecords, poiRecords, scenes, characters, appearances, quests+tasks+choices, lessons+steps
 
 **Upload assets** : `POST /api/admin/upload` multipart → `public/uploads/{logos|backgrounds|sounds}/`. Types acceptés : images (logo POI, background scène), audio (entrée, ambiance).
+
+### Système d'évènements (`Event`)
+
+`src/lib/events.ts` — types partagés client/serveur.
+
+**Types** :
+- `ActiveEvent` — `{ id, type, title, description, poiId, poiName, emoji, color, xpReward, questId, lessonId, imageUrl, expiresAt }`
+- `EventsResponse` — `{ seasonal: ActiveEvent[], daily: ActiveEvent[] }`
+- `formatExpiry(expiresAt, type)` — retourne `"encore Xh Ymin"` (daily) ou `"jusqu'au DD mois"` (seasonal)
+
+**Deux types d'events** :
+- `SEASONAL` : plage mensuelle récurrente chaque année (`startMonth/Day` → `endMonth/Day`). Filtre actif côté serveur par date courante (comparaison `month*100+day`). `expiresAt` calculé au moment de la réponse API = fin de l'occurrence de l'année courante.
+- `DAILY_TEMPLATE` : pool de scénarios quotidiens gérés par l'admin (ne s'affichent jamais directement).
+- `DAILY_INSTANCE` : générée lazily dans `GET /api/events` si moins de 2 instances actives existent pour la journée. Sélection aléatoire depuis les templates, `endAt = now + 24h`. Clé idempotente : `daily-{templateId}-{YYYY-MM-DD}`.
+
+**POIs event** : chaque event pointe vers un `POIRecord` dédié (ID `event-*`), décalé de ~80-100m par rapport aux POIs existants voisins pour éviter le chevauchement visuel sur la carte.
+
+**Carte** (`GameMap3D`) :
+- `visibleEvents` = events non expirés (`expiresAt > now`, réévalué chaque minute).
+- Les event POI IDs sont exclus du rendu normal (pas de double marker).
+- Markers event : classe `gm3d-poi--event`, badge fond `var(--pc)`, texte blanc, emoji 34px, anneau beacon pulsant (`gm3d-event-pulse` + `::before` décalé 1.3s → `@keyframes eventPulse`).
+- À expiration, le marker disparaît automatiquement sans rechargement.
+
+**Évènements seedés** (2 saisonniers + 3 daily templates) :
+| ID | Type | Période |
+|---|---|---|
+| `event-sakura-ueno` | SEASONAL | 15 mar → 10 mai |
+| `event-halloween-shibuya` | SEASONAL | 1 oct → 5 nov |
+| `event-daily-lost-tourist` | DAILY_TEMPLATE | — |
+| `event-daily-lost-wallet` | DAILY_TEMPLATE | — |
+| `event-daily-photo` | DAILY_TEMPLATE | — |
+
+### Système d'objectifs du jour (`src/lib/daily-goals.ts`)
+
+Sélection déterministe : `dayIndex = floor((Date.now() - 2026-01-01 UTC) / 86400000) % 14` → même 3 objectifs pour tous les utilisateurs le même jour (pas de seed DB, purement calculé).
+
+**10 types d'objectifs** (`GoalType`) :
+
+| Type | Label | Cible | Source de vérification |
+|---|---|---|---|
+| `complete_quest` | Complète une quête | 1 | `UserQuestProgress.completedAt >= todayUTC` |
+| `complete_2_quests` | Complète 2 quêtes | 2 | idem, count >= 2 |
+| `complete_lesson` | Valide une leçon (≥80%) | 1 | `UserLessonProgress.completedAt + validated` |
+| `complete_2_lessons` | Valide 2 leçons | 2 | idem, count >= 2 |
+| `finish_session` | Termine une conversation | 1 | `SessionRecord.createdAt >= todayUTC` |
+| `complete_3_sessions` | Lance 3 conversations | 3 | idem, count >= 3 |
+| `complete_sns` | Complète une discussion SNS | 1 | `UserSnsProgress.completedAt >= todayUTC` |
+| `practice_vocab_5` | Révise 5 mots | 5 | `UserVocabProgress.lastSeenAt >= todayUTC`, count |
+| `practice_vocab_10` | Révise 10 mots | 10 | idem, count >= 10 |
+| `quest_and_lesson` | Quête + leçon | 2 | min(quests,1) + min(lessons,1) |
+
+**14 sets rotatifs** — cycle de 2 semaines, ex : Jour 0 = [quête, leçon, 5 mots], Jour 1 = [session, SNS, 5 mots], Jour 2 = [2 quêtes, 10 mots, leçon]…
+
+**`GoalResult`** : `{ type, label, icon, done, progress, target }` — `progress` clampé à `target`.
+
+**Hook `useDailyGoals`** (`src/hooks/useDailyGoals.ts`) — fetch `GET /api/daily-goals` au mount, expose `{ goals, loading, doneCount }`. Utilisé dans `HomeClient` et `CityClient` (remplace l'ancien tableau statique `DAILY_GOALS`).
 
 ### Scripts de maintenance DB (`scripts/`)
 

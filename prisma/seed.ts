@@ -2257,6 +2257,340 @@ async function main() {
   });
   console.log("Tutorial vocab updated.");
 
+  // ── Events — POIs, quêtes, leçons et records ──────────────────────────────
+
+  // Event POIs (tous cityId "tokyo")
+  const EVENT_POIS = [
+    // Décalés ~80-100m par rapport aux POIs existants pour éviter le chevauchement
+    { id: "event-sakura-ueno",          name: "Hanami — Parc Ueno",              type: "site",      lat: 35.7163, lng: 139.7718 }, // nord-ouest du museum
+    { id: "event-halloween-shibuya",    name: "Halloween Shibuya",               type: "loisir",    lat: 35.6617, lng: 139.6982 }, // nord du cluster Donki/Loft
+    { id: "event-daily-lost-tourist",   name: "Touriste égaré",                  type: "transport", lat: 35.6907, lng: 139.7019 }, // nord-est de JR Shinjuku
+    { id: "event-daily-lost-wallet",    name: "Portefeuille perdu",              type: "konbini",   lat: 35.6612, lng: 139.6969 }, // nord-ouest de FamilyMart Shibuya
+    { id: "event-daily-photo",          name: "Photo au Sensō-ji",               type: "site",      lat: 35.7158, lng: 139.7980 }, // nord-est du Sensō-ji
+  ] as const;
+
+  for (const ep of EVENT_POIS) {
+    await prisma.pOIRecord.upsert({
+      where: { id: ep.id },
+      update: { name: ep.name, type: ep.type, lat: ep.lat, lng: ep.lng },
+      create: { id: ep.id, cityId: "tokyo", name: ep.name, type: ep.type, lat: ep.lat, lng: ep.lng, isActive: true },
+    });
+  }
+  console.log("Event POIs upserted.");
+
+  // ── Helper — upsert quest + steps ────────────────────────────────────────
+
+  type TaskDef = { order: number; instruction: string; aiContext: string; choices?: { text: string; isCorrect: boolean; order: number }[] };
+
+  async function upsertEventQuest(id: string, poiId: string, title: string, xpReward: number, tasks: TaskDef[], vocab: VocabEntry2[]) {
+    const existing = await prisma.quest.findUnique({ where: { id } });
+    if (!existing) {
+      await prisma.quest.create({
+        data: {
+          id, poiId, title, xpReward, isActive: true, order: 0,
+          tasks: {
+            create: tasks.map(t => ({
+              order: t.order, instruction: t.instruction, aiContext: t.aiContext,
+              choices: t.choices ? { create: t.choices } : undefined,
+            })),
+          },
+        },
+      });
+    }
+    await prisma.quest.update({ where: { id }, data: { vocab } });
+  }
+
+  type StepDef = { order: number; type: string; data: object };
+
+  async function upsertEventLesson(poiId: string, title: string, steps: StepDef[]) {
+    let lesson = await prisma.lesson.findFirst({ where: { poiId } });
+    if (!lesson) {
+      lesson = await prisma.lesson.create({ data: { poiId, title } });
+    } else {
+      await prisma.lesson.update({ where: { id: lesson.id }, data: { title } });
+    }
+    await prisma.lessonStep.deleteMany({ where: { lessonId: lesson.id } });
+    await prisma.lessonStep.createMany({
+      data: steps.map(s => ({ lessonId: lesson!.id, order: s.order, type: s.type as any, data: s.data })),
+    });
+    return lesson.id;
+  }
+
+  // ── Sakura — Ueno ─────────────────────────────────────────────────────────
+
+  await upsertEventQuest(
+    "quest-event-sakura", "event-sakura-ueno", "Hanami sous les cerisiers", 80,
+    [
+      { order: 1, instruction: "Salue les participants du hanami en japonais",
+        aiContext: "[CONTEXTE] L'utilisateur participe à un hanami au parc Ueno. Il doit saluer poliment les personnes déjà installées (こんにちは, よろしくお願いします).\n[CRITÈRE DE VALIDATION] L'utilisateur a dit bonjour en japonais." },
+      { order: 2, instruction: "Complimente les cerisiers en bloom",
+        aiContext: "[CONTEXTE] L'utilisateur admire les sakura. Il doit dire que les fleurs sont belles en japonais (きれいですね, 素晴らしいですね).\n[CRITÈRE DE VALIDATION] L'utilisateur a dit que les fleurs sont belles.",
+        choices: [
+          { text: "桜がきれいですね！",       isCorrect: true,  order: 1 },
+          { text: "桜が怖いですね。",          isCorrect: false, order: 2 },
+          { text: "桜を食べましょう。",        isCorrect: false, order: 3 },
+          { text: "桜はつまらないですね。",    isCorrect: false, order: 4 },
+        ] },
+    ],
+    [
+      { jp: "花見",   kana: "はなみ",   romaji: "hanami",   fr: "fête des fleurs / pique-nique sous les cerisiers", jlpt: 4 },
+      { jp: "桜",     kana: "さくら",   romaji: "sakura",   fr: "cerisier en fleurs",                               jlpt: 4 },
+      { jp: "春",     kana: "はる",     romaji: "haru",     fr: "printemps",                                        jlpt: 5 },
+      { jp: "きれい", kana: "きれい",   romaji: "kirei",    fr: "beau / joli",                                      jlpt: 5 },
+    ]
+  );
+
+  const sakuraLessonId = await upsertEventLesson("event-sakura-ueno", "Hanami — Les mots du printemps", [
+    { order: 1, type: "INTRO",         data: { word: "花見", kana: "はなみ", romaji: "hanami", translation: "Pique-nique sous les cerisiers", example: "花見をしましょう！— Faisons un hanami !" } },
+    { order: 2, type: "INTRO",         data: { word: "桜",   kana: "さくら", romaji: "sakura", translation: "Cerisier en fleurs",             example: "桜がきれいですね — Les cerisiers sont beaux, n'est-ce pas ?" } },
+    { order: 3, type: "CHOOSE_ANSWER", data: { question: "Comment dit-on 'les fleurs sont belles' ?", choices: [
+      { text: "花がきれいですね",  subtext: "hana ga kirei desu ne",  isCorrect: true  },
+      { text: "花がこわいですね",  subtext: "hana ga kowai desu ne",  isCorrect: false },
+      { text: "花がまずいですね",  subtext: "hana ga mazui desu ne",  isCorrect: false },
+      { text: "花がありますね",    subtext: "hana ga arimasu ne",     isCorrect: false },
+    ], explanation: "きれい (kirei) = beau / joli. こわい = effrayant, まずい = mauvais goût." } },
+    { order: 4, type: "MATCH_PAIRS",   data: { pairs: [
+      { left: "花見",   right: "Pique-nique sakura" },
+      { left: "桜",     right: "Cerisier"           },
+      { left: "春",     right: "Printemps"          },
+      { left: "きれい", right: "Beau / joli"        },
+    ]} },
+  ]);
+
+  // ── Halloween — Shibuya ───────────────────────────────────────────────────
+
+  await upsertEventQuest(
+    "quest-event-halloween", "event-halloween-shibuya", "Halloween au carrefour de Shibuya", 80,
+    [
+      { order: 1, instruction: "Complimente le costume d'un passant en japonais",
+        aiContext: "[CONTEXTE] Le carrefour de Shibuya est envahi de costumes. L'utilisateur doit complimenter un costume (すごい、かっこいい、かわいい).\n[CRITÈRE DE VALIDATION] L'utilisateur a dit que le costume est cool / beau en japonais." },
+      { order: 2, instruction: "Dis 'trick or treat' en japonais de manière amusante",
+        aiContext: "[CONTEXTE] Halloween à Shibuya, scène humoristique.",
+        choices: [
+          { text: "お菓子くれなきゃ、いたずらしちゃうぞ！",  isCorrect: true,  order: 1 },
+          { text: "お菓子を売ってください。",                  isCorrect: false, order: 2 },
+          { text: "仮装が怖くないですね。",                    isCorrect: false, order: 3 },
+          { text: "ハロウィンは嫌いです。",                    isCorrect: false, order: 4 },
+        ] },
+    ],
+    [
+      { jp: "仮装",   kana: "かそう",   romaji: "kasō",    fr: "déguisement / costume",     jlpt: 3 },
+      { jp: "お菓子", kana: "おかし",   romaji: "okashi",  fr: "bonbon / confiserie",       jlpt: 4 },
+      { jp: "怖い",   kana: "こわい",   romaji: "kowai",   fr: "effrayant / qui fait peur", jlpt: 4 },
+      { jp: "仮面",   kana: "かめん",   romaji: "kamen",   fr: "masque",                    jlpt: 3 },
+    ]
+  );
+
+  const halloweenLessonId = await upsertEventLesson("event-halloween-shibuya", "Halloween — Vocabulaire festif", [
+    { order: 1, type: "INTRO",         data: { word: "仮装", kana: "かそう",   romaji: "kasō",   translation: "Déguisement / costume", example: "仮装パーティーに行きます — Je vais à une soirée costumée" } },
+    { order: 2, type: "INTRO",         data: { word: "お菓子", kana: "おかし", romaji: "okashi", translation: "Bonbons / confiseries", example: "お菓子をください — Donnez-moi des bonbons" } },
+    { order: 3, type: "CHOOSE_ANSWER", data: { question: "Comment dire 'le costume est effrayant' ?", choices: [
+      { text: "仮装が怖いですね",    subtext: "kasō ga kowai desu ne",   isCorrect: true  },
+      { text: "仮装がきれいですね",  subtext: "kasō ga kirei desu ne",   isCorrect: false },
+      { text: "仮装がおいしいですね",subtext: "kasō ga oishii desu ne",  isCorrect: false },
+      { text: "仮装が早いですね",    subtext: "kasō ga hayai desu ne",   isCorrect: false },
+    ], explanation: "怖い (kowai) = effrayant. きれい = beau, おいしい = délicieux, 早い = rapide." } },
+    { order: 4, type: "MATCH_PAIRS",   data: { pairs: [
+      { left: "仮装",   right: "Déguisement"   },
+      { left: "お菓子", right: "Bonbons"        },
+      { left: "怖い",   right: "Effrayant"      },
+      { left: "仮面",   right: "Masque"         },
+    ]} },
+  ]);
+
+  // ── Daily template — Touriste égaré ───────────────────────────────────────
+
+  await upsertEventQuest(
+    "quest-event-lost-tourist", "event-daily-lost-tourist", "Aider un touriste à trouver sa route", 40,
+    [
+      { order: 1, instruction: "Demande au touriste où il veut aller en japonais",
+        aiContext: "[CONTEXTE] Un touriste a l'air perdu devant JR Shinjuku. L'utilisateur doit lui demander où il veut aller (どこに行きたいですか？).\n[CRITÈRE DE VALIDATION] L'utilisateur a posé une question sur la destination." },
+      { order: 2, instruction: "Indique-lui la direction de la gare JR",
+        aiContext: "[CONTEXTE] Le touriste cherche la sortie de la gare.",
+        choices: [
+          { text: "まっすぐ行って、右に曲がってください。",   isCorrect: true,  order: 1 },
+          { text: "飛行機に乗ってください。",                 isCorrect: false, order: 2 },
+          { text: "バスで二時間かかります。",                 isCorrect: false, order: 3 },
+          { text: "そこはありません。",                       isCorrect: false, order: 4 },
+        ] },
+    ],
+    [
+      { jp: "どこ",     kana: "どこ",       romaji: "doko",      fr: "où",                   jlpt: 5 },
+      { jp: "右",       kana: "みぎ",       romaji: "migi",      fr: "droite",               jlpt: 5 },
+      { jp: "左",       kana: "ひだり",     romaji: "hidari",    fr: "gauche",               jlpt: 5 },
+      { jp: "まっすぐ", kana: "まっすぐ",   romaji: "massugu",   fr: "tout droit",           jlpt: 5 },
+    ]
+  );
+
+  const lostTouristLessonId = await upsertEventLesson("event-daily-lost-tourist", "Indiquer le chemin", [
+    { order: 1, type: "INTRO",         data: { word: "右",   kana: "みぎ",     romaji: "migi",    translation: "Droite",      example: "右に曲がってください — Tournez à droite" } },
+    { order: 2, type: "INTRO",         data: { word: "左",   kana: "ひだり",   romaji: "hidari",  translation: "Gauche",      example: "左に曲がってください — Tournez à gauche" } },
+    { order: 3, type: "CHOOSE_ANSWER", data: { question: "Comment demander 'Où est la gare ?' ?", choices: [
+      { text: "駅はどこですか？",      subtext: "eki wa doko desu ka?",   isCorrect: true  },
+      { text: "駅が好きですか？",      subtext: "eki ga suki desu ka?",   isCorrect: false },
+      { text: "駅を食べますか？",      subtext: "eki wo tabemasu ka?",    isCorrect: false },
+      { text: "駅はいくらですか？",    subtext: "eki wa ikura desu ka?",  isCorrect: false },
+    ], explanation: "どこ (doko) = où. La structure est 「〜はどこですか」pour demander l'emplacement." } },
+    { order: 4, type: "MATCH_PAIRS",   data: { pairs: [
+      { left: "右",       right: "Droite"     },
+      { left: "左",       right: "Gauche"     },
+      { left: "まっすぐ", right: "Tout droit" },
+      { left: "どこ",     right: "Où"         },
+    ]} },
+  ]);
+
+  // ── Daily template — Portefeuille perdu ───────────────────────────────────
+
+  await upsertEventQuest(
+    "quest-event-lost-wallet", "event-daily-lost-wallet", "Aider un touriste qui a perdu son portefeuille", 40,
+    [
+      { order: 1, instruction: "Rassure le touriste et demande-lui où il l'a perdu",
+        aiContext: "[CONTEXTE] Un touriste paniqué a perdu son portefeuille. L'utilisateur doit le calmer et demander quand/où il l'a perdu (いつ？どこで？お財布をなくしましたか？).\n[CRITÈRE DE VALIDATION] L'utilisateur a posé une question sur la perte ou le lieu." },
+      { order: 2, instruction: "Dis-lui où aller pour signaler la perte",
+        aiContext: "[CONTEXTE] Il faut guider vers le koban (poste de police).",
+        choices: [
+          { text: "近くの交番に行ってください。",    isCorrect: true,  order: 1 },
+          { text: "コンビニで買えますよ。",          isCorrect: false, order: 2 },
+          { text: "諦めてください。",                isCorrect: false, order: 3 },
+          { text: "タクシーで帰りましょう。",        isCorrect: false, order: 4 },
+        ] },
+    ],
+    [
+      { jp: "落とし物", kana: "おとしもの", romaji: "otoshimono", fr: "objet perdu / trouvé", jlpt: 3 },
+      { jp: "交番",     kana: "こうばん",   romaji: "kōban",      fr: "poste de police de quartier", jlpt: 3 },
+      { jp: "お財布",   kana: "おさいふ",   romaji: "osaifu",     fr: "portefeuille",          jlpt: 4 },
+      { jp: "なくした", kana: "なくした",   romaji: "nakushita",  fr: "j'ai perdu (passé)",    jlpt: 4 },
+    ]
+  );
+
+  const lostWalletLessonId = await upsertEventLesson("event-daily-lost-wallet", "Signaler un objet perdu", [
+    { order: 1, type: "INTRO",         data: { word: "落とし物", kana: "おとしもの", romaji: "otoshimono", translation: "Objet perdu / trouvé", example: "落とし物をしました — J'ai perdu quelque chose" } },
+    { order: 2, type: "INTRO",         data: { word: "交番",     kana: "こうばん",   romaji: "kōban",      translation: "Poste de police",     example: "交番はどこですか — Où est le poste de police ?" } },
+    { order: 3, type: "CHOOSE_ANSWER", data: { question: "Où signale-t-on un objet perdu au Japon ?", choices: [
+      { text: "交番",         subtext: "kōban — poste de police", isCorrect: true  },
+      { text: "コンビニ",     subtext: "konbini",                  isCorrect: false },
+      { text: "ホテル",       subtext: "hôtel",                    isCorrect: false },
+      { text: "レストラン",   subtext: "restaurant",               isCorrect: false },
+    ], explanation: "La 交番 (kōban, poste de police de quartier) est l'endroit où déclarer un objet perdu ou trouvé." } },
+    { order: 4, type: "MATCH_PAIRS",   data: { pairs: [
+      { left: "落とし物", right: "Objet perdu"       },
+      { left: "交番",     right: "Poste de police"   },
+      { left: "お財布",   right: "Portefeuille"      },
+      { left: "なくした", right: "J'ai perdu"        },
+    ]} },
+  ]);
+
+  // ── Daily template — Photo au Sensō-ji ────────────────────────────────────
+
+  await upsertEventQuest(
+    "quest-event-photo", "event-daily-photo", "Prendre une photo pour des touristes japonais", 40,
+    [
+      { order: 1, instruction: "Accepte de prendre la photo des touristes en japonais",
+        aiContext: "[CONTEXTE] Des touristes japonais t'approchent et te demandent de prendre une photo d'eux devant le Sensō-ji. L'utilisateur doit accepter poliment (もちろんです！はい、どうぞ！).\n[CRITÈRE DE VALIDATION] L'utilisateur a accepté en japonais." },
+      { order: 2, instruction: "Demande s'ils sont satisfaits de la photo",
+        aiContext: "[CONTEXTE] La photo a été prise.",
+        choices: [
+          { text: "いい写真が撮れましたか？",         isCorrect: true,  order: 1 },
+          { text: "もう一度撮りましょうか？いいですか？", isCorrect: true,  order: 2 },
+          { text: "カメラを持っていません。",          isCorrect: false, order: 3 },
+          { text: "写真は禁止です。",                 isCorrect: false, order: 4 },
+        ] },
+    ],
+    [
+      { jp: "写真",   kana: "しゃしん", romaji: "shashin",    fr: "photo",                      jlpt: 4 },
+      { jp: "撮る",   kana: "とる",     romaji: "toru",       fr: "prendre (une photo)",        jlpt: 4 },
+      { jp: "シャッター", kana: "シャッター", romaji: "shattā", fr: "déclencheur / bouton photo", jlpt: 5 },
+      { jp: "笑顔",   kana: "えがお",   romaji: "egao",       fr: "sourire",                    jlpt: 3 },
+    ]
+  );
+
+  const photoLessonId = await upsertEventLesson("event-daily-photo", "Photographier — Vocabulaire", [
+    { order: 1, type: "INTRO",         data: { word: "写真", kana: "しゃしん", romaji: "shashin", translation: "Photo / photographie", example: "写真を撮ってもいいですか — Puis-je prendre une photo ?" } },
+    { order: 2, type: "INTRO",         data: { word: "笑顔", kana: "えがお",   romaji: "egao",    translation: "Sourire",             example: "笑顔でどうぞ — Souriez s'il vous plaît !" } },
+    { order: 3, type: "CHOOSE_ANSWER", data: { question: "Comment demander poliment 'puis-je prendre une photo ?' ?", choices: [
+      { text: "写真を撮ってもいいですか？",  subtext: "shashin wo totte mo ii desu ka?", isCorrect: true  },
+      { text: "写真が嫌いですか？",          subtext: "shashin ga kirai desu ka?",       isCorrect: false },
+      { text: "写真を食べますか？",          subtext: "shashin wo tabemasu ka?",         isCorrect: false },
+      { text: "写真は高いですか？",          subtext: "shashin wa takai desu ka?",       isCorrect: false },
+    ], explanation: "〜てもいいですか (te mo ii desu ka) = est-ce que je peux ~ ? C'est la formule polie pour demander la permission." } },
+    { order: 4, type: "MATCH_PAIRS",   data: { pairs: [
+      { left: "写真",     right: "Photo"              },
+      { left: "撮る",     right: "Prendre (une photo)" },
+      { left: "笑顔",     right: "Sourire"            },
+      { left: "シャッター", right: "Déclencheur"      },
+    ]} },
+  ]);
+
+  // ── Event records ─────────────────────────────────────────────────────────
+
+  const eventRecords = [
+    // Seasonal
+    {
+      id: "event-sakura-ueno",
+      type: "SEASONAL" as const,
+      title: "Pique-nique sous les Sakura",
+      description: "Les cerisiers sont en fleurs au parc Ueno ! Rejoignez les locaux pour un hanami traditionnel, goûtez les spécialités printanières et profitez de l'atmosphère unique de Tokyo en avril.",
+      poiId: "event-sakura-ueno",
+      startMonth: 3, startDay: 15,
+      endMonth:   5, endDay:   10,
+      emoji: "🌸", color: "#f472b6", xpReward: 80,
+      questId: "quest-event-sakura",
+      lessonId: sakuraLessonId,
+    },
+    {
+      id: "event-halloween-shibuya",
+      type: "SEASONAL" as const,
+      title: "Halloween de Shibuya",
+      description: "Le carrefour de Shibuya se transforme en fête d'Halloween géante avec des milliers de costumes ! Rencontrez des Tokyoïtes déguisés et vivez la fête la plus folle du Japon.",
+      poiId: "event-halloween-shibuya",
+      startMonth: 10, startDay: 1,
+      endMonth:   11, endDay:   5,
+      emoji: "🎃", color: "#f97316", xpReward: 80,
+      questId: "quest-event-halloween",
+      lessonId: halloweenLessonId,
+    },
+    // Daily templates
+    {
+      id: "event-daily-lost-tourist",
+      type: "DAILY_TEMPLATE" as const,
+      title: "Touriste égaré",
+      description: "Une personne visiblement perdue vous observe avec un plan dans la main. Aidez-la à trouver son chemin en japonais !",
+      poiId: "event-daily-lost-tourist",
+      emoji: "🆘", color: "#ef4444", xpReward: 40,
+      questId: "quest-event-lost-tourist",
+      lessonId: lostTouristLessonId,
+    },
+    {
+      id: "event-daily-lost-wallet",
+      type: "DAILY_TEMPLATE" as const,
+      title: "Portefeuille perdu",
+      description: "Un touriste paniqué cherche son portefeuille. Aidez-le à comprendre la procédure japonaise pour les objets perdus.",
+      poiId: "event-daily-lost-wallet",
+      emoji: "👛", color: "#8b5cf6", xpReward: 40,
+      questId: "quest-event-lost-wallet",
+      lessonId: lostWalletLessonId,
+    },
+    {
+      id: "event-daily-photo",
+      type: "DAILY_TEMPLATE" as const,
+      title: "Photo au Sensō-ji",
+      description: "Des touristes japonais vous approchent pour que vous les preniez en photo. Une occasion inattendue d'engager la conversation !",
+      poiId: "event-daily-photo",
+      emoji: "📸", color: "#10b981", xpReward: 40,
+      questId: "quest-event-photo",
+      lessonId: photoLessonId,
+    },
+  ];
+
+  for (const ev of eventRecords) {
+    await prisma.event.upsert({
+      where: { id: ev.id },
+      update: { title: ev.title, description: ev.description, xpReward: ev.xpReward, questId: ev.questId, lessonId: ev.lessonId },
+      create: ev,
+    });
+  }
+  console.log("Events upserted.");
+
   console.log("Seed completed.");
 }
 

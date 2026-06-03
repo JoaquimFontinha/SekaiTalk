@@ -292,6 +292,113 @@ body {
   margin-left: -1.5px;
 }
 
+/* ── Event POI markers ──────────────────────────────────────── */
+
+/* Conteneur pour centrer le pulse sur le badge */
+.gm3d-event-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Badge coloré (couleur de l'event) */
+.gm3d-poi--event .gm3d-badge {
+  background: var(--pc);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 4px 16px color-mix(in srgb, var(--pc) 55%, transparent),
+    0 2px 6px  rgba(0, 0, 0, 0.28);
+}
+
+/* Texte blanc sur fond coloré */
+.gm3d-poi--event .gm3d-name {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 800;
+}
+
+/* Grande icône emoji */
+.gm3d-event-icon {
+  font-size: 20px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
+  transition: font-size 0.22s ease;
+}
+
+/* Hover / pinned */
+.gm3d-poi--event:hover .gm3d-badge,
+.gm3d-poi--event.gm3d-poi--pinned .gm3d-badge {
+  transform: translateY(-6px) scale(1.14);
+  background: var(--pc);
+  filter: brightness(1.12);
+  box-shadow:
+    0 14px 36px rgba(0, 0, 0, 0.35),
+    0 0 0 3px color-mix(in srgb, var(--pc) 45%, transparent),
+    0 0 24px color-mix(in srgb, var(--pc) 40%, transparent);
+  border-color: rgba(255, 255, 255, 0.75);
+}
+
+.gm3d-poi--event:hover .gm3d-event-icon,
+.gm3d-poi--event.gm3d-poi--pinned .gm3d-event-icon {
+  font-size: 24px;
+}
+
+/* Nom visible au hover */
+.gm3d-poi--event:hover .gm3d-name,
+.gm3d-poi--event.gm3d-poi--pinned .gm3d-name {
+  max-width: 170px;
+  padding: 0 10px 0 4px;
+}
+
+/* Tige colorée */
+.gm3d-poi--event .gm3d-stem {
+  background: linear-gradient(to bottom, var(--pc), color-mix(in srgb, var(--pc) 15%, transparent));
+  height: 9px;
+}
+
+.gm3d-poi--event:hover .gm3d-stem,
+.gm3d-poi--event.gm3d-poi--pinned .gm3d-stem {
+  height: 13px;
+}
+
+.gm3d-poi--event .gm3d-stem::after {
+  background: var(--pc);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--pc) 60%, transparent);
+}
+
+/* Anneau de pulse — beacon effect */
+.gm3d-event-pulse {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: transparent;
+  border: 2.5px solid var(--pc);
+  opacity: 0;
+  pointer-events: none;
+  animation: eventPulse 2.6s ease-out infinite;
+}
+
+.gm3d-event-pulse::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid var(--pc);
+  opacity: 0;
+  animation: eventPulse 2.6s ease-out 1.3s infinite;
+}
+
+@keyframes eventPulse {
+  0%   { transform: scale(0.6); opacity: 0.8; }
+  100% { transform: scale(2.0); opacity: 0;   }
+}
+
 /* ── Japan Map — larger pins ────────────────────────────────── */
 .japan-poi .gm3d-badge {
   padding: 5px;

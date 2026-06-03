@@ -356,6 +356,50 @@ model PracticeRecord {
   @@index([userId, createdAt])
 }
 
+// ── Events ────────────────────────────────────────────────────────────────────
+
+enum EventType {
+  SEASONAL
+  DAILY_TEMPLATE
+  DAILY_INSTANCE
+}
+
+model Event {
+  id          String    @id
+  type        EventType
+  title       String
+  description String    @db.Text
+  poiId       String    // POIRecord.id — POI dédié à cet event
+
+  // SEASONAL only: plage de dates récurrente chaque année (null pour daily)
+  startMonth  Int?
+  startDay    Int?
+  endMonth    Int?
+  endDay      Int?
+
+  // DAILY_INSTANCE only: timestamps absolus (null pour seasonal/template)
+  startAt     DateTime?
+  endAt       DateTime?
+
+  xpReward    Int       @default(50)
+  emoji       String    @default("🎉")
+  color       String    @default("#6366f1")
+  imageUrl    String?
+
+  questId     String?   // quête dédiée à cet event
+  lessonId    String?   // leçon dédiée à cet event
+
+  isActive    Boolean   @default(true)
+  templateId  String?   // DAILY_INSTANCE → DAILY_TEMPLATE.id
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([type])
+  @@index([poiId])
+  @@index([isActive])
+}
+
 // ── Admin: CityRecord + POIRecord ──────────────────────────────────────────────
 
 model CityRecord {

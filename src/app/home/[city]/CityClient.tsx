@@ -14,6 +14,9 @@ import MonObjectif from "@/components/MonObjectif";
 import TutorialLayer from "@/components/TutorialLayer";
 import { getTutoStep, setTutoStep as storeTutoStep } from "@/lib/tutorial";
 import type { SnsConversation } from "@/lib/sns-conversations";
+import { useDailyGoals } from "@/hooks/useDailyGoals";
+import type { EventsResponse, ActiveEvent } from "@/lib/events";
+import { formatExpiry } from "@/lib/events";
 import cities, { POI, POIType } from "@/lib/cities";
 import POI_LOGOS from "@/lib/poi-logos";
 import { type VocabEntry, JLPT_COLORS } from "@/lib/mastery";
@@ -68,11 +71,6 @@ const SIDEBAR_BUTTONS: { panel: Exclude<SidebarPanel, null>; label: string; enab
     svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> },
 ];
 
-const DAILY_GOALS = [
-  { label: "Lance une conversation",   done: false },
-  { label: "Apprends 5 nouveaux mots", done: false },
-  { label: "Complète une quête",       done: false },
-];
 
 
 function getFriendshipLevel(count: number): { label: string; color: string } {
@@ -116,12 +114,66 @@ function createMarkerIcon(name: string, type: POIType) {
 
 function MapClickBlocker() { useMapEvents({}); return null; }
 
+// ── EventCard ─────────────────────────────────────────────────────────────────
+
+function EventCard({ ev, tick, onClick }: {
+  ev: ActiveEvent; tick: number; onClick: () => void;
+}) {
+  void tick; // trigger re-render for countdown
+  const expiry  = formatExpiry(ev.expiresAt, ev.type);
+  const isDaily = ev.type === "DAILY_INSTANCE";
+
+  return (
+    <button
+      onClick={onClick}
+      className="w-full rounded-2xl border border-gray-100 bg-white p-3.5 text-left shadow-sm transition-all hover:border-gray-200 hover:shadow-md active:scale-[0.99]"
+    >
+      <div className="flex items-start gap-3">
+        {/* Emoji circle */}
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-2xl"
+          style={{ background: `${ev.color}18` }}>
+          {ev.emoji}
+        </div>
+
+        {/* Content */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="truncate text-sm font-bold text-gray-800">{ev.title}</p>
+          </div>
+          <p className="mt-0.5 line-clamp-2 text-[11px] leading-relaxed text-gray-500">{ev.description}</p>
+
+          {/* Footer badges */}
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            {/* Countdown */}
+            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+              isDaily ? "bg-red-50 text-red-500" : "bg-amber-50 text-amber-600"
+            }`}>
+              {isDaily ? "⏱" : "📅"} {expiry}
+            </span>
+            {/* XP */}
+            <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-600">
+              +{ev.xpReward} XP
+            </span>
+            {/* POI name */}
+            <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-2 py-0.5 text-[10px] text-gray-400">
+              📍 {ev.poiName}
+            </span>
+          </div>
+        </div>
+
+        {/* Arrow */}
+        <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-gray-300" />
+      </div>
+    </button>
+  );
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function CityClient({ citySlug, initialCity }: { citySlug: string; initialCity?: import("@/lib/cities").CityData | null }) {
   const router       = useRouter();
   const searchParams = useSearchParams();
-  const { activeType, poiClickRef, mapBgClickRef, mapRef, editMode, setEditMode, poiMoveRef } = useMapCtx();
+  const { activeType, poiClickRef, mapBgClickRef, mapRef, editMode, setEditMode, poiMoveRef, setActiveEvents } = useMapCtx();
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.isAdmin === true;
 
@@ -133,6 +185,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
   const [lessonData, setLessonData]       = useState<{ id: string; title: string; validated: boolean; score: number } | null | "none">(null);
 
   // Sidebar state
+  const { goals: dailyGoals, doneCount: goalsDone } = useDailyGoals();
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [showRevision, setShowRevision]       = useState(false);
   const [showStreakPopover, setShowStreakPopover]   = useState(false);
@@ -148,6 +201,11 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
     () => new Set((CITY_GUIDAGE[citySlug] ?? []).map(t => t.id))
   );
   const [themesLevel, setThemesLevel] = useState<5 | 4 | 3 | null>(null);
+
+  // Events state
+  const [events, setEvents]               = useState<EventsResponse | null>(null);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsTick, setEventsTick]       = useState(0); // force countdown re-render each minute
 
   // Contacts state
   const [contacts, setContacts]             = useState<Contact[]>([]);
@@ -374,6 +432,26 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
       .finally(() => setContactsLoading(false));
   }, [sidebarPanel, contacts.length]);
 
+  // Fetch events au montage → injecte dans le context pour la carte
+  useEffect(() => {
+    setEventsLoading(true);
+    fetch("/api/events")
+      .then(r => r.ok ? r.json() : { seasonal: [], daily: [] })
+      .then((data: EventsResponse) => {
+        setEvents(data);
+        setActiveEvents([...data.seasonal, ...data.daily]);
+      })
+      .catch(() => setEvents({ seasonal: [], daily: [] }))
+      .finally(() => setEventsLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Countdown tick every minute
+  useEffect(() => {
+    const id = setInterval(() => setEventsTick(t => t + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <div className="pointer-events-none flex h-screen overflow-hidden">
 
@@ -429,13 +507,17 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
             <div className="px-7 pb-8 shrink-0">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Objectifs du jour</span>
-                <span className="text-xs font-semibold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full">0 / {DAILY_GOALS.length}</span>
+                <span className="text-xs font-semibold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full">{goalsDone} / {dailyGoals.length || 3}</span>
               </div>
               <div className="flex flex-col gap-2.5">
-                {DAILY_GOALS.map((g, i) => (
-                  <div key={i} className="flex items-center gap-3.5 rounded-xl bg-gray-50 px-4 py-3.5">
+                {dailyGoals.map((g) => (
+                  <div key={g.type} className={`flex items-center gap-3.5 rounded-xl px-4 py-3.5 transition-colors ${g.done ? "bg-indigo-50" : "bg-gray-50"}`}>
                     {g.done ? <CheckCircle2 className="h-5 w-5 shrink-0 text-indigo-500" /> : <Circle className="h-5 w-5 shrink-0 text-gray-300" />}
-                    <span className={`text-sm font-medium ${g.done ? "line-through text-gray-400" : "text-gray-600"}`}>{g.label}</span>
+                    <span className="text-lg shrink-0 leading-none">{g.icon}</span>
+                    <span className={`flex-1 text-sm font-medium ${g.done ? "line-through text-gray-400" : "text-gray-600"}`}>{g.label}</span>
+                    {g.target > 1 && !g.done && (
+                      <span className="text-[11px] font-bold text-gray-400 shrink-0">{g.progress}/{g.target}</span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -983,29 +1065,79 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
           })()}
 
           {/* Évènements panel */}
-          {city.use3DMap && sidebarPanel === "evenements" && (
-            <div className="pointer-events-auto absolute z-[1000] flex w-[380px] flex-col overflow-hidden rounded-2xl bg-white"
-              style={{ left: 484, top: 20, height: "calc(100vh - 40px)", boxShadow: "0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1)" }}>
-              <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4">
-                <div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">Saison</span>
-                  <h3 className="mt-0.5 text-sm font-bold text-gray-800">Évènements</h3>
+          {city.use3DMap && sidebarPanel === "evenements" && (() => {
+            const allEvents = events ? [...events.seasonal, ...events.daily] : [];
+            const hasEvents = allEvents.length > 0;
+
+            const handleEventClick = (ev: ActiveEvent) => {
+              // Ferme le panneau, ouvre le drawer du POI + fly
+              setSidebarPanel(null);
+              handlePoiClick(ev.poiId);
+            };
+
+            return (
+              <div className="pointer-events-auto absolute z-[1000] flex w-[380px] flex-col overflow-hidden rounded-2xl bg-white"
+                style={{ left: 484, top: 20, height: "calc(100vh - 40px)", boxShadow: "0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1)" }}>
+
+                {/* Header */}
+                <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-5 py-4">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">En cours</span>
+                    <h3 className="mt-0.5 text-sm font-bold text-gray-800">Évènements</h3>
+                  </div>
+                  <button onClick={() => setSidebarPanel(null)} className="text-gray-400 transition-colors hover:text-gray-600">
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
-                <button onClick={() => setSidebarPanel(null)} className="text-gray-400 transition-colors hover:text-gray-600">
-                  <X className="h-4 w-4" />
-                </button>
+
+                {/* Body */}
+                {eventsLoading ? (
+                  <div className="flex flex-1 items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-amber-400" />
+                  </div>
+                ) : !hasEvents ? (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 text-2xl">🌸</div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-500">Aucun évènement en cours</p>
+                      <p className="mt-1.5 text-[11px] leading-relaxed text-gray-400">
+                        Les évènements saisonniers et quotidiens apparaîtront ici — hanami, matsuri, Halloween, aides ponctuelles…
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-1 flex-col gap-0 overflow-y-auto">
+
+                    {/* Saisonniers */}
+                    {events!.seasonal.length > 0 && (
+                      <div className="px-4 pt-4">
+                        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">Saisonniers</p>
+                        <div className="flex flex-col gap-2">
+                          {events!.seasonal.map(ev => (
+                            <EventCard key={ev.id} ev={ev} tick={eventsTick} onClick={() => handleEventClick(ev)} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Quotidiens */}
+                    {events!.daily.length > 0 && (
+                      <div className="px-4 pt-4 pb-4">
+                        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400">Aujourd'hui</p>
+                        <div className="flex flex-col gap-2">
+                          {events!.daily.map(ev => (
+                            <EventCard key={ev.id} ev={ev} tick={eventsTick} onClick={() => handleEventClick(ev)} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="h-4 shrink-0" />
+                  </div>
+                )}
               </div>
-              <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-100 bg-gray-50 text-2xl">🌸</div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-500">Aucun évènement en cours</p>
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-gray-400">
-                    Les évènements saisonniers apparaîtront ici — hanami, matsuri, Halloween, illuminations de Noël…
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Contacts panel */}
           {city.use3DMap && sidebarPanel === "contacts" && (
