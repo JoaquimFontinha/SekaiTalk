@@ -17,7 +17,7 @@ import type { SnsConversation } from "@/lib/sns-conversations";
 import cities, { POI, POIType } from "@/lib/cities";
 import POI_LOGOS from "@/lib/poi-logos";
 import { type VocabEntry, JLPT_COLORS } from "@/lib/mastery";
-import { CITY_GUIDAGE } from "@/lib/guidage";
+import { CITY_GUIDAGE, POI_JLPT_LEVEL } from "@/lib/guidage";
 import { getNeighborhood } from "@/lib/tokyo-neighborhoods";
 import IllustratedMap from "./IllustratedMap";
 import { useMapCtx } from "../MapContext";
@@ -60,7 +60,7 @@ const SIDEBAR_BUTTONS: { panel: Exclude<SidebarPanel, null>; label: string; enab
     svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg> },
   { panel: "lieux",      label: "Lieux",      enabled: true,  color: "#6366f1",
     svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> },
-  { panel: "contacts",   label: "Contacts",   enabled: true,  color: "#0d9488",
+  { panel: "contacts",   label: "Contacts",   enabled: false, color: "#0d9488",
     svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
   { panel: "evenements", label: "Évènements", enabled: true,  color: "#d97706",
     svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
@@ -147,6 +147,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
   const [collapsedThemes, setCollapsedThemes] = useState<Set<string>>(
     () => new Set((CITY_GUIDAGE[citySlug] ?? []).map(t => t.id))
   );
+  const [themesLevel, setThemesLevel] = useState<5 | 4 | 3 | null>(null);
 
   // Contacts state
   const [contacts, setContacts]             = useState<Contact[]>([]);
@@ -463,12 +464,15 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                   >
                     <div
                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-2 transition-transform group-hover:scale-105"
-                      style={{ background: color }}
+                      style={{ background: enabled ? color : "#d1d5db" }}
                     >
                       {svg}
                     </div>
                     <span className="text-[15px] font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">{label}</span>
-                    <ChevronRight className="ml-auto h-4 w-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    {!enabled
+                      ? <span className="ml-auto rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-400">Bientôt</span>
+                      : <ChevronRight className="ml-auto h-4 w-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    }
                   </button>
                 ))}
               </div>
@@ -858,7 +862,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                 style={{ left: 484, top: 20, height: "calc(100vh - 40px)", boxShadow: "0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1)" }}>
                 {/* Header */}
                 <div className="shrink-0 border-b border-gray-100 px-5 py-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-3">
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-500">Parcours guidé</span>
                       <h3 className="mt-0.5 text-lg font-black text-gray-900">Thèmes</h3>
@@ -867,11 +871,38 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                       <X className="h-4 w-4" />
                     </button>
                   </div>
+                  {/* Level selector */}
+                  <div className="flex gap-1.5">
+                    {([null, 5, 4, 3] as const).map(lvl => {
+                      const labels: Record<string, string> = { "null": "Tous", "5": "N5", "4": "N4", "3": "N3" };
+                      const colors: Record<string, string> = { "null": "#6366f1", "5": "#16a34a", "4": "#2563eb", "3": "#dc2626" };
+                      const key = String(lvl);
+                      const active = themesLevel === lvl;
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => setThemesLevel(lvl)}
+                          className="flex-1 rounded-lg py-1.5 text-[11px] font-bold transition-all"
+                          style={{
+                            background: active ? colors[key] : "#f3f4f6",
+                            color: active ? "white" : "#6b7280",
+                          }}
+                        >
+                          {labels[key]}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {/* Themes */}
                 <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
-                  {themes.map((theme, ti) => (
+                  {themes.map((theme, ti) => {
+                    const filteredPoiIds = theme.poiIds.filter(id =>
+                      themesLevel === null || POI_JLPT_LEVEL[id] === themesLevel
+                    );
+                    if (filteredPoiIds.length === 0) return null;
+                    return (
                     <div key={theme.id}>
                       {/* Theme header */}
                       <button
@@ -897,12 +928,14 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                       </button>
 
                       {/* POIs */}
-                      {!collapsedThemes.has(theme.id) && theme.poiIds.map((poiId, pi) => {
+                      {!collapsedThemes.has(theme.id) && filteredPoiIds.map((poiId, pi) => {
                         const poi = city.pois.find(p => p.id === poiId);
                         if (!poi) return null;
                         const meta = POI_META[poi.type];
                         const qd = poiQuestData[poiId];
                         const isDone = qd && qd.total > 0 && qd.done === qd.total;
+                        const lvl = POI_JLPT_LEVEL[poiId];
+                        const lvlColor: Record<number, string> = { 5: "#16a34a", 4: "#2563eb", 3: "#dc2626" };
                         return (
                           <button
                             key={poiId}
@@ -924,13 +957,20 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                               <p className="truncate text-sm font-semibold text-gray-800">{poi.name}</p>
                               <p className="text-[11px] text-gray-400">{meta.label}</p>
                             </div>
+                            {lvl && (
+                              <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-black text-white"
+                                style={{ background: lvlColor[lvl] }}>
+                                N{lvl}
+                              </span>
+                            )}
                             <ChevronRight className="h-4 w-4 shrink-0 text-gray-300" />
                           </button>
                         );
                       })}
                     </div>
-                  ))}
-                  {themes.length === 0 && (
+                    );
+                  })}
+                  {themes.every(t => t.poiIds.filter(id => themesLevel === null || POI_JLPT_LEVEL[id] === themesLevel).length === 0) && (
                     <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 py-16 text-center">
                       <Compass className="h-10 w-10 text-gray-200" />
                       <p className="text-sm text-gray-400">Aucun guidage disponible pour cette ville.</p>
@@ -1292,7 +1332,10 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                 const conv = snsConversation;
                 return (
                   <div className="mt-2 px-4 pb-4">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-white/30">Discussion SNS</span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/30">Discussion SNS</span>
+                      <span className="text-[9px] font-bold uppercase tracking-wide bg-amber-400/20 text-amber-300 border border-amber-400/30 px-1.5 py-0.5 rounded-full">Beta</span>
+                    </span>
                     <button
                       onClick={() => setShowSns(true)}
                       className="mt-3 w-full rounded-2xl border border-emerald-500/30 bg-emerald-950/40 p-3.5 text-left hover:bg-emerald-900/50 transition-colors"
@@ -1476,6 +1519,33 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
           </div>
         );
       })()}
+
+      {/* Footer links — drawer-aware positioning */}
+      <div
+        className="pointer-events-auto fixed bottom-4 z-10 flex items-center gap-4 transition-all duration-300"
+        style={{ right: selectedPoi ? 440 : 20 }}
+      >
+        {(["À propos", "Blog", "Efficacité", "Termes", "Confidentialité"] as const).map(label => (
+          <a
+            key={label}
+            href="#"
+            style={{ fontSize: 11, fontWeight: 500, letterSpacing: "0.03em", color: "rgba(255,255,255,0.45)", textDecoration: "none", transition: "color 0.15s" }}
+            onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.85)")}
+            onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.45)")}
+          >
+            {label}
+          </a>
+        ))}
+        <a
+          href="https://github.com/JoaquimFontinha/SekaiTalk/issues/new"
+          target="_blank" rel="noopener noreferrer"
+          style={{ fontSize: 11, fontWeight: 500, letterSpacing: "0.03em", color: "rgba(255,255,255,0.45)", textDecoration: "none", transition: "color 0.15s" }}
+          onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.85)")}
+          onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.45)")}
+        >
+          Signaler un bug
+        </a>
+      </div>
     </div>
   );
 }

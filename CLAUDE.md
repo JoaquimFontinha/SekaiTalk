@@ -59,7 +59,7 @@ Deux fichiers d'env :
 
 ### Database — modèles Prisma
 
-- `User` — profil central (email, pseudo unique, firstName, lastName, birthDate, image, password haché bcrypt). Champ `isAdmin: Boolean @default(false)` — accès interface admin
+- `User` — profil central (email, pseudo unique, firstName, lastName, birthDate, image, password haché bcrypt). Champ `isAdmin: Boolean @default(false)` — accès interface admin. Note: `yens` supprimé — seul `xp` subsiste comme récompense.
 - `Account` — méthode de connexion liée à un User (géré par NextAuth)
 - `Session` — toujours vide (JWT strategy)
 - `CityRecord` — ville gérée via admin (id=slug ex: `"tokyo"`, name, nameJp, centerLat, centerLng, zoom, pitch, bearing, levelRequired, use3DMap, mapImage, mapBoundsJson, isActive). Source de vérité pour le jeu via `getCityFromDB()` — remplace `cities.ts` au runtime
@@ -68,7 +68,7 @@ Deux fichiers d'env :
 - `CharacterAppearance` — table de jonction many-to-many `Character ↔ POI`. Champs : `characterId`, `poiId`, `locationContext?` (injection supplémentaire dans le system prompt pour contextualiser le lieu). Contrainte `@@unique([characterId, poiId])`
 - `Scene` — décor lié à un POI (`poiId @unique`). Champs : `backgroundImage?`, `entrySound?`, `ambientSound?`. Séparé du personnage car le même lieu peut avoir un autre personnage à l'avenir
 - `CharacterMemory` — mémoire persistante par `(characterId, userId, key)`. Valeur mise à jour via upsert. Activée uniquement si `character.isFriendable = true` + utilisateur connecté. Contrainte `@@unique([characterId, userId, key])`
-- `Quest` — quête liée à un POI (`poiId`). Plusieurs quêtes possibles par POI, ordonnées par `order`. Champ `vocab Json @default("[]")` — tableau de `VocabEntry[]` prédéfini pour la quête (voir `src/lib/mastery.ts`)
+- `Quest` — quête liée à un POI (`poiId`). Plusieurs quêtes possibles par POI, ordonnées par `order`. Champ `vocab Json @default("[]")` — tableau de `VocabEntry[]` prédéfini pour la quête (voir `src/lib/mastery.ts`). Note: `yenReward` supprimé — seul `xpReward` subsiste.
 - `QuestTask` — tâche ordonnée dans une quête. Contient `instruction` (affiché à l'utilisateur) et `aiContext` (injecté dans le system prompt pour guider l'IA)
 - `TaskChoice` — choix QCM d'une tâche (`isCorrect` pour la bonne réponse)
 - `UserQuestProgress` — progression d'un utilisateur sur une quête (`IN_PROGRESS` | `COMPLETED`)
@@ -104,6 +104,19 @@ Deux fichiers d'env :
 /home/[city]/[poi]/lesson      → leçon interactive du POI (LessonClient)
 ```
 
+### Validation des tâches de quête — deux types
+
+**QCM** (`task.choices.length > 0`) : comportement historique — bouton "J'ai compris ✓" → quiz à choix multiples.
+
+**IA auto-validée** (`task.choices.length === 0`) : la tâche se valide automatiquement quand l'IA détecte que le joueur a dit la bonne chose en japonais.
+- Règle de contenu : **affirmations** → IA (Dis, Explique, Présente, Confirme, Réponds, Donne) ; **questions/demandes** → QCM (Demande, Commande, Achète, Paye, Réserve)
+- Dans POIClient : si `isAiTask`, ajoute `[VALIDATION AUTOMATIQUE]` au system prompt + passe `aiTask: true` à `/api/chat`
+- `/api/chat` expose `"taskValidated": false` dans le schéma JSON quand `aiTask: true` — l'IA le met à `true` si critère satisfait
+- Côté client : `d.taskValidated === true` → `taskValidatedBanner` (bandeau vert 2,2s) → `handleCompleteTask()` auto
+- Le `[CRITÈRE DE VALIDATION]` est embarqué dans le champ `aiContext` de la tâche en DB
+- Scripts de maintenance : `scripts/update-ai-tasks.js`, `scripts/apply-ai-tasks-all.js`, `scripts/restore-qcm-tasks.js`
+- 15 tâches IA sur 84 total (~18%) — tous les POIs Tokyo concernés
+
 ### Flux quête complet
 
 1. L'utilisateur clique un POI sur la carte → **drawer POI** dans `CityClient` avec les quêtes disponibles
@@ -126,9 +139,9 @@ Deux fichiers d'env :
 | `/api/analyze` | POST | Analyse un texte japonais, retourne `{translation, words}`. Usage ponctuel (admin/seed) — ne pas appeler au runtime |
 | `/api/transcribe` | POST | Transcrit un audio via Groq Whisper (`language: "ja"`, prompt court `"日本語"`, filtres qualité segments + filtre hallucination) |
 | `/api/tts` | POST | TTS ElevenLabs server-side (`{text, voiceId}`), retourne `audio/mpeg` |
-| `/api/user/stats` | GET | Stats XP/Yens/niveau de l'utilisateur connecté |
+| `/api/user/stats` | GET | Stats XP/niveau de l'utilisateur connecté |
 | `/api/contacts` | GET | Liste tous les personnages `isFriendable + isActive` avec `memoryCount` (groupBy CharacterMemory) et `locations` (POIs résolus depuis cities.ts) |
-| `/api/quests/poi/[poiId]` | GET | Liste les quêtes d'un POI avec progression utilisateur (inclut `vocab`, `xpReward`, `yenReward`) |
+| `/api/quests/poi/[poiId]` | GET | Liste les quêtes d'un POI avec progression utilisateur (inclut `vocab`, `xpReward`) |
 | `/api/quests/[questId]/start` | POST | Crée un `UserQuestProgress` (auth requise) |
 | `/api/quests/tasks/[taskId]/complete` | POST | Valide une tâche, débloque la suivante ou termine la quête |
 | `/api/session/complete` | POST | Sauvegarde `SessionRecord` + upsert `UserVocabProgress` pour **tous** les mots du vocab de la quête (pas uniquement les mots prononcés). Mots pratiqués : `encounters+1, correctCount+1`. Mots non pratiqués existants : inchangés. Nouveaux mots non pratiqués : `encounters:1, correctCount:0`. Retourne `{ vocabWithMastery }` — chaque mot enrichi de `mastery`, `encounters`, `practiced` |
@@ -193,7 +206,7 @@ Helper server-side (uniquement `import` côté serveur / route handlers / `page.
 - `transport`, `site`, `loisir`, `shop`, `restaurant`, `cafe`, `konbini`, `izakaya`, `market` — types historiques
 - `hotel` (#0891b2 cyan), `pharmacie` (#059669 vert), `medecin` (#ef4444 rouge), `poste` (#d97706 ambre) — ajoutés pour Tokyo v2
 - Chaque nouveau type a ses entrées dans `POI_COLORS` + `POI_ICONS` (GameMap3D) et `POI_META` (CityClient)
-- Logos de POI : `src/lib/poi-logos.ts` — `Record<poiId, string>` importé par `GameMap3D` et `CityClient`. Logos dans `public/images/pois/logos/`
+- Logos de POI : `src/lib/poi-logos.ts` — `Record<poiId, string>` importé par `GameMap3D` et `CityClient`. Logos dans `public/images/pois/logos/`. **23 logos** présents pour tous les POIs Tokyo (formats : .svg, .png, .webp, .jpg). Nommage : `{poi-id}.{ext}` (ex: `jr-shinjuku.svg`, `familymart.webp`).
 
 ### Sidebar CityClient (`src/app/home/[city]/CityClient.tsx`)
 
@@ -224,7 +237,12 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 
 **Panneau Évènements** (`sidebarPanel === "evenements"`, 380px) — placeholder vide.
 
-**Panneau Guidage** (`sidebarPanel === "guidage"`, 380px) — premier item de navigation. Affiche le système de guidage contextuel (`src/lib/guidage.ts`).
+**Panneau Thèmes** (`sidebarPanel === "guidage"`, 380px) — premier item de navigation (libellé "Thèmes"). Affiche le système de guidage contextuel (`src/lib/guidage.ts`).
+- Sélecteur de niveau en haut du panneau : **Tous | N5 | N4 | N3**. State `themesLevel` dans CityClient.
+- `POI_JLPT_LEVEL: Record<string, 5 | 4 | 3>` dans `src/lib/guidage.ts` — un niveau par POI.
+- Filtrage : `filteredPoiIds = theme.poiIds.filter(id => themesLevel === null || POI_JLPT_LEVEL[id] === themesLevel)` — thème caché si aucun POI au niveau sélectionné.
+- Badge N5/N4/N3 coloré sur chaque ligne POI (vert=N5, bleu=N4, rouge=N3).
+- Règle d'affectation : N5=konbinis/McDonald's/Starbucks, N4=transport/shopping/loisirs, N3=hôpital/poste/musées/hôtels luxe.
 
 **Panneau Révision** — désactivé dans `CityClient` (`enabled: false`), à implémenter. Actif dans `HomeClient` via bouton "Révision" dans la sidebar (ouvre `RevisionOverlay`).
 
@@ -241,7 +259,7 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 
 **Modale prévisualisation quête** (`questPreview` state)
 - Overlay `fixed inset-0 overflow-y-auto` (pattern scrollable-outer) → carte `max-w-2xl` centrée.
-- Affiche : nom du POI + titre + description + récompenses (XP/Yens) + nombre de tâches.
+- Affiche : nom du POI + titre + description + récompenses (XP) + nombre de tâches.
 - Vocabulaire groupé par JLPT en **grille 2 colonnes** : kanji + kana inline, romaji en petit, traduction. Section scrollable `max-h-[52vh] overflow-y-auto` — header et CTA toujours visibles.
 - Uniquement le vocab de la quête affichée (pas de mélange inter-quêtes).
 - Boutons "Annuler" / "Commencer →" (navigue vers la quête).
@@ -289,7 +307,10 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 </div>
 ```
 
-**Footer links** : `HomeShell` dans `layout.tsx` rend un `div` fixe `bottom: 16, right: 20` avec 5 liens semi-transparents : À propos, Blog, Efficacité, Termes, Confidentialité. `pointer-events: auto` explicite. Visibles sur toutes les pages `/home/*`.
+**Footer links — comportement par page** :
+- Sur `/home` : footer dans `HomeShell` (`right: 20`), tous les liens visibles.
+- Sur `/home/[city]` : `HomeShell` masque son footer (`!isOnCityPage`). `CityClient` rend son propre footer avec `right: selectedPoi ? 440 : 20` (recule quand le drawer est ouvert, transition CSS).
+- Sur `/home/[city]/[poi]` : seul "Signaler un bug" visible (`!isOnPoiPage` masque les autres liens).
 
 ### Page `/home` — `HomeClient.tsx`
 
@@ -509,6 +530,7 @@ type KanaMasteryStore = Record<string, KanaMasteryEntry>;
 - **Contraintes caméra** : `minZoom=14`, `maxPitch=85`, `minPitch=20`, `maxBounds` Tokyo + Haneda (`[139.58, 35.52]` → `[139.85, 35.75]`), bearing clampé ±25° autour de −20°
 - **Pins** : classe CSS `gm3d-poi` avec `--pc` (couleur par type). Logo POI via `POI_LOGOS[poi.id]` → `<img>` sinon emoji. Hover expand via `max-width` transition. En mode placement : classe `gm3d-poi--edit` (bordure orange pointillée, curseur `grab`)
 - **Props** : `editMode?: boolean`, `onPoiMove?: (id, lat, lng) => void`. Coordonnées des markers : `poiPositionOverrides[poi.id] ?? poi.lat/lng` (override context prioritaire sur les données statiques)
+- **`pinnedPoiId`** : state local dans `GameMap3D` — persiste l'état "ouvert" du badge après un clic. Clic POI → `setPinnedPoiId(poi.id)` (badge reste ouvert). Clic fond → `setPinnedPoiId(null)`. Drag carte → `onDragStart` → `setPinnedPoiId(null)`. Classe CSS `gm3d-poi--pinned` — mêmes styles que `:hover`. Note : `onMoveStart` NON utilisé (déclenche aussi sur `flyTo` programmatique) → `onDragStart` uniquement.
 
 ### Mode placement admin (`editMode`)
 
@@ -555,7 +577,7 @@ Permet aux admins de repositionner les POIs directement sur la carte par drag & 
 - `allPoiVocabRef` — vocab dédupliqué de toutes les quêtes du POI, peuplé au chargement depuis `GET /api/quests/poi/[poiId]`
 
 **Modales post-quête** (toutes en `fixed inset-0 overflow-y-auto` — pattern scrollable-outer) :
-- `showQuestComplete` + `completedQuestInfo` → modale sombre (fond glassmorphism). Récompenses XP/Yens + aperçu vocab. Bouton unique : "Terminer la session →" (pas de "Continuer la conversation")
+- `showQuestComplete` + `completedQuestInfo` → modale sombre (fond glassmorphism). Récompenses XP + aperçu vocab. Bouton unique : "Terminer la session →" (pas de "Continuer la conversation")
 - `showSessionSummary` + `summaryVocabProgress` → modale blanche (fond noir/75). Stats (erreurs, aides, `sessionAllDetectedVocab.size`) + vocab quête groupé par JLPT avec icône de maîtrise. Bouton "Terminer" → `handleBack`.
 
 **`handleEndSession(info, practiced, errors, suggestions)`** :
@@ -610,6 +632,10 @@ Permet aux admins de repositionner les POIs directement sur la carte par drag & 
 - `maxWidth: 420px` (anciennement 320px)
 - Bouton "J'ai compris ✓" désactivé (`opacity-50 pointer-events-none`) quand `isPaused`
 
+**Bandeaux de tâche** :
+- **`taskBanner`** — affiché au lancement d'une quête et à chaque nouvelle tâche. State `{ index, total, instruction }`, auto-dismiss 3,5s via `taskBannerTimerRef`. Bandeau pleine largeur, fond blanc, "Objectif N" + instruction. Keyframes : `taskBannerIn` (spring entrée) + `taskBannerOut` (fondu sortie à 3s).
+- **`taskValidatedBanner`** — affiché 2,2s quand une tâche IA est auto-validée. State `string | null` (instruction de la tâche validée). Bandeau vert pleine largeur avec ✅ + "Tâche validée !".
+
 **`SuggestionPlayButton`** (composant dans `POIClient.tsx`) :
 - Bouton lecture Web Speech API gratuit, dans chaque ligne du panneau Suggestions
 - Même UI pill que le bouton replay de la boîte de dialogue : fond `bg-gray-100 border border-gray-200`, `rounded-full`
@@ -621,12 +647,13 @@ Permet aux admins de repositionner les POIs directement sur la carte par drag & 
 
 Whisper hallucine le contenu du prompt quand il n'y a pas de vraie parole.
 
-- **Prompt court** : `"日本語"` uniquement (l'ancien prompt long était reproduit tel quel)
+- **Prompt enrichi** : `"日本語で話しています。観光、仕事、パスポート、ありがとうございます、すみません、です、ます、はい、いいえ、どこ、いくら、お願いします。"` — ancre Whisper sur le japonais.
 - **Filtre segments** : garde uniquement les segments avec `no_speech_prob < 0.4` et `avg_logprob > -1.0`. Si aucun segment valide → retourne `{ text: "" }`
 - **Filtre hallucination** `isHallucination(text)` :
   - Longueur < 3 caractères
   - Texte exact dans `HALLUCINATIONS` : `["日本語", "ご視聴", "字幕", "翻訳", "ありがとうございました", "お願いします。", "です。", "ます。"]`
   - Uniquement ponctuation/espaces : `/^[。、．，\s]+$/`
+  - **Filtre langue** : si le texte ne contient aucun caractère japonais (`HAS_JAPANESE` regex) ET contient un mot français/anglais courant (`FRENCH_EN_WORDS` regex) → rejeté. Évite les confusions Whisper type "encore desu" pour "観光です".
 - Appliqué sur le texte reconstruit des segments ET sur `data.text` (fallback sans segments)
 
 ### Carte illustrée (`IllustratedMap`)
@@ -637,9 +664,9 @@ Whisper hallucine le contenu du prompt quand il n'y a pas de vraie parole.
 - `mapImage` + `mapBounds` dans `src/lib/cities.ts` activent la carte illustrée (sinon fallback Leaflet)
 - `use3DMap: true` dans `cities.ts` active `GameMap3D` à la place
 
-### Système XP / Yens / Niveau
+### Système XP / Niveau
 
-- `User.xp` et `User.yens` en DB, incrémentés à la complétion de quête (`firstCompletedAt`)
+- `User.xp` en DB, incrémenté à la complétion de quête (`firstCompletedAt`)
 - `getLevelInfo(xp)` dans `src/lib/level.ts` — calcule `{level, xpInLevel, xpNeeded, percent}`
 - Replay d'une quête : `isReplay = status === "IN_PROGRESS" && !!firstCompletedAt` → pas de récompense
 - Les récompenses s'affichent dans la modale `showQuestComplete` de `POIClient`
@@ -759,6 +786,13 @@ Accessible uniquement aux utilisateurs avec `User.isAdmin = true`. Protégée pa
 4. Le JSON contient : cityRecords, poiRecords, scenes, characters, appearances, quests+tasks+choices, lessons+steps
 
 **Upload assets** : `POST /api/admin/upload` multipart → `public/uploads/{logos|backgrounds|sounds}/`. Types acceptés : images (logo POI, background scène), audio (entrée, ambiance).
+
+### Scripts de maintenance DB (`scripts/`)
+
+- `scripts/jlpt-vocab.js` — applique le vocab JLPT N5/N4/N3 à toutes les quêtes Tokyo (8 mots/quête). `node scripts/jlpt-vocab.js`
+- `scripts/update-ai-tasks.js` / `apply-ai-tasks-all.js` / `restore-qcm-tasks.js` — gestion des tâches IA vs QCM.
+- `scripts/generate-poi-doc.js` — génère `POIs_Tokyo_SekaiTalk.html` (document Word-compatible avec tous les POIs, quêtes, tâches, vocab). `node scripts/generate-poi-doc.js`
+- `scripts/scrape-busuu.js` — scraper Playwright pour récupérer le contenu pédagogique Busuu (nécessite `.env.busuu` avec `BUSUU_EMAIL` + `BUSUU_PASSWORD`, résolution CAPTCHA manuelle).
 
 ### SessionProvider
 `src/app/providers.tsx` wrappe l'app avec le `SessionProvider` NextAuth, inclus dans `src/app/layout.tsx`.

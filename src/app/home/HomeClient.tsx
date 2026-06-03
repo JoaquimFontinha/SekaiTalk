@@ -32,7 +32,7 @@ const NAV_ITEMS: { label: string; enabled: boolean; color: string; svg: React.Re
     svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
   },
   {
-    label: "Évènements", enabled: false, color: "#d97706",
+    label: "Évènements", enabled: true,  color: "#d97706",
     svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
   },
   {
@@ -171,11 +171,12 @@ export default function HomeClient() {
                   <ChevronRight className="ml-auto h-4 w-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
                 </button>
               ) : (
-                <div key={label} className="flex items-center gap-3.5 rounded-xl px-3 py-3 opacity-30 pointer-events-none select-none">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-2" style={{ background: color }}>
+                <div key={label} className="flex items-center gap-3.5 rounded-xl px-3 py-3 cursor-default select-none">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-2" style={{ background: "#d1d5db" }}>
                     {svg}
                   </div>
-                  <span className="text-[15px] font-semibold text-gray-700">{label}</span>
+                  <span className="text-[15px] font-semibold text-gray-400">{label}</span>
+                  <span className="ml-auto rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-400">Bientôt</span>
                 </div>
               );
             })}

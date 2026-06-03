@@ -267,6 +267,7 @@ export default function POIClient({
   const [sessionAllDetectedVocab, setSessionAllDetectedVocab] = useState<Set<string>>(new Set());
   const [taskBanner, setTaskBanner] = useState<{ index: number; total: number; instruction: string } | null>(null);
   const taskBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [taskValidatedBanner, setTaskValidatedBanner] = useState<string | null>(null);
 
   const [messages, setMessages]           = useState<Message[]>([]);
   const [currentReply, setCurrentReply]   = useState<AIReply | null>(null);
@@ -451,11 +452,27 @@ export default function POIClient({
 
     const aq = activeQuestRef.current;
     let sysPrompt = systemRef.current;
+    let isAiTask = false;
     if (aq) {
       const task = aq.tasks[aq.currentTaskIndex];
+      isAiTask = task?.choices?.length === 0;
       if (task?.aiContext) {
         const isFirstMessage = messagesRef.current.length <= 1;
         sysPrompt += `\n\n[CONTEXTE DE LA TÂCHE ${aq.currentTaskIndex + 1}/${aq.tasks.length} — information de fond, ne pas aborder directement${isFirstMessage ? ", répondre d'abord naturellement au message de l'utilisateur" : ""}]\n${task.aiContext}`;
+      }
+      if (isAiTask && task) {
+        sysPrompt += `\n\n[VALIDATION AUTOMATIQUE — INSTRUCTIONS CRITIQUES]
+Cette tâche se valide automatiquement quand l'utilisateur dit la bonne chose en japonais.
+Dans ta réponse JSON, le champ "taskValidated" DOIT être:
+  - true : si le dernier message de l'utilisateur accomplit clairement le critère ci-dessus EN JAPONAIS
+  - false : dans tous les autres cas (réponse en français/anglais seulement, hors-sujet, approximation vague, phrase incomplète)
+RÈGLES STRICTES DE VALIDATION:
+1. Le message doit contenir la clé sémantique en japonais (kanji, kana ou romaji compréhensible)
+2. Ne PAS valider si l'utilisateur répond uniquement en français ou anglais
+3. Ne PAS valider si la réponse est vague ou ne correspond pas au critère
+4. Valider les différentes formulations naturelles en japonais qui expriment la même idée
+5. En cas de doute, mettre false — mieux vaut être strict
+Tu continues la conversation normalement, et indiques juste le résultat de validation dans le JSON.`;
       }
     }
 
@@ -472,16 +489,28 @@ export default function POIClient({
           messages: next,
           systemPrompt: sysPrompt,
           characterId: characterIdRef.current,
+          aiTask: isAiTask,
         }),
       });
       if (!r.ok) throw new Error(`API ${r.status}`);
-      const d: AIReply = await r.json();
+      const d: AIReply & { taskValidated?: boolean } = await r.json();
       if (!mountedRef.current) return;
       setMessages(p => [...p, { role: "assistant", content: d.reply }]);
       setCurrentReply(d);
       replyHistoryRef.current = [...replyHistoryRef.current, { reply: d, userMsg: t }];
       setHistoryIndex(replyHistoryRef.current.length - 1);
       speak(d.reply);
+
+      // ── AI task auto-validation ───────────────────────────────────────────
+      if (isAiTask && d.taskValidated === true && activeQuestRef.current) {
+        const aq = activeQuestRef.current;
+        const taskInstr = aq.tasks[aq.currentTaskIndex]?.instruction ?? "";
+        setTaskValidatedBanner(taskInstr);
+        setTimeout(() => {
+          setTaskValidatedBanner(null);
+          handleCompleteTask();
+        }, 2200);
+      }
     } catch (err: any) {
       if (err?.name === "AbortError") { /* requête annulée — l'ancien message reste */ }
       else if (mountedRef.current) setCurrentReply({ reply: "Erreur réseau…", translation: "", words: [], suggestions: [] });
@@ -938,14 +967,25 @@ export default function POIClient({
                   }`} />
                 ))}
               </div>
-              {currentReply && !isBusy && !isPaused && (
-                <button
-                  onClick={() => setShowQuiz(true)}
-                  className="mt-2.5 w-full rounded-lg bg-emerald-500 hover:bg-emerald-400 active:scale-95 transition-all py-1.5 text-[11px] font-bold text-white tracking-wide"
-                >
-                  J&apos;ai compris ✓
-                </button>
-              )}
+              {(() => {
+                const currentTask = activeQuest.tasks[activeQuest.currentTaskIndex];
+                const isAiValidatedTask = currentTask?.choices?.length === 0;
+                if (isAiValidatedTask) {
+                  return (
+                    <p className="mt-2 text-[10px] text-gray-400 italic">
+                      💬 Parle en japonais — validation automatique
+                    </p>
+                  );
+                }
+                return currentReply && !isBusy && !isPaused ? (
+                  <button
+                    onClick={() => setShowQuiz(true)}
+                    className="mt-2.5 w-full rounded-lg bg-emerald-500 hover:bg-emerald-400 active:scale-95 transition-all py-1.5 text-[11px] font-bold text-white tracking-wide"
+                  >
+                    J&apos;ai compris ✓
+                  </button>
+                ) : null;
+              })()}
             </div>
           </div>
         ) : (
@@ -1509,6 +1549,21 @@ export default function POIClient({
                 );
               })}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Task validated banner ── */}
+      {taskValidatedBanner && (
+        <div
+          className="pointer-events-none fixed inset-x-0 top-1/3 z-[60]"
+          style={{ animation: "taskBannerIn 0.3s cubic-bezier(0.34,1.56,0.64,1) both" }}
+        >
+          <div className="flex flex-col items-center justify-center bg-emerald-500 px-16 py-8 text-center shadow-lg"
+            style={{ borderTop: "1px solid #16a34a", borderBottom: "1px solid #16a34a" }}>
+            <span className="text-2xl mb-2">✅</span>
+            <p className="text-base font-black text-white">Tâche validée !</p>
+            <p className="text-sm text-white/80 mt-1">{taskValidatedBanner}</p>
           </div>
         </div>
       )}

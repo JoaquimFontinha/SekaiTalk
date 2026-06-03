@@ -18,7 +18,8 @@ export async function POST(req: NextRequest) {
   whisperForm.append("language", "ja");
   whisperForm.append("response_format", "verbose_json");
   whisperForm.append("temperature", "0");
-  whisperForm.append("prompt", "日本語");
+  // Prompt enrichi : exemples de vocabulaire japonais courant pour ancrer Whisper
+  whisperForm.append("prompt", "日本語で話しています。観光、仕事、パスポート、ありがとうございます、すみません、です、ます、はい、いいえ、どこ、いくら、お願いします。");
 
   const response = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
     method: "POST",
@@ -38,10 +39,21 @@ export async function POST(req: NextRequest) {
     "日本語", "ご視聴", "字幕", "翻訳", "ありがとうございました",
     "お願いします。", "です。", "ます。",
   ];
-  const isHallucination = (text: string) =>
-    text.trim().length < 3 ||
-    HALLUCINATIONS.some(h => text.trim() === h) ||
-    /^[。、．，\s]+$/.test(text.trim());
+
+  const HAS_JAPANESE = /[　-〿぀-ゟ゠-ヿ＀-￯一-龯]/;
+
+  // Mots français/anglais qui indiquent une mauvaise reconnaissance du japonais
+  const FRENCH_EN_WORDS = /\b(encore|mais|avec|pour|dans|bien|plus|très|aussi|votre|notre|cette|comme|tout|vous|nous|elle|ils|merci|bonjour|oui|non|the|and|but|for|with|this|that|have|from|they|what|just|when|your|more|will|about|there|their|been|also|would|could|should|were|said|each|she|him|his|how|its|now|only|over|than|then|time|very|after|before|through|where|while)\b/i;
+
+  const isHallucination = (text: string) => {
+    const t = text.trim();
+    if (t.length < 3) return true;
+    if (HALLUCINATIONS.some(h => t === h)) return true;
+    if (/^[。、．，\s]+$/.test(t)) return true;
+    // Rejet si aucun caractère japonais ET ressemble à du français/anglais
+    if (!HAS_JAPANESE.test(t) && FRENCH_EN_WORDS.test(t)) return true;
+    return false;
+  };
 
   // Filter segments where Whisper detected no meaningful speech
   if (Array.isArray(data.segments) && data.segments.length > 0) {

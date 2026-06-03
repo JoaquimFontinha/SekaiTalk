@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-const JSON_INSTRUCTION = `
+const jsonInstruction = (aiTask: boolean) => `
 Réponds UNIQUEMENT avec ce JSON valide (rien d'autre, pas de markdown) :
 {
   "reply": "réponse complète en japonais",
@@ -12,7 +12,7 @@ Réponds UNIQUEMENT avec ce JSON valide (rien d'autre, pas de markdown) :
   "words": [
     {"furigana": "lecture hiragana du mot (vide si déjà hiragana)", "jp": "mot japonais (kanji ou kana)", "romaji": "romanisation", "fr": "traduction française du mot"}
   ],
-  "suggestions": ["suggestion naturelle en français 1", "suggestion naturelle en français 2", "suggestion naturelle en français 3"]
+  "suggestions": ["suggestion naturelle en français 1", "suggestion naturelle en français 2", "suggestion naturelle en français 3"]${aiTask ? `,\n  "taskValidated": false` : ""}
 }
 Règles de découpage importantes :
 - Regroupe toujours les particules (は、が、を、に、で、と、も、か、ね、よ…) avec le mot qui les précède. Ex: "今日は" → un seul groupe, pas deux.
@@ -42,7 +42,7 @@ const REMEMBER_TOOL: Anthropic.Tool = {
 };
 
 export async function POST(req: NextRequest) {
-  const { messages, systemPrompt, characterId } = await req.json();
+  const { messages, systemPrompt, characterId, aiTask } = await req.json();
 
   if (!messages || !systemPrompt) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
     const response = await anthropic.messages.create({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 800,
-      system: enhancedSystemPrompt + "\n\n" + JSON_INSTRUCTION,
+      system: enhancedSystemPrompt + "\n\n" + jsonInstruction(!!aiTask),
       messages: currentMessages,
       ...(useTool ? { tools: [REMEMBER_TOOL], tool_choice: { type: "auto" } } : {}),
     });

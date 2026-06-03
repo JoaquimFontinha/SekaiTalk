@@ -22,7 +22,9 @@
       "Bash(node -e 'const {PrismaClient}=require\\('\\\\''@prisma/client'\\\\''\\);const p=new PrismaClient\\(\\);Promise.all\\([p.cityRecord.count\\(\\),p.pOIRecord.count\\(\\)]\\).then\\(\\([c,poi]\\)=>console.log\\('\\\\''Cities:'\\\\'',c,'\\\\''POIs:'\\\\'',poi\\)\\).finally\\(\\(\\)=>p.$disconnect\\(\\)\\)')",
       "Bash(node -e 'const {PrismaClient}=require\\('\\\\''@prisma/client'\\\\''\\);const p=new PrismaClient\\(\\);p.user.updateMany\\({where:{email:'\\\\''jfontinha17@gmail.com'\\\\''},data:{isAdmin:true}}\\).then\\(r=>console.log\\('\\\\''Updated:'\\\\'',r.count,'\\\\''user\\(s\\)'\\\\''\\)\\).finally\\(\\(\\)=>p.$disconnect\\(\\)\\)')",
       "WebFetch(domain:web.meetcleo.com)",
-      "WebFetch(domain:traqo.fr)"
+      "WebFetch(domain:traqo.fr)",
+      "Skill(claude-md-management:revise-claude-md)",
+      "Skill(claude-md-management:revise-claude-md:*)"
     ]
   }
 }
