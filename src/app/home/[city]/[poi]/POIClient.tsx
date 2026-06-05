@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Pause, Play, Eye, EyeOff, Mic, MicOff, ChevronLeft, ChevronRight } from "lucide-react";
 import cities from "@/lib/cities";
@@ -188,14 +188,22 @@ function AudioWave({ analyserRef, isRecording, isSpeaking, isBusy, maxH = 20 }: 
 
 // ── WordRow ───────────────────────────────────────────────────────────────────
 
-function WordRow({ words, mode }: { words: Word[]; mode: DisplayMode }) {
+function WordRow({ words, mode, isMobile }: { words: Word[]; mode: DisplayMode; isMobile?: boolean }) {
+  const furiSz  = isMobile ? "text-[9px]"  : "text-[11px]";
+  const kanjiSz = isMobile ? "text-[18px]" : "text-[26px]";
+  const jpSz    = isMobile ? "text-[17px]" : "text-[24px]";
+  const romajiSz = isMobile ? "text-[9px]" : "text-[11px]";
+  const frSz    = isMobile ? "text-[9px]"  : "text-[10px]";
+  const gapX    = isMobile ? "gap-x-3"     : "gap-x-5";
+  const gapY    = isMobile ? "gap-y-2"     : "gap-y-4";
+
   if (mode === "kanji") {
     return (
-      <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+      <div className={`flex flex-wrap items-end ${isMobile ? "gap-x-3 gap-y-2" : "gap-x-4 gap-y-3"}`}>
         {words.map((w, i) => (
           <div key={i} className="flex flex-col items-center gap-[2px]">
-            <span className="text-[11px] font-medium text-gray-400 min-h-[14px]">{w.furigana}</span>
-            <span className="text-[26px] font-bold text-gray-900 leading-none tracking-wide">{w.jp}</span>
+            <span className={`${furiSz} font-medium text-gray-400 min-h-[14px]`}>{w.furigana}</span>
+            <span className={`${kanjiSz} font-bold text-gray-900 leading-none tracking-wide`}>{w.jp}</span>
           </div>
         ))}
       </div>
@@ -204,14 +212,14 @@ function WordRow({ words, mode }: { words: Word[]; mode: DisplayMode }) {
 
   if (mode === "romaji") {
     return (
-      <div className="flex flex-wrap items-end gap-x-5 gap-y-4">
+      <div className={`flex flex-wrap items-end ${gapX} ${gapY}`}>
         {words.map((w, i) => {
           const color = WORD_COLORS[i % WORD_COLORS.length];
           return (
             <div key={i} className="flex flex-col items-center gap-[3px]">
-              <span className={`text-[11px] font-medium min-h-[16px] ${color} opacity-80`}>{w.furigana}</span>
-              <span className="text-[24px] font-bold leading-none text-gray-900 tracking-wide">{w.jp}</span>
-              <span className={`text-[11px] font-semibold underline underline-offset-2 decoration-dotted ${color}`}>{w.romaji}</span>
+              <span className={`${furiSz} font-medium min-h-[16px] ${color} opacity-80`}>{w.furigana}</span>
+              <span className={`${jpSz} font-bold leading-none text-gray-900 tracking-wide`}>{w.jp}</span>
+              <span className={`${romajiSz} font-semibold underline underline-offset-2 decoration-dotted ${color}`}>{w.romaji}</span>
             </div>
           );
         })}
@@ -221,15 +229,15 @@ function WordRow({ words, mode }: { words: Word[]; mode: DisplayMode }) {
 
   // mode === "full"
   return (
-    <div className="flex flex-wrap items-end gap-x-5 gap-y-4">
+    <div className={`flex flex-wrap items-end ${gapX} ${gapY}`}>
       {words.map((w, i) => {
         const color = WORD_COLORS[i % WORD_COLORS.length];
         return (
           <div key={i} className="flex flex-col items-center gap-[3px]">
-            <span className={`text-[11px] font-medium min-h-[16px] ${color} opacity-80`}>{w.furigana}</span>
-            <span className="text-[24px] font-bold leading-none text-gray-900 tracking-wide">{w.jp}</span>
-            <span className={`text-[11px] font-semibold underline underline-offset-2 decoration-dotted ${color}`}>{w.romaji}</span>
-            <span className="text-[10px] text-gray-500 mt-0.5">{w.fr}</span>
+            <span className={`${furiSz} font-medium min-h-[16px] ${color} opacity-80`}>{w.furigana}</span>
+            <span className={`${jpSz} font-bold leading-none text-gray-900 tracking-wide`}>{w.jp}</span>
+            <span className={`${romajiSz} font-semibold underline underline-offset-2 decoration-dotted ${color}`}>{w.romaji}</span>
+            <span className={`${frSz} text-gray-500 mt-0.5`}>{w.fr}</span>
           </div>
         );
       })}
@@ -288,6 +296,44 @@ export default function POIClient({
   const [sessionExpired, setSessionExpired]   = useState(false);
   const [leaving, setLeaving]                 = useState(false);
   const [hideDialogue, setHideDialogue]       = useState(false);
+  const [isMobile, setIsMobile] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.innerWidth < 640 : false
+  );
+  const [charBottom, setCharBottom] = useState(140);
+  const [charHeight, setCharHeight] = useState(0);
+  const dialogueElRef = useRef<HTMLDivElement | null>(null);
+  const dialogueObsRef = useRef<ResizeObserver | null>(null);
+
+  const updateCharLayout = useCallback((dialogueH: number) => {
+    if (typeof window === "undefined") return;
+    const sh     = window.innerHeight;
+    const HEAD_Y   = 260;   // ancre hauteur (ne pas toucher)
+    const OVERLAP  = 90;    // px cachés sous la carte blanche (header dialogue ≈ 70px + marge)
+    const LOWER_BY = 25;    // décalage vers le bas sans changer la taille
+    const minH = Math.round(sh * 0.35);
+    const maxH = Math.round(sh * 0.54);
+    const rawH   = sh - HEAD_Y - (dialogueH + 72) + OVERLAP;
+    const height = Math.min(maxH, Math.max(minH, rawH));
+    const idealBottom = sh - HEAD_Y - height;
+    const maxBottom   = Math.max(0, dialogueH + 72 - OVERLAP);
+    const bottom = Math.max(0, Math.min(idealBottom, maxBottom) - LOWER_BY);
+    setCharBottom(bottom);
+    setCharHeight(height);
+  }, []);
+
+  const dialogueBoxRef = useCallback((el: HTMLDivElement | null) => {
+    dialogueElRef.current = el;
+    dialogueObsRef.current?.disconnect();
+    dialogueObsRef.current = null;
+    if (!el || !isMobile) return;
+    const obs = new ResizeObserver(entries => {
+      const el = entries[0]?.target as HTMLElement | undefined;
+      updateCharLayout(el?.getBoundingClientRect().height ?? 0);
+    });
+    obs.observe(el);
+    dialogueObsRef.current = obs;
+    updateCharLayout(el.getBoundingClientRect().height);
+  }, [isMobile, updateCharLayout]);
   const [micMuted, setMicMuted]               = useState(false);
   const [speakKey, setSpeakKey]               = useState(0);
   const [showMenu, setShowMenu]               = useState(false);
@@ -866,6 +912,19 @@ Tu continues la conversation normalement, et indiques juste le résultat de vali
 
   const isBusy = isLoading || isTranscribing;
 
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // Re-measure après chaque changement de contenu (mode, nouvelle réponse, etc.)
+  useLayoutEffect(() => {
+    if (!isMobile || !dialogueElRef.current) return;
+    updateCharLayout(dialogueElRef.current.getBoundingClientRect().height);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile, isBusy, historyIndex, displayMode, updateCharLayout]);
+
   // ── History navigation ──
   const histEntry       = replyHistoryRef.current[historyIndex];
   const displayedReply  = histEntry?.reply ?? currentReply;
@@ -933,37 +992,50 @@ Tu continues la conversation normalement, et indiques juste le résultat de vali
       </div>
 
       {/* Character sprite */}
-      <div className="absolute bottom-0 right-0 z-10 h-full flex items-end pointer-events-none" style={{ width: "52%" }}>
+      <div
+        className={`absolute z-10 pointer-events-none ${isMobile ? "left-0 right-0" : "right-0 flex items-end"}`}
+        style={isMobile
+          ? {
+              bottom: `${charBottom}px`,
+              height: charHeight > 0 ? `${charHeight}px` : "50vh",
+              transition: "bottom 0.25s ease, height 0.25s ease",
+            }
+          : { width: "52%", bottom: 0, height: "100%" }
+        }
+      >
         <img
           key={speakKey}
           src={character.image || "/character_placeholder.png"} alt={character.name}
           onError={e => { (e.currentTarget as HTMLImageElement).src = "/character_placeholder.png"; }}
-          className={`h-[92%] w-auto object-contain object-bottom${speakKey > 0 ? " char-bounce" : ""}`}
+          className={`object-contain object-bottom${isMobile ? " w-full h-full" : " w-auto h-[92%]"}${speakKey > 0 ? " char-bounce" : ""}`}
           draggable={false}
         />
       </div>
 
 
       {/* Top bar — left | center pause | right */}
-      <div className="absolute top-0 left-0 right-0 z-50 flex items-start justify-between px-5 pt-4">
+      <div className={`absolute top-0 left-0 right-0 z-50 flex items-start justify-between ${isMobile ? "px-2 pt-3 gap-2" : "px-5 pt-4"}`}>
 
         {/* Left: quest info */}
         {activeQuest ? (
-          <div className="flex items-start gap-2 rounded-xl bg-white/95 px-4 py-3 shadow-sm border border-yellow-400/30 backdrop-blur-sm" style={{ maxWidth: 420 }}>
-            <span className="mt-0.5 shrink-0">🎯</span>
+          <div
+            className="flex items-start gap-2 rounded-xl bg-white/95 px-3 py-2.5 shadow-sm border border-yellow-400/30 backdrop-blur-sm"
+            style={{ maxWidth: isMobile ? "calc(100vw - 148px)" : 420 }}
+          >
+            <span className="mt-0.5 shrink-0 text-sm">🎯</span>
             <div className="flex-1 min-w-0">
-              <p className="text-[9px] font-bold uppercase tracking-widest text-yellow-600">
+              <p className={`font-bold uppercase tracking-widest text-yellow-600 ${isMobile ? "text-[8px]" : "text-[9px]"}`}>
                 {activeQuest.questTitle} — {activeQuest.currentTaskIndex + 1}/{activeQuest.tasks.length}
               </p>
-              <p className="text-[12px] font-semibold text-gray-800 leading-snug mt-0.5">
+              <p className={`font-semibold text-gray-800 leading-snug mt-0.5 ${isMobile ? "text-[11px]" : "text-[12px]"}`}>
                 {activeQuest.tasks[activeQuest.currentTaskIndex]?.instruction}
               </p>
               <div className="mt-1.5 flex gap-1">
                 {activeQuest.tasks.map((_, i) => (
                   <div key={i} className={`h-1 rounded-full transition-all duration-500 ${
-                    i < activeQuest.currentTaskIndex ? "w-5 bg-emerald-400"
-                    : i === activeQuest.currentTaskIndex ? "w-5 bg-yellow-400"
-                    : "w-3 bg-gray-200"
+                    i < activeQuest.currentTaskIndex ? "w-4 bg-emerald-400"
+                    : i === activeQuest.currentTaskIndex ? "w-4 bg-yellow-400"
+                    : "w-2.5 bg-gray-200"
                   }`} />
                 ))}
               </div>
@@ -972,7 +1044,7 @@ Tu continues la conversation normalement, et indiques juste le résultat de vali
                 const isAiValidatedTask = currentTask?.choices?.length === 0;
                 if (isAiValidatedTask) {
                   return (
-                    <p className="mt-2 text-[10px] text-gray-400 italic">
+                    <p className="mt-1.5 text-[10px] text-gray-400 italic">
                       💬 Parle en japonais — validation automatique
                     </p>
                   );
@@ -980,7 +1052,7 @@ Tu continues la conversation normalement, et indiques juste le résultat de vali
                 return currentReply && !isBusy && !isPaused ? (
                   <button
                     onClick={() => setShowQuiz(true)}
-                    className="mt-2.5 w-full rounded-lg bg-emerald-500 hover:bg-emerald-400 active:scale-95 transition-all py-1.5 text-[11px] font-bold text-white tracking-wide"
+                    className="mt-2 w-full rounded-lg bg-emerald-500 hover:bg-emerald-400 active:scale-95 transition-all py-1.5 text-[11px] font-bold text-white tracking-wide"
                   >
                     J&apos;ai compris ✓
                   </button>
@@ -992,46 +1064,54 @@ Tu continues la conversation normalement, et indiques juste le résultat de vali
           <div />
         )}
 
-        {/* Center: pause button + timer */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={togglePause}
-            className="flex flex-col items-center gap-0.5 rounded-xl bg-white/95 px-5 py-2.5 shadow-sm backdrop-blur-sm hover:bg-white transition-colors"
-          >
-            {isPaused
-              ? <Play  className="h-5 w-5 text-gray-700" />
-              : <Pause className="h-5 w-5 text-gray-700" />
-            }
-            <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400">
-              {isPaused ? "Reprendre" : "Pause"}
-            </span>
-          </button>
-          {questTimeLeft !== null && (() => {
-            const m = Math.floor(questTimeLeft / 60);
-            const s = questTimeLeft % 60;
+        {/* Center: pause + timer (desktop only) */}
+        {!isMobile && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              onClick={togglePause}
+              className="flex flex-col items-center gap-0.5 rounded-xl bg-white/95 px-5 py-2.5 shadow-sm backdrop-blur-sm hover:bg-white transition-colors"
+            >
+              {isPaused ? <Play className="h-5 w-5 text-gray-700" /> : <Pause className="h-5 w-5 text-gray-700" />}
+              <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400">
+                {isPaused ? "Reprendre" : "Pause"}
+              </span>
+            </button>
+            {questTimeLeft !== null && (() => {
+              const m = Math.floor(questTimeLeft / 60); const s = questTimeLeft % 60;
+              const display = `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+              const isWarn = questTimeLeft <= 5 * 60; const isCrit = questTimeLeft <= 60;
+              return (
+                <div className={`rounded-xl bg-white/95 px-3 py-2.5 shadow-sm backdrop-blur-sm text-center min-w-[56px] ${isCrit ? "animate-pulse" : ""}`}>
+                  <p className={`text-base font-black tabular-nums leading-none ${isCrit ? "text-red-500" : isWarn ? "text-orange-500" : "text-gray-700"}`}>{display}</p>
+                  <p className="text-[8px] font-bold uppercase tracking-widest text-gray-300 mt-0.5">Session</p>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* Right: timer (mobile) + menu button */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {isMobile && questTimeLeft !== null && (() => {
+            const m = Math.floor(questTimeLeft / 60); const s = questTimeLeft % 60;
             const display = `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-            const isWarn  = questTimeLeft <= 5 * 60;
-            const isCrit  = questTimeLeft <= 60;
+            const isWarn = questTimeLeft <= 5 * 60; const isCrit = questTimeLeft <= 60;
             return (
-              <div className={`rounded-xl bg-white/95 px-3 py-2.5 shadow-sm backdrop-blur-sm text-center min-w-[56px] ${isCrit ? "animate-pulse" : ""}`}>
-                <p className={`text-base font-black tabular-nums leading-none ${
-                  isCrit ? "text-red-500" : isWarn ? "text-orange-500" : "text-gray-700"
-                }`}>{display}</p>
+              <div className={`rounded-xl bg-white/95 px-2 py-2 shadow-sm backdrop-blur-sm text-center min-w-[48px] ${isCrit ? "animate-pulse" : ""}`}>
+                <p className={`text-sm font-black tabular-nums leading-none ${isCrit ? "text-red-500" : isWarn ? "text-orange-500" : "text-gray-700"}`}>{display}</p>
                 <p className="text-[8px] font-bold uppercase tracking-widest text-gray-300 mt-0.5">Session</p>
               </div>
             );
           })()}
+          <button
+            onClick={() => setShowMenu(true)}
+            className={`flex flex-col items-center justify-center gap-[5px] rounded-xl bg-white/95 shadow-sm backdrop-blur-sm hover:bg-white transition-colors shrink-0 ${isMobile ? "px-3 py-2" : "px-4 py-2.5"}`}
+          >
+            <span className={`block h-[2px] rounded-full bg-gray-600 ${isMobile ? "w-4" : "w-5"}`} />
+            <span className={`block h-[2px] rounded-full bg-gray-600 ${isMobile ? "w-4" : "w-5"}`} />
+            <span className={`block h-[2px] rounded-full bg-gray-600 ${isMobile ? "w-4" : "w-5"}`} />
+          </button>
         </div>
-
-        {/* Right: menu button */}
-        <button
-          onClick={() => setShowMenu(true)}
-          className="flex flex-col items-center justify-center gap-[5px] rounded-xl bg-white/95 px-4 py-2.5 shadow-sm backdrop-blur-sm hover:bg-white transition-colors"
-        >
-          <span className="block w-5 h-[2px] rounded-full bg-gray-600" />
-          <span className="block w-5 h-[2px] rounded-full bg-gray-600" />
-          <span className="block w-5 h-[2px] rounded-full bg-gray-600" />
-        </button>
       </div>
 
       {/* Pause overlay */}
@@ -1101,7 +1181,11 @@ Tu continues la conversation normalement, et indiques juste le résultat de vali
 
       {/* Dialogue panel */}
       {!hideDialogue && (
-      <div className="absolute bottom-[72px] left-1/2 -translate-x-1/2 z-20 flex flex-col gap-2.5" style={{ width: "54%" }}>
+      <div
+        ref={dialogueBoxRef}
+        className={`absolute bottom-[72px] z-20 flex flex-col gap-2.5 ${isMobile ? "left-2 right-2" : "left-1/2 -translate-x-1/2"}`}
+        style={isMobile ? undefined : { width: "54%" }}
+      >
 
         <div className="flex items-center gap-2">
           <div className="h-14 w-14 rounded-full overflow-hidden border-2 border-white shadow-sm shrink-0 bg-indigo-100">
@@ -1183,10 +1267,10 @@ Tu continues la conversation normalement, et indiques juste le résultat de vali
               <span className="text-sm">{isTranscribing ? "Transcription…" : "Réflexion…"}</span>
             </div>
           ) : displayedReply ? (
-            <div className={`flex flex-col gap-4 pr-36 transition-opacity duration-200 ${isViewingHistory ? "opacity-60" : ""}`}>
+            <div className={`flex flex-col gap-4 transition-opacity duration-200 ${isMobile ? "pr-24" : "pr-36"} ${isViewingHistory ? "opacity-60" : ""}`}>
               {(displayedReply.words?.length ?? 0) > 0 ? (
                 <>
-                  <WordRow words={displayedReply.words} mode={displayMode} />
+                  <WordRow words={displayedReply.words} mode={displayMode} isMobile={isMobile} />
                   {displayedReply.translation && displayMode !== "romaji" && (
                     <p className="text-xs text-gray-400 border-t border-gray-200 pt-3 mt-1 italic">
                       {displayedReply.translation}
@@ -1195,7 +1279,7 @@ Tu continues la conversation normalement, et indiques juste le résultat de vali
                 </>
               ) : (
                 <>
-                  <p className="text-xl font-bold text-gray-900 leading-relaxed">{displayedReply.reply}</p>
+                  <p className={`${isMobile ? "text-base" : "text-xl"} font-bold text-gray-900 leading-relaxed`}>{displayedReply.reply}</p>
                   {displayedReply.translation && (
                     <p className="text-xs text-gray-400 border-t border-gray-200 pt-3 italic">{displayedReply.translation}</p>
                   )}
@@ -1605,6 +1689,33 @@ Tu continues la conversation normalement, et indiques juste le résultat de vali
             </div>
 
             <div className="flex flex-col p-3 gap-1.5">
+
+              {/* Pause / Resume — mobile only */}
+              {isMobile && (
+                <button
+                  onClick={() => { togglePause(); setShowMenu(false); }}
+                  className={`flex items-center gap-3 rounded-xl px-4 py-3.5 text-left border transition-all ${
+                    isPaused
+                      ? "bg-emerald-50 border-emerald-200 hover:bg-emerald-100"
+                      : "bg-gray-50 border-gray-100 hover:bg-gray-100"
+                  }`}
+                >
+                  {isPaused
+                    ? <Play  className="h-5 w-5 text-emerald-600 shrink-0" />
+                    : <Pause className="h-5 w-5 text-gray-500 shrink-0" />
+                  }
+                  <div>
+                    <p className={`text-sm font-bold ${isPaused ? "text-emerald-700" : "text-gray-700"}`}>
+                      {isPaused ? "Reprendre la session" : "Mettre en pause"}
+                    </p>
+                    <p className="text-[10px] text-gray-400">
+                      {isPaused ? "Continuer là où vous en étiez" : "Suspendre temporairement"}
+                    </p>
+                  </div>
+                </button>
+              )}
+
+              {isMobile && <div className="h-px bg-gray-100" />}
 
               {/* Volume voix */}
               <div className="flex items-center gap-3 rounded-xl px-4 py-3 bg-gray-50 border border-gray-100">
