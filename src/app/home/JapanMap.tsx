@@ -112,6 +112,13 @@ const CENTER_LNG  = 136.5;
 const CENTER_LAT  = 36.8;
 const INIT_ZOOM   = 5.4;
 const SIDEBAR_PX  = 468; // sidebar width (448) + left offset (20)
+// Mobile: collapsed sheet = 84px + 14px bottom margin = ~98px from bottom
+function getMapPadding() {
+  const mobile = typeof window !== "undefined" && window.innerWidth < 640;
+  return mobile
+    ? { left: 0, top: 0, right: 0, bottom: 100 }
+    : { left: SIDEBAR_PX, top: 0, right: 0, bottom: 0 };
+}
 
 export default function JapanMap() {
   const router = useRouter();
@@ -152,11 +159,17 @@ export default function JapanMap() {
       onLoad={() => {
         const map = mapRef.current?.getMap();
         if (!map) return;
-        map.setPadding({ left: SIDEBAR_PX, top: 0, right: 0, bottom: 0 });
+        map.setPadding(getMapPadding());
         map.jumpTo({ center: [CENTER_LNG, CENTER_LAT], zoom: INIT_ZOOM });
         japanFlyToRef.current = (lng, lat, zoom = 7) => {
           map.flyTo({ center: [lng, lat], zoom, duration: 1200, essential: true });
         };
+        // Update padding on resize (e.g. orientation change)
+        const onResize = () => {
+          map.setPadding(getMapPadding());
+          map.jumpTo({ center: [CENTER_LNG, CENTER_LAT], zoom: INIT_ZOOM });
+        };
+        window.addEventListener("resize", onResize);
       }}
       minZoom={5.4}
       maxZoom={9}

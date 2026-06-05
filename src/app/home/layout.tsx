@@ -104,6 +104,15 @@ function HomeShell({ children }: { children: React.ReactNode }) {
   const isOnHomePage = parts.length === 0;
   const isOnPoiPage  = parts.length >= 2;
 
+  const [isMobile, setIsMobile] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.innerWidth < 640 : false
+  );
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
   return (
     <>
       <PersistentJapanMap />
@@ -114,7 +123,7 @@ function HomeShell({ children }: { children: React.ReactNode }) {
         {children}
       </div>
       {/* Footer links — hidden on city page (CityClient renders its own with drawer-aware offset) */}
-      {!isOnCityPage && (
+      {!isOnCityPage && !isMobile && (
         <div style={{
           position: "fixed", bottom: 16, right: 20,
           zIndex: 10, pointerEvents: "auto",
