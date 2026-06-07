@@ -54,6 +54,11 @@ const MAP_STYLE = {
   },
   layers: [
     {
+      id: "ocean-background",
+      type: "background" as const,
+      paint: { "background-color": "#1a3568" },
+    },
+    {
       id: "japan-fill",
       type: "fill" as const,
       source: "country-boundaries",
