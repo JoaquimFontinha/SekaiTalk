@@ -42,6 +42,11 @@ const MAP_STYLE = {
       type: "vector" as const,
       url: "mapbox://mapbox.country-boundaries-v1",
     },
+    "terrain-dem": {
+      type: "raster-dem" as const,
+      url: "mapbox://mapbox.mapbox-terrain-dem-v1",
+      tileSize: 512,
+    },
     "japan-regions": {
       type: "geojson" as const,
       data: JAPAN_REGIONS_GEOJSON,
@@ -54,6 +59,14 @@ const MAP_STYLE = {
       paint: { "background-color": "#1a3568" },
     },
     {
+      id: "non-japan-mask-base",
+      type: "fill" as const,
+      source: "country-boundaries",
+      "source-layer": "country_boundaries",
+      filter: ["!=", ["get", "iso_3166_1"], "JP"],
+      paint: { "fill-color": "#1a3568", "fill-opacity": 1, "fill-antialias": false },
+    },
+    {
       id: "japan-fill",
       type: "fill" as const,
       source: "country-boundaries",
@@ -62,12 +75,24 @@ const MAP_STYLE = {
       paint: { "fill-color": "#b8a07a", "fill-opacity": 1 },
     },
     {
+      id: "japan-hillshade",
+      type: "hillshade" as const,
+      source: "terrain-dem",
+      paint: {
+        "hillshade-illumination-direction": 335,
+        "hillshade-exaggeration": 0.45,
+        "hillshade-shadow-color": "#6b4f2a",
+        "hillshade-highlight-color": "#f0e8d0",
+        "hillshade-accent-color": "#8a6640",
+      },
+    },
+    {
       id: "non-japan-mask",
       type: "fill" as const,
       source: "country-boundaries",
       "source-layer": "country_boundaries",
       filter: ["!=", ["get", "iso_3166_1"], "JP"],
-      paint: { "fill-color": "#1a3568", "fill-opacity": 1 },
+      paint: { "fill-color": "#1a3568", "fill-opacity": 1, "fill-antialias": false },
     },
     {
       id: "japan-region-labels",
