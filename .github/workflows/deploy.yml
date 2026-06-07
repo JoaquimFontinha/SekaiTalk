@@ -21,7 +21,7 @@ jobs:
           ssh -i ~/.ssh/deploy_key ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
             cd ~/SekaiTalk &&
             git pull origin dev/first &&
-            npm ci --omit=dev &&
+            npm ci &&
             npx prisma generate &&
             npm run build &&
             pm2 restart sekaitalk
