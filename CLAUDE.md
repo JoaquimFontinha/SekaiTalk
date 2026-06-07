@@ -58,12 +58,26 @@ psql -U sekaiuser -d sekaitalk
 - `.env` → `DATABASE_URL="postgresql://sekaiuser:Joaquim123@localhost:5432/sekaitalk"`
 - `.env.local` → toutes les autres variables (ANTHROPIC_API_KEY, GROQ_API_KEY, NEXTAUTH_SECRET, NEXTAUTH_URL=https://sekaitalk.com, GOOGLE_CLIENT_ID/SECRET, ELEVENLABS_API_KEY, NEXT_PUBLIC_MAPBOX_TOKEN). **Ne pas mettre DATABASE_URL dans `.env.local`** — il écrase `.env` et pointe vers la DB locale.
 
-**Workflow deploy** (depuis la machine locale) :
+**CI/CD automatique** : GitHub Actions déclenche le déploiement à chaque push sur `dev/first`. Workflow : `.github/workflows/deploy.yml`.
+
+Secrets GitHub requis (Settings → Secrets → Actions) :
+- `VPS_HOST` → `51.91.127.2`
+- `VPS_USER` → `ubuntu`
+- `VPS_SSH_KEY` → clé privée SSH **encodée en base64** (voir ci-dessous)
+
+Génération de la clé SSH dédiée (sur le VPS, une seule fois) :
+```bash
+ssh-keygen -t ed25519 -C "github-actions" -f ~/.ssh/github_actions -N ""
+cat ~/.ssh/github_actions.pub >> ~/.ssh/authorized_keys
+base64 -w 0 ~/.ssh/github_actions   # → coller dans le secret VPS_SSH_KEY
+```
+
+**Workflow deploy manuel** (si CI/CD contourné) :
 ```bash
 # 1. Commit + push sur dev/first
 git add . && git commit -m "feat: ..." && git push origin dev/first
 
-# 2. Sur le VPS
+# 2. Sur le VPS (normalement automatique)
 cd ~/SekaiTalk && git pull && npm run build && pm2 restart sekaitalk
 ```
 
@@ -82,6 +96,9 @@ npm run build && pm2 restart sekaitalk
 - Le `catch {}` vide dans `src/app/api/register/route.ts` masque les erreurs — ajouter `console.error(e)` pour déboguer
 - `npm run build` doit être relancé après chaque modification de code côté serveur
 - `prisma db push` régénère le client Prisma automatiquement, mais le build Next.js doit être relancé
+- **Ne jamais mettre `DATABASE_URL` dans `.env.local`** — il écrase `.env` et pointe vers la DB locale (localhost) au lieu de la DB VPS
+- La clé SSH pour GitHub Actions doit être encodée en **base64** (`base64 -w 0 ~/.ssh/github_actions`) avant d'être collée dans le secret GitHub — sinon les sauts de ligne sont perdus et l'auth SSH échoue silencieusement
+- Le CI/CD utilise `npm ci` (pas `npm ci --omit=dev`) — `tailwindcss` est une devDependency nécessaire au build Next.js
 
 ## Stack
 
