@@ -3,13 +3,13 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 // ─── Light-mode palette (Cleo warm + Traqo clean) ─────────────────────────────
-const BG_PAGE  = "#f7f4f0";   // warm light
+const BG_PAGE  = "#f7f4f0";
 const BG_WHITE = "#ffffff";
-const BG_DEEP  = "#eee8e1";   // slightly deeper warm
-const COL_HEAD = "#1c1410";   // dark heading text
-const COL_BODY = "#6b5c56";   // body text
-const COL_MUTED = "#a89990";  // secondary / muted
-const COL_GREEN = "#05df72";  // CTA green
+const BG_DEEP  = "#eee8e1";
+const COL_HEAD = "#1c1410";
+const COL_BODY = "#6b5c56";
+const COL_MUTED = "#a89990";
+const COL_GREEN = "#05df72";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 const FEATURES = [
@@ -63,6 +63,18 @@ const CITIES = [
 
 const NAV_LINKS = ["Fonctionnalités", "Comment ça marche", "Tarifs", "Blog"];
 
+// ─── Responsive hook ──────────────────────────────────────────────────────────
+function useIsMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < breakpoint);
+    check();
+    window.addEventListener("resize", check, { passive: true });
+    return () => window.removeEventListener("resize", check);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 // ─── Scroll reveal ────────────────────────────────────────────────────────────
 function useScrollReveal() {
   useEffect(() => {
@@ -78,9 +90,11 @@ function useScrollReveal() {
   }, []);
 }
 
-// ─── Topbar (Traqo-style) ─────────────────────────────────────────────────────
+// ─── Topbar ───────────────────────────────────────────────────────────────────
 function Nav() {
   const [scrolled, setScrolled] = useState(false);
+  const isMobile = useIsMobile();
+
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 30);
     window.addEventListener("scroll", fn, { passive: true });
@@ -93,13 +107,13 @@ function Nav() {
       background: scrolled ? "rgba(255,255,255,0.94)" : "transparent",
       backdropFilter: scrolled ? "blur(20px)" : "none",
       borderBottom: scrolled ? "1px solid rgba(0,0,0,0.07)" : "none",
-      padding: "12px 32px",
-      display: "grid",
-      gridTemplateColumns: "1fr auto 1fr",
+      padding: isMobile ? "10px 20px" : "12px 32px",
+      display: "flex",
       alignItems: "center",
-      transition: "background 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease",
+      justifyContent: "space-between",
+      transition: "background 0.3s ease, border-color 0.3s ease",
     }}>
-      {/* Logo — left */}
+      {/* Logo */}
       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
         <span style={{ fontSize: 22 }}>🗾</span>
         <span style={{
@@ -108,47 +122,52 @@ function Nav() {
         }}>SekaiTalk</span>
       </div>
 
-      {/* Center pill nav */}
-      <div style={{
-        display: "inline-flex", gap: 1,
-        background: "#ede7e0",
-        borderRadius: 99, padding: "3px",
-        border: "1px solid rgba(0,0,0,0.06)",
-      }}>
-        {NAV_LINKS.map((label, i) => (
-          <button key={i} style={{
-            padding: "7px 18px", borderRadius: 99,
-            background: i === 0 ? COL_HEAD : "transparent",
-            color: i === 0 ? "#fff" : COL_BODY,
-            fontSize: 13, fontWeight: i === 0 ? 600 : 500,
-            border: "none", cursor: "pointer",
-            transition: "all 0.18s",
-            fontFamily: "system-ui, sans-serif",
-            whiteSpace: "nowrap",
-            letterSpacing: "-0.01em",
-          }}>
-            {label}
-          </button>
-        ))}
-      </div>
+      {/* Center pill nav — desktop only */}
+      {!isMobile && (
+        <div style={{
+          display: "inline-flex", gap: 1,
+          background: "#ede7e0",
+          borderRadius: 99, padding: "3px",
+          border: "1px solid rgba(0,0,0,0.06)",
+        }}>
+          {NAV_LINKS.map((label, i) => (
+            <button key={i} style={{
+              padding: "7px 18px", borderRadius: 99,
+              background: i === 0 ? COL_HEAD : "transparent",
+              color: i === 0 ? "#fff" : COL_BODY,
+              fontSize: 13, fontWeight: i === 0 ? 600 : 500,
+              border: "none", cursor: "pointer",
+              transition: "all 0.18s",
+              fontFamily: "system-ui, sans-serif",
+              whiteSpace: "nowrap",
+              letterSpacing: "-0.01em",
+            }}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Right CTAs */}
-      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", alignItems: "center" }}>
-        <Link href="/login" style={{
-          padding: "8px 18px", borderRadius: 99,
-          color: COL_BODY, fontSize: 13, fontWeight: 500,
-          textDecoration: "none", whiteSpace: "nowrap",
-        }}>
-          Se connecter
-        </Link>
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        {!isMobile && (
+          <Link href="/login" style={{
+            padding: "8px 18px", borderRadius: 99,
+            color: COL_BODY, fontSize: 13, fontWeight: 500,
+            textDecoration: "none", whiteSpace: "nowrap",
+          }}>
+            Se connecter
+          </Link>
+        )}
         <Link href="/onboarding" style={{
-          padding: "8px 22px", borderRadius: 99,
+          padding: isMobile ? "8px 16px" : "8px 22px",
+          borderRadius: 99,
           background: COL_HEAD, color: "#fff",
           fontSize: 13, fontWeight: 700,
           textDecoration: "none", letterSpacing: "-0.01em",
           whiteSpace: "nowrap",
         }}>
-          Essayer →
+          {isMobile ? "Commencer" : "Essayer →"}
         </Link>
       </div>
     </nav>
@@ -156,7 +175,7 @@ function Nav() {
 }
 
 // ─── 3D iPhone mockup ─────────────────────────────────────────────────────────
-function IPhone3D({ loaded }: { loaded: boolean }) {
+function IPhone3D({ loaded, scale = 1 }: { loaded: boolean; scale?: number }) {
   const [tilt, setTilt] = useState({ x: 4, y: -10 });
   const rafRef     = useRef<number>(0);
   const targetRef  = useRef({ x: 4, y: -10 });
@@ -190,7 +209,12 @@ function IPhone3D({ loaded }: { loaded: boolean }) {
   const W = 278, H = 570;
 
   return (
-    <div style={{ perspective: "1100px", perspectiveOrigin: "50% 40%", filter: "drop-shadow(0 60px 80px rgba(0,0,0,0.22)) drop-shadow(0 20px 40px rgba(0,0,0,0.14))" }}>
+    <div style={{
+      perspective: "1100px", perspectiveOrigin: "50% 40%",
+      filter: "drop-shadow(0 60px 80px rgba(0,0,0,0.22)) drop-shadow(0 20px 40px rgba(0,0,0,0.14))",
+      transform: `scale(${scale})`,
+      transformOrigin: "center top",
+    }}>
       <div style={{
         width: W, height: H,
         transform: loaded
@@ -308,6 +332,7 @@ function IPhone3D({ loaded }: { loaded: boolean }) {
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 function Hero() {
   const [loaded, setLoaded] = useState(false);
+  const isMobile = useIsMobile();
   useEffect(() => { const t = setTimeout(() => setLoaded(true), 80); return () => clearTimeout(t); }, []);
 
   return (
@@ -315,9 +340,9 @@ function Hero() {
       position: "relative", minHeight: "100vh",
       background: BG_PAGE, overflow: "hidden",
       display: "flex", alignItems: "center",
-      padding: "100px 0 80px",
+      padding: isMobile ? "88px 0 60px" : "100px 0 80px",
     }}>
-      {/* Gradient blobs (Traqo style) */}
+      {/* Gradient blobs */}
       <div style={{
         position: "absolute", top: -120, left: -120,
         width: 520, height: 520, borderRadius: "50%",
@@ -330,26 +355,24 @@ function Hero() {
         background: "radial-gradient(circle, rgba(217,119,6,0.1) 0%, transparent 70%)",
         filter: "blur(50px)", pointerEvents: "none",
       }}/>
-      <div style={{
-        position: "absolute", bottom: 80, right: 300,
-        width: 280, height: 280, borderRadius: "50%",
-        background: "radial-gradient(circle, rgba(5,223,114,0.09) 0%, transparent 70%)",
-        filter: "blur(30px)", pointerEvents: "none",
-      }}/>
 
       <div style={{
-        maxWidth: 1200, margin: "0 auto", width: "100%", padding: "0 56px",
-        display: "flex", alignItems: "center", gap: 64,
+        maxWidth: 1200, margin: "0 auto", width: "100%",
+        padding: isMobile ? "0 24px" : "0 56px",
+        display: "flex",
+        flexDirection: isMobile ? "column" : "row",
+        alignItems: isMobile ? "flex-start" : "center",
+        gap: isMobile ? 48 : 64,
       }}>
         {/* Left — text */}
-        <div style={{ flex: "0 0 520px" }}>
+        <div style={{ flex: isMobile ? "unset" : "0 0 520px", width: "100%" }}>
           {/* Badge */}
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
             padding: "5px 14px 5px 8px", borderRadius: 99,
             background: "rgba(5,223,114,0.1)",
             border: "1px solid rgba(5,223,114,0.28)",
-            marginBottom: 32,
+            marginBottom: 28,
             opacity: loaded ? 1 : 0,
             transform: loaded ? "translateY(0)" : "translateY(14px)",
             transition: "all 0.7s cubic-bezier(0.16,1,0.3,1) 0.1s",
@@ -366,10 +389,10 @@ function Hero() {
 
           {/* Headline */}
           <h1 style={{
-            fontSize: "clamp(3rem, 4.8vw, 4.4rem)",
-            fontWeight: 900, lineHeight: 1.04,
+            fontSize: isMobile ? "2.6rem" : "clamp(3rem, 4.8vw, 4.4rem)",
+            fontWeight: 900, lineHeight: 1.06,
             letterSpacing: "-0.04em",
-            color: COL_HEAD, margin: "0 0 22px",
+            color: COL_HEAD, margin: "0 0 18px",
             fontFamily: "system-ui, -apple-system, sans-serif",
             opacity: loaded ? 1 : 0,
             transform: loaded ? "translateY(0)" : "translateY(22px)",
@@ -381,8 +404,8 @@ function Hero() {
           </h1>
 
           <p style={{
-            fontSize: "1.05rem", color: COL_BODY,
-            maxWidth: 420, lineHeight: 1.72, margin: "0 0 36px",
+            fontSize: "1rem", color: COL_BODY,
+            maxWidth: "100%", lineHeight: 1.72, margin: "0 0 32px",
             opacity: loaded ? 1 : 0,
             transform: loaded ? "translateY(0)" : "translateY(14px)",
             transition: "all 0.8s cubic-bezier(0.16,1,0.3,1) 0.32s",
@@ -393,26 +416,31 @@ function Hero() {
 
           {/* CTAs */}
           <div style={{
-            display: "flex", gap: 12, alignItems: "center", marginBottom: 20,
+            display: "flex",
+            flexDirection: isMobile ? "column" : "row",
+            gap: 12, alignItems: isMobile ? "stretch" : "center",
+            marginBottom: 20,
             opacity: loaded ? 1 : 0,
             transform: loaded ? "translateY(0)" : "translateY(14px)",
             transition: "all 0.8s cubic-bezier(0.16,1,0.3,1) 0.44s",
           }}>
             <Link href="/onboarding" style={{
-              padding: "13px 30px", borderRadius: 99,
+              padding: "14px 30px", borderRadius: 99,
               background: COL_HEAD, color: "#fff",
               fontSize: 14, fontWeight: 700,
               textDecoration: "none", letterSpacing: "-0.01em",
               boxShadow: "0 4px 16px rgba(28,20,16,0.22)",
+              textAlign: "center",
             }}>
               Créer mon compte gratuit →
             </Link>
             <Link href="/login" style={{
-              padding: "13px 22px", borderRadius: 99,
+              padding: "14px 22px", borderRadius: 99,
               border: "1.5px solid " + BG_DEEP,
               color: COL_BODY, fontSize: 14, fontWeight: 500,
               textDecoration: "none", background: BG_WHITE,
               letterSpacing: "-0.01em",
+              textAlign: "center",
             }}>
               Se connecter
             </Link>
@@ -426,7 +454,7 @@ function Hero() {
             <p style={{ color: COL_MUTED, fontSize: 12, margin: "0 0 8px" }}>
               Gratuit pour commencer · Sans carte de crédit
             </p>
-            <div style={{ display: "flex", gap: 16 }}>
+            <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
               {["✓ Conversations IA", "✓ Carte 3D Tokyo", "✓ Révision JLPT"].map((t, i) => (
                 <span key={i} style={{ color: COL_MUTED, fontSize: 12, fontWeight: 500 }}>{t}</span>
               ))}
@@ -434,13 +462,16 @@ function Hero() {
           </div>
         </div>
 
-        {/* Right — 3D iPhone */}
+        {/* iPhone mockup */}
         <div style={{
-          flex: 1, display: "flex", justifyContent: "center", alignItems: "center",
+          flex: 1, display: "flex",
+          justifyContent: isMobile ? "center" : "center",
+          alignItems: "center",
           opacity: loaded ? 1 : 0,
           transition: "opacity 0.9s cubic-bezier(0.16,1,0.3,1) 0.55s",
+          ...(isMobile ? { height: 340, overflow: "hidden" } : {}),
         }}>
-          <IPhone3D loaded={loaded} />
+          <IPhone3D loaded={loaded} scale={isMobile ? 0.58 : 1} />
         </div>
       </div>
     </section>
@@ -449,21 +480,29 @@ function Hero() {
 
 // ─── Stats bar ────────────────────────────────────────────────────────────────
 function StatsBar() {
+  const isMobile = useIsMobile();
   return (
     <div style={{
       background: BG_WHITE,
       borderTop: `1px solid ${BG_DEEP}`,
       borderBottom: `1px solid ${BG_DEEP}`,
-      padding: "36px 48px",
+      padding: isMobile ? "28px 24px" : "36px 48px",
     }}>
-      <div style={{ maxWidth: 900, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4,1fr)" }}>
+      <div style={{
+        maxWidth: 900, margin: "0 auto",
+        display: "grid",
+        gridTemplateColumns: isMobile ? "repeat(2,1fr)" : "repeat(4,1fr)",
+        gap: isMobile ? "24px 0" : 0,
+      }}>
         {STATS.map(({ value, label }, i) => (
           <div key={i} style={{
-            display: "flex", flexDirection: "column", alignItems: "center", padding: "0 24px",
-            borderRight: i < 3 ? `1px solid ${BG_DEEP}` : "none",
+            display: "flex", flexDirection: "column", alignItems: "center", padding: "0 16px",
+            borderRight: isMobile
+              ? (i % 2 === 0 ? `1px solid ${BG_DEEP}` : "none")
+              : (i < 3 ? `1px solid ${BG_DEEP}` : "none"),
           }}>
             <span style={{
-              fontSize: "2.1rem", fontWeight: 900, color: COL_HEAD,
+              fontSize: "2rem", fontWeight: 900, color: COL_HEAD,
               letterSpacing: "-0.04em", lineHeight: 1, fontFamily: "system-ui, sans-serif",
             }}>{value}</span>
             <span style={{ color: COL_MUTED, fontSize: 12, marginTop: 4, fontWeight: 500 }}>{label}</span>
@@ -476,10 +515,11 @@ function StatsBar() {
 
 // ─── Features ─────────────────────────────────────────────────────────────────
 function Features() {
+  const isMobile = useIsMobile();
   return (
-    <section style={{ background: BG_PAGE, padding: "110px 48px" }}>
+    <section style={{ background: BG_PAGE, padding: isMobile ? "72px 24px" : "110px 48px" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div className="lp-reveal" style={{ textAlign: "center", marginBottom: 64 }}>
+        <div className="lp-reveal" style={{ textAlign: "center", marginBottom: 48 }}>
           <div style={{
             display: "inline-block", padding: "5px 16px", borderRadius: 99,
             background: "rgba(28,20,16,0.06)",
@@ -487,7 +527,8 @@ function Features() {
             letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 18,
           }}>Fonctionnalités</div>
           <h2 style={{
-            fontSize: "clamp(2rem,3.8vw,3rem)", fontWeight: 900,
+            fontSize: isMobile ? "1.9rem" : "clamp(2rem,3.8vw,3rem)",
+            fontWeight: 900,
             color: COL_HEAD, margin: "0 0 12px",
             letterSpacing: "-0.04em", lineHeight: 1.05, fontFamily: "system-ui, sans-serif",
           }}>
@@ -496,12 +537,16 @@ function Features() {
           </h2>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 18 }}>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "repeat(2,1fr)",
+          gap: 18,
+        }}>
           {FEATURES.map(({ icon, tag, title, desc, color }, i) => (
             <div key={i} className={`lp-reveal lp-reveal-d${i + 1}`} style={{
               background: BG_WHITE,
               border: `1px solid ${BG_DEEP}`,
-              borderRadius: 20, padding: "30px",
+              borderRadius: 20, padding: "28px",
               transition: "transform 0.22s ease, box-shadow 0.22s ease",
               cursor: "default",
             }}
@@ -516,7 +561,7 @@ function Features() {
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: 7,
                 padding: "4px 13px", borderRadius: 99,
-                background: color + "15", marginBottom: 18,
+                background: color + "15", marginBottom: 16,
               }}>
                 <span style={{ fontSize: 14 }}>{icon}</span>
                 <span style={{ fontSize: 11, fontWeight: 700, color, letterSpacing: "0.06em", textTransform: "uppercase" }}>{tag}</span>
@@ -537,17 +582,19 @@ function Features() {
 
 // ─── How it works ─────────────────────────────────────────────────────────────
 function HowItWorks() {
+  const isMobile = useIsMobile();
   return (
-    <section style={{ background: BG_WHITE, padding: "110px 48px", borderTop: `1px solid ${BG_DEEP}` }}>
+    <section style={{ background: BG_WHITE, padding: isMobile ? "72px 24px" : "110px 48px", borderTop: `1px solid ${BG_DEEP}` }}>
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-        <div className="lp-reveal" style={{ textAlign: "center", marginBottom: 72 }}>
+        <div className="lp-reveal" style={{ textAlign: "center", marginBottom: 56 }}>
           <div style={{
             display: "inline-block", padding: "5px 16px", borderRadius: 99,
             background: "rgba(0,165,68,0.1)", color: "#00a544",
             fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 18,
           }}>Comment ça marche</div>
           <h2 style={{
-            fontSize: "clamp(2rem,3.8vw,3rem)", fontWeight: 900,
+            fontSize: isMobile ? "1.9rem" : "clamp(2rem,3.8vw,3rem)",
+            fontWeight: 900,
             color: COL_HEAD, margin: 0,
             letterSpacing: "-0.04em", lineHeight: 1.05, fontFamily: "system-ui, sans-serif",
           }}>
@@ -555,34 +602,50 @@ function HowItWorks() {
           </h2>
         </div>
 
-        <div style={{ display: "flex", gap: 0, position: "relative" }}>
-          <div style={{
-            position: "absolute", top: 28, left: "calc(16.6% + 20px)", right: "calc(16.6% + 20px)",
-            height: 1, background: `linear-gradient(90deg, ${COL_GREEN}55, ${BG_DEEP}, ${COL_GREEN}55)`,
-          }}/>
+        <div style={{
+          display: "flex",
+          flexDirection: isMobile ? "column" : "row",
+          gap: isMobile ? 32 : 0,
+          position: "relative",
+        }}>
+          {!isMobile && (
+            <div style={{
+              position: "absolute", top: 28, left: "calc(16.6% + 20px)", right: "calc(16.6% + 20px)",
+              height: 1, background: `linear-gradient(90deg, ${COL_GREEN}55, ${BG_DEEP}, ${COL_GREEN}55)`,
+            }}/>
+          )}
           {STEPS.map(({ num, title, desc, icon }, i) => (
             <div key={i} className={`lp-reveal lp-reveal-d${i + 1}`} style={{
-              flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-              textAlign: "center", padding: "0 32px",
+              flex: 1,
+              display: "flex",
+              flexDirection: isMobile ? "row" : "column",
+              alignItems: isMobile ? "flex-start" : "center",
+              textAlign: isMobile ? "left" : "center",
+              padding: isMobile ? "0" : "0 32px",
+              gap: isMobile ? 16 : 0,
             }}>
               <div style={{
                 width: 56, height: 56, borderRadius: "50%",
                 background: i === 0 ? COL_HEAD : BG_PAGE,
                 border: i === 0 ? "none" : `1.5px solid ${BG_DEEP}`,
                 display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 22, marginBottom: 22, position: "relative", zIndex: 1,
+                fontSize: 22,
+                marginBottom: isMobile ? 0 : 22,
+                position: "relative", zIndex: 1,
                 boxShadow: i === 0 ? "0 4px 16px rgba(28,20,16,0.2)" : "none",
                 flexShrink: 0,
               }}>{icon}</div>
-              <div style={{ color: "#00a544", fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", marginBottom: 8, opacity: 0.8 }}>
-                ÉTAPE {num}
+              <div>
+                <div style={{ color: "#00a544", fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", marginBottom: 6, opacity: 0.8 }}>
+                  ÉTAPE {num}
+                </div>
+                <h3 style={{
+                  color: COL_HEAD, fontSize: "1rem", fontWeight: 700,
+                  margin: "0 0 8px", lineHeight: 1.35,
+                  letterSpacing: "-0.02em", fontFamily: "system-ui, sans-serif",
+                }}>{title}</h3>
+                <p style={{ color: COL_BODY, fontSize: 13, lineHeight: 1.72, margin: 0 }}>{desc}</p>
               </div>
-              <h3 style={{
-                color: COL_HEAD, fontSize: "1rem", fontWeight: 700,
-                margin: "0 0 10px", lineHeight: 1.35,
-                letterSpacing: "-0.02em", fontFamily: "system-ui, sans-serif",
-              }}>{title}</h3>
-              <p style={{ color: COL_BODY, fontSize: 13, lineHeight: 1.72, margin: 0 }}>{desc}</p>
             </div>
           ))}
         </div>
@@ -593,17 +656,19 @@ function HowItWorks() {
 
 // ─── Cities ───────────────────────────────────────────────────────────────────
 function Cities() {
+  const isMobile = useIsMobile();
   return (
-    <section style={{ background: BG_PAGE, padding: "110px 48px", borderTop: `1px solid ${BG_DEEP}` }}>
+    <section style={{ background: BG_PAGE, padding: isMobile ? "72px 24px" : "110px 48px", borderTop: `1px solid ${BG_DEEP}` }}>
       <div style={{ maxWidth: 1000, margin: "0 auto" }}>
-        <div className="lp-reveal" style={{ textAlign: "center", marginBottom: 56 }}>
+        <div className="lp-reveal" style={{ textAlign: "center", marginBottom: 40 }}>
           <div style={{
             display: "inline-block", padding: "5px 16px", borderRadius: 99,
             background: "rgba(28,20,16,0.06)", color: COL_BODY,
             fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 18,
           }}>Destinations</div>
           <h2 style={{
-            fontSize: "clamp(2rem,3.8vw,3rem)", fontWeight: 900,
+            fontSize: isMobile ? "1.9rem" : "clamp(2rem,3.8vw,3rem)",
+            fontWeight: 900,
             color: COL_HEAD, margin: "0 0 12px",
             letterSpacing: "-0.04em", lineHeight: 1.05, fontFamily: "system-ui, sans-serif",
           }}>7 villes. Des dizaines d'aventures.</h2>
@@ -612,10 +677,14 @@ function Cities() {
           </p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: isMobile ? "repeat(2,1fr)" : "repeat(3,1fr)",
+          gap: 14,
+        }}>
           {CITIES.map(({ name, nameJp, locked, emoji }, i) => (
             <div key={i} className={`lp-reveal lp-reveal-d${Math.min(i + 1, 4)}`} style={{
-              position: "relative", borderRadius: 18, padding: "26px 22px",
+              position: "relative", borderRadius: 18, padding: isMobile ? "20px 16px" : "26px 22px",
               background: locked ? "rgba(28,20,16,0.03)" : BG_WHITE,
               border: `1px solid ${locked ? BG_DEEP : COL_MUTED + "55"}`,
               opacity: locked ? 0.55 : 1,
@@ -633,17 +702,17 @@ function Cities() {
             }}>
               {!locked && (
                 <div style={{
-                  position: "absolute", top: 12, right: 12,
+                  position: "absolute", top: 10, right: 10,
                   background: COL_GREEN + "22",
                   border: `1px solid ${COL_GREEN}66`,
-                  borderRadius: 99, padding: "2px 10px",
-                  fontSize: 10, fontWeight: 700, color: "#00a544",
+                  borderRadius: 99, padding: "2px 8px",
+                  fontSize: 9, fontWeight: 700, color: "#00a544",
                   letterSpacing: "0.06em",
-                }}>DISPONIBLE</div>
+                }}>DISPO</div>
               )}
-              {locked && <div style={{ position: "absolute", top: 14, right: 14, fontSize: 14, opacity: 0.3 }}>🔒</div>}
-              <div style={{ fontSize: 34, marginBottom: 10 }}>{emoji}</div>
-              <div style={{ color: COL_HEAD, fontSize: 15, fontWeight: 700, fontFamily: "system-ui, sans-serif" }}>{name}</div>
+              {locked && <div style={{ position: "absolute", top: 12, right: 12, fontSize: 14, opacity: 0.3 }}>🔒</div>}
+              <div style={{ fontSize: 30, marginBottom: 8 }}>{emoji}</div>
+              <div style={{ color: COL_HEAD, fontSize: 14, fontWeight: 700, fontFamily: "system-ui, sans-serif" }}>{name}</div>
               <div style={{ color: COL_MUTED, fontSize: 13, fontFamily: "serif" }}>{nameJp}</div>
             </div>
           ))}
@@ -655,34 +724,36 @@ function Cities() {
 
 // ─── Final CTA ────────────────────────────────────────────────────────────────
 function FinalCTA() {
+  const isMobile = useIsMobile();
   return (
     <section style={{
       position: "relative", overflow: "hidden",
       background: COL_HEAD,
-      padding: "130px 48px", textAlign: "center",
+      padding: isMobile ? "80px 24px" : "130px 48px",
+      textAlign: "center",
     }}>
-      {/* Subtle blobs on dark */}
       <div style={{ position: "absolute", top: -80, left: "20%", width: 400, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(5,223,114,0.12) 0%, transparent 70%)", filter: "blur(40px)", pointerEvents: "none" }}/>
       <div style={{ position: "absolute", bottom: -60, right: "15%", width: 350, height: 280, borderRadius: "50%", background: "radial-gradient(circle, rgba(5,223,114,0.09) 0%, transparent 70%)", filter: "blur(40px)", pointerEvents: "none" }}/>
 
       <div className="lp-reveal" style={{ position: "relative" }}>
-        <div style={{ fontSize: "3.8rem", marginBottom: 20, display: "inline-block", animation: "floatCard 4s ease-in-out infinite" }}>🗾</div>
+        <div style={{ fontSize: "3.2rem", marginBottom: 18, display: "inline-block" }}>🗾</div>
         <h2 style={{
-          fontSize: "clamp(2.4rem,5.5vw,4.2rem)", fontWeight: 900,
-          color: "#f8f6f2", margin: "0 0 18px",
+          fontSize: isMobile ? "2rem" : "clamp(2.4rem,5.5vw,4.2rem)",
+          fontWeight: 900,
+          color: "#f8f6f2", margin: "0 0 16px",
           letterSpacing: "-0.04em", lineHeight: 1.06, fontFamily: "system-ui, sans-serif",
         }}>
           Prêt à parler japonais ?
         </h2>
         <p style={{
-          color: "rgba(248,246,242,0.55)", fontSize: "1.05rem",
-          maxWidth: 460, margin: "0 auto 40px", lineHeight: 1.72,
+          color: "rgba(248,246,242,0.55)", fontSize: isMobile ? "0.95rem" : "1.05rem",
+          maxWidth: 460, margin: "0 auto 36px", lineHeight: 1.72,
         }}>
           Rejoignez SekaiTalk et explorez le Japon comme vous n'avez jamais imaginé l'apprendre.
         </p>
         <Link href="/onboarding" style={{
           display: "inline-flex", alignItems: "center", gap: 10,
-          padding: "15px 40px", borderRadius: 99,
+          padding: isMobile ? "14px 32px" : "15px 40px", borderRadius: 99,
           background: COL_GREEN, color: COL_HEAD,
           fontSize: 15, fontWeight: 700,
           textDecoration: "none", letterSpacing: "-0.01em",
@@ -700,12 +771,18 @@ function FinalCTA() {
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
 function Footer() {
+  const isMobile = useIsMobile();
   return (
     <footer style={{
       background: "#0f0c0a",
       borderTop: "1px solid rgba(255,255,255,0.06)",
-      padding: "36px 48px",
-      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: isMobile ? "28px 24px" : "36px 48px",
+      display: "flex",
+      flexDirection: isMobile ? "column" : "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: isMobile ? 16 : 0,
+      textAlign: isMobile ? "center" : "left",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
         <span style={{ fontSize: 18 }}>🗾</span>
