@@ -23,6 +23,66 @@ net stop "postgresql-x64-17"
 
 > ⚠️ Always stop `npm run dev` before running migrations — the dev server locks the Prisma DLL.
 
+## Déploiement VPS (Production)
+
+**Infra** : OVH VPS Ubuntu 24.04 — IP `51.91.127.2`, domaine `sekaitalk.com`
+
+**Process manager** : PM2 — SekaiTalk tourne sur le port **3001** (port 3000 occupé par `pokemon-tcg`)
+
+```bash
+# Démarrage (déjà configuré, ne pas relancer sauf après un reboot)
+pm2 start npm --name "sekaitalk" -- start -- -p 3001
+pm2 save   # persiste la config PM2
+
+# Commandes courantes sur le VPS
+pm2 status
+pm2 logs sekaitalk --lines 50
+pm2 restart sekaitalk
+pm2 flush sekaitalk   # vider les logs
+```
+
+**Nginx** : reverse proxy HTTPS → port 3001. Config dans `/etc/nginx/sites-available/sekaitalk`.
+```bash
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+**SSL** : Let's Encrypt via Certbot standalone. Certificat dans `/etc/letsencrypt/live/sekaitalk.com/`.
+
+**Base de données** : PostgreSQL 17, user `sekaiuser`, DB `sekaitalk`.
+```bash
+# Sur le VPS, se connecter
+psql -U sekaiuser -d sekaitalk
+```
+
+**Fichiers d'env sur le VPS** (`/home/ubuntu/SekaiTalk/`) :
+- `.env` → `DATABASE_URL="postgresql://sekaiuser:Joaquim123@localhost:5432/sekaitalk"`
+- `.env.local` → toutes les autres variables (ANTHROPIC_API_KEY, GROQ_API_KEY, NEXTAUTH_SECRET, NEXTAUTH_URL=https://sekaitalk.com, GOOGLE_CLIENT_ID/SECRET, ELEVENLABS_API_KEY, NEXT_PUBLIC_MAPBOX_TOKEN). **Ne pas mettre DATABASE_URL dans `.env.local`** — il écrase `.env` et pointe vers la DB locale.
+
+**Workflow deploy** (depuis la machine locale) :
+```bash
+# 1. Commit + push sur dev/first
+git add . && git commit -m "feat: ..." && git push origin dev/first
+
+# 2. Sur le VPS
+cd ~/SekaiTalk && git pull && npm run build && pm2 restart sekaitalk
+```
+
+**Après une migration Prisma** (sur le VPS) :
+```bash
+cd ~/SekaiTalk
+npx prisma migrate deploy   # applique les migrations
+npx prisma db push          # sync schema si db push utilisé en dev
+npx tsx prisma/seed.ts      # re-seed si nécessaire
+npm run build && pm2 restart sekaitalk
+```
+
+**Google OAuth** : ajouter `https://sekaitalk.com/api/auth/callback/google` dans les Authorized redirect URIs sur [console.cloud.google.com](https://console.cloud.google.com).
+
+**Pièges connus** :
+- Le `catch {}` vide dans `src/app/api/register/route.ts` masque les erreurs — ajouter `console.error(e)` pour déboguer
+- `npm run build` doit être relancé après chaque modification de code côté serveur
+- `prisma db push` régénère le client Prisma automatiquement, mais le build Next.js doit être relancé
+
 ## Stack
 
 - **Next.js 14** (App Router) + **TypeScript** + **Tailwind CSS**
