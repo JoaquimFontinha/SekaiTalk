@@ -78,6 +78,7 @@ const MAP_STYLE = {
       id: "japan-hillshade",
       type: "hillshade" as const,
       source: "terrain-dem",
+      minzoom: 6.5,
       paint: {
         "hillshade-illumination-direction": 335,
         "hillshade-exaggeration": 0.45,
