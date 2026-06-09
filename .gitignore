@@ -36,3 +36,6 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# Source assets (large files — kept locally only)
+asset SEKAI TALK/

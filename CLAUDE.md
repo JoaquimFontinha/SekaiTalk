@@ -92,6 +92,29 @@ npm run build && pm2 restart sekaitalk
 
 **Google OAuth** : ajouter `https://sekaitalk.com/api/auth/callback/google` dans les Authorized redirect URIs sur [console.cloud.google.com](https://console.cloud.google.com).
 
+**Gate "bientôt disponible"** (temporaire — à supprimer avant lancement public) :
+
+Le site est actuellement verrouillé par un gate mot de passe. Fichiers concernés :
+- `src/middleware.ts` — remplace l'ancien `withAuth`, ajoute le gate check avant la protection admin
+- `src/app/coming-soon/` — page "Bientôt disponible" avec champ mot de passe caché (bouton `···` en bas à droite)
+- `src/app/api/auth/gate/route.ts` — vérifie le mot de passe (SHA-256 côté serveur), pose un cookie httpOnly 30 jours
+
+Pour retirer le gate : supprimer `src/app/coming-soon/`, `src/app/api/auth/gate/`, et remplacer `src/middleware.ts` par :
+```ts
+import { withAuth } from "next-auth/middleware";
+import { NextResponse } from "next/server";
+export default withAuth(
+  function middleware(req) {
+    const token = req.nextauth.token as any;
+    if (req.nextUrl.pathname.startsWith("/admin") && !token?.isAdmin)
+      return NextResponse.redirect(new URL("/home", req.url));
+    return NextResponse.next();
+  },
+  { callbacks: { authorized: ({ token }) => !!token } }
+);
+export const config = { matcher: ["/admin/:path*"] };
+```
+
 **Pièges connus** :
 - Le `catch {}` vide dans `src/app/api/register/route.ts` masque les erreurs — ajouter `console.error(e)` pour déboguer
 - `npm run build` doit être relancé après chaque modification de code côté serveur
@@ -163,7 +186,10 @@ Deux fichiers d'env :
 `prisma/seed.ts` — crée `Scene`, `Character`, `CharacterAppearance`, `Quest`, `Lesson`, `CityRecord` et `POIRecord` avec des IDs stables.
 - Personnages : upsert par `id` stable (`"char-kenji"`, `"char-hana"`, `"char-taro"`)
 - `greetingWords` et `greetingTranslation` hardcodés dans le seed — pour un nouveau personnage, appeler `/api/analyze` une fois pour générer le breakdown puis le coller dans le seed
-- Scènes : upsert par `poiId` (konbini-shinjuku, konbini-shibuya, konbini-kyoto) avec `entrySound: "/sounds/konbini_enter.mp3"`
+- **Scènes** : deux blocs dans le seed —
+  1. Trois konbinis historiques (konbini-shinjuku, konbini-shibuya, konbini-kyoto) upsertés individuellement avec `update` explicite (plus de `update: {}`).
+  2. `TOKYO_SCENES: { poiId, bg?, entry?, ambient? }[]` — 29 POIs Tokyo + 2 events (sakura-ueno, halloween-shibuya). Chaque entrée peut porter `bg` (backgroundImage), `entry` (entrySound) et `ambient` (ambientSound). Le loop upsert met à jour les trois champs à chaque seed.
+- `CharSeed` type inclut un champ optionnel `image?: string`. Le loop upsert inclut `image` dans l'objet `update` (permet de rafraîchir les images via seed). Fallback `"/characters/default.png"` si absent.
 - Apparitions : upsert par `@@unique([characterId, poiId])`
 - Quêtes : `findUnique` + `create` — idempotentes, non recréées si l'ID existe déjà
 - Vocab : `quest.update({ data: { vocab: VocabEntry[] } })` après le create — toujours upsertée pour rester à jour
@@ -231,6 +257,7 @@ Deux fichiers d'env :
 | `/api/revision/result` | POST | Reçoit `{ results: [{ wordJp, correct }] }`, incrémente `encounters` + `correctCount`/`errorCount` + `lastSeenAt` via la clé `userId_wordJp` |
 | `/api/content/cities` | GET | Public (pas d'auth). Retourne `Record<string, CityData>` depuis la DB via `getAllCitiesFromDB()`. `revalidate = 0` (toujours frais). Utilisé par `layout.tsx` et `JapanMap.tsx` pour afficher les villes admin |
 | `/api/sns/poi/[poiId]` | GET | Public. Retourne la `SnsConversation` active pour un POI (`isActive: true`), ou `null`. Appelé par `CityClient` à chaque sélection de POI. |
+| `/api/scenes/poi/[poiId]` | GET | Public. Retourne `{ backgroundImage: string | null }` — background de scène du POI. Appelé par `CityClient` à chaque sélection de POI pour alimenter le hero image du drawer. |
 | `/api/admin/export` | GET | Admin uniquement. Exporte tout le contenu DB (cityRecords, poiRecords, scenes, characters, appearances, quests+tasks+choices, lessons+steps, **snsConversations**) en JSON avec `Content-Disposition: attachment` |
 | `/api/admin/import` | POST | Admin uniquement. Importe un JSON exporté, upsert idempotent de toutes les entités (incluant `snsConversations`). Retourne `{ imported: { cities, pois, …, sns } }`. Stratégie de sync dev→prod |
 | `/api/admin/upload` | POST | Admin uniquement. Multipart form-data. Sauvegarde le fichier dans `public/uploads/{type}/{timestamp-filename}`. Retourne `{ url }` |
@@ -337,7 +364,7 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 **Titre ville** : `position: absolute, top: 20`, `left: sidebarPanel ? 864 : sidebarExpanded ? 488 : 96` — se décale dynamiquement selon l'état sidebar/panneau.
 
 **Drawer POI** (420px, `right-0`, slide-in, fond `bg-gray-950/96`)
-- Hero image ou gradient par type. Titre, description, leçon (si disponible) puis quêtes avec barre de progression.
+- **Hero image** : state `poiBackground: string | null` — fetché via `GET /api/scenes/poi/${poiId}` à chaque sélection de POI (réinitialisé à `null` à chaque changement). Affiche `poiBackground` si non-null, sinon fallback `"/background_placeholder.png"`. Deux drawers utilisent ce state : desktop (h-52) et mobile sheet (h-24). Titre, description, leçon (si disponible) puis quêtes avec barre de progression.
 - **Section Leçon** : fetche `GET /api/lessons/poi/${poiId}` en parallèle avec les quêtes. État `lessonData` : `null` (chargement) | `"none"` (aucune leçon) | `{ id, title, validated, score }`. Affiche un spinner puis une carte avec GraduationCap, statut ("Non commencée" / score précédent / "Validée ✓") et bouton "🎓 Commencer la leçon" / "🔄 Réessayer" / "🔄 Refaire la leçon". Navigue vers `/home/${citySlug}/${poi.id}/lesson`.
 - Bouton "▶ Faire la quête" / "🔄 Refaire" → ouvre `questPreview` (état local).
 - **Section SNS** : si `snsConversation` (state, fetchée via `GET /api/sns/poi/[poiId]` à la sélection du POI) est non-null, affiche une carte verte "Discussion SNS" avec l'avatar/nom du contact, le contexte et les XP. Badge **"Beta"** amber affiché à côté du label "Discussion SNS" (`text-[9px] bg-amber-400/20 text-amber-300 border border-amber-400/30 rounded-full`). Clic → `setShowSns(true)` → `SnsOverlay`. State `snsConversation` réinitialisée à `null` à chaque changement de POI.
@@ -941,6 +968,33 @@ Sélection déterministe : `dayIndex = floor((Date.now() - 2026-01-01 UTC) / 864
 
 ### SessionProvider
 `src/app/providers.tsx` wrappe l'app avec le `SessionProvider` NextAuth, inclus dans `src/app/layout.tsx`.
+
+### Assets publics (`public/`)
+
+Les assets visuels et sonores sont dans `public/` et servis statiquement.
+
+**`public/characters/`** — portraits personnages (PNG sans fond, fond transparent). Un fichier par personnage, nommé par rôle :
+- Existant : `konbini_vendor.png` (Kenji, Hana, Taro — konbinis génériques)
+- Nouveaux (22) : `airport_agent.png`, `jr_agent.png`, `shinkansen_staff.png`, `capsule_hotel_staff.png`, `grand_hyatt_staff.png`, `seven_eleven_staff.png`, `lawson_staff.png`, `pharmacist.png`, `postal_staff.png`, `starbucks_staff.png`, `mcdo_staff.png`, `izakaya_staff.png`, `shibuya109_staff.png`, `donki_staff.png`, `yodobashi_staff.png`, `skytree_guide.png`, `meiji_miko.png`, `sensoji_monk.png`, `museum_guide.png`, `big_echo_staff.png`, `maid_cafe_staff.png`, `hospital_nurse.png`
+- Fallback si image manquante : `default.png` (défini dans le seed)
+
+**`public/backgrounds/`** — fonds de scène (PNG, ratio ~16:9 ou ~4:3). Un fichier par lieu :
+- Existants : `konbini.jpg`, `aeroport_tutoriel.avif`
+- Nouveaux (26) : `familymart.png`, `lawson.png`, `7eleven.png`, `jr_station.png`, `shinkansen.png`, `haneda_airport.png`, `capsule_hotel.png`, `grand_hyatt.png`, `pharmacy.png`, `post_office.png`, `starbucks_shibuya.png`, `mcdo.png`, `asahi_izakaya.png`, `shibuya109.png`, `donki.png`, `yodobashi.png`, `tokyo_skytree.png`, `tokyo_tower.png`, `meiji_jingu.png`, `sensoji.png`, `tokyo_national_museum.png`, `karaoke.png`, `maid_cafe.png`, `hospital.png`, `sakura_ueno.png`, `shibuya_halloween.png`
+- Fallback si background manquant : `background_placeholder.png`
+
+**`public/sounds/`** — sons (MP3). Deux types :
+- **Sons d'entrée** (`*_enter.mp3`) : joués une fois à l'ouverture d'un POI. `konbini_enter.mp3` (existant), `familymart_enter.mp3`, `haneda_enter.mp3`, `jr_enter.mp3`, `shop_bell_enter.mp3`, `sliding_door_enter.mp3`
+- **Sons d'ambiance** (`*_ambient.mp3`) : loop en fond de conversation. `haneda_ambient.mp3`, `jr_ambient.mp3`
+- Assignation dans `prisma/seed.ts` — `TOKYO_SCENES` + les 3 konbinis du haut
+
+**Mappings sons d'entrée par contexte** :
+- `familymart_enter.mp3` → konbinis (familymart, konbini-shinjuku, konbini-shibuya)
+- `konbini_enter.mp3` → 7-Eleven, Lawson
+- `jr_enter.mp3` → gares JR (jr-shinjuku, tokyo-station-shinkansen)
+- `haneda_enter.mp3` → aéroport Haneda
+- `sliding_door_enter.mp3` → capsule hotel, grand hyatt, poste, hôpital
+- `shop_bell_enter.mp3` → tous les commerces/restaurants/loisirs (Starbucks, McDo, Donki, Yodobashi, karaoke, maid café, etc.)
 
 ### Pièges CSS connus
 

@@ -12,29 +12,29 @@ async function main() {
 
   await prisma.scene.upsert({
     where: { poiId: "konbini-shinjuku" },
-    update: {},
+    update: { backgroundImage: "/backgrounds/familymart.png", entrySound: "/sounds/familymart_enter.mp3" },
     create: {
       poiId: "konbini-shinjuku",
-      backgroundImage: "/backgrounds/konbini.jpg",
-      entrySound: "/sounds/konbini_enter.mp3",
+      backgroundImage: "/backgrounds/familymart.png",
+      entrySound: "/sounds/familymart_enter.mp3",
       ambientSound: null,
     },
   });
 
   await prisma.scene.upsert({
     where: { poiId: "konbini-shibuya" },
-    update: {},
+    update: { backgroundImage: "/backgrounds/familymart.png", entrySound: "/sounds/familymart_enter.mp3" },
     create: {
       poiId: "konbini-shibuya",
-      backgroundImage: "/backgrounds/konbini.jpg",
-      entrySound: "/sounds/konbini_enter.mp3",
+      backgroundImage: "/backgrounds/familymart.png",
+      entrySound: "/sounds/familymart_enter.mp3",
       ambientSound: null,
     },
   });
 
   await prisma.scene.upsert({
     where: { poiId: "konbini-kyoto" },
-    update: {},
+    update: { backgroundImage: "/backgrounds/konbini.jpg", entrySound: "/sounds/konbini_enter.mp3" },
     create: {
       poiId: "konbini-kyoto",
       backgroundImage: "/backgrounds/konbini.jpg",
@@ -486,42 +486,45 @@ async function main() {
   // TOKYO EXPANSION — Scènes, Personnages, Apparitions, Quêtes, Leçons
   // ═══════════════════════════════════════════════════════════════════════════
 
-  // ── Scenes (upsert — null = pas de son pour ce POI) ─────────────────────────
+  // ── Scenes (upsert — null = pas de son/bg pour ce POI) ──────────────────────
 
-  const TOKYO_SCENES: { poiId: string; entry?: string }[] = [
-    { poiId: "haneda-airport" },
-    { poiId: "tokyo-station-shinkansen" },
-    { poiId: "jr-shinjuku" },
-    { poiId: "nine-hours-shinjuku" },
-    { poiId: "grand-hyatt-tokyo" },
-    { poiId: "7eleven-shinjuku",       entry: "/sounds/konbini_enter.mp3" },
-    { poiId: "familymart-shibuya",     entry: "/sounds/konbini_enter.mp3" },
-    { poiId: "lawson-harajuku",        entry: "/sounds/konbini_enter.mp3" },
-    { poiId: "matsumoto-kiyoshi-akiba" },
-    { poiId: "tokyo-central-post" },
-    { poiId: "starbucks-shibuya" },
-    { poiId: "mcdonalds-shibuya" },
-    { poiId: "asahi-super-dry-hall" },
-    { poiId: "loft-shibuya" },
-    { poiId: "shibuya-109" },
-    { poiId: "donquijote-shibuya" },
-    { poiId: "yodobashi-akiba" },
-    { poiId: "lumine-est-shinjuku" },
-    { poiId: "tokyo-skytree" },
-    { poiId: "tokyo-tower" },
-    { poiId: "meiji-jingu" },
-    { poiId: "sensoji" },
-    { poiId: "tokyo-national-museum" },
+  const TOKYO_SCENES: { poiId: string; bg?: string; entry?: string; ambient?: string }[] = [
+    { poiId: "haneda-airport",          bg: "/backgrounds/haneda_airport.png",         entry: "/sounds/haneda_enter.mp3",        ambient: "/sounds/haneda_ambient.mp3" },
+    { poiId: "tokyo-station-shinkansen",bg: "/backgrounds/shinkansen.png",             entry: "/sounds/jr_enter.mp3",            ambient: "/sounds/jr_ambient.mp3" },
+    { poiId: "jr-shinjuku",             bg: "/backgrounds/jr_station.png",             entry: "/sounds/jr_enter.mp3",            ambient: "/sounds/jr_ambient.mp3" },
+    { poiId: "nine-hours-shinjuku",     bg: "/backgrounds/capsule_hotel.png",          entry: "/sounds/sliding_door_enter.mp3" },
+    { poiId: "grand-hyatt-tokyo",       bg: "/backgrounds/grand_hyatt.png",            entry: "/sounds/sliding_door_enter.mp3" },
+    { poiId: "7eleven-shinjuku",        bg: "/backgrounds/7eleven.png",                entry: "/sounds/konbini_enter.mp3" },
+    { poiId: "familymart-shibuya",      bg: "/backgrounds/familymart.png",             entry: "/sounds/familymart_enter.mp3" },
+    { poiId: "lawson-harajuku",         bg: "/backgrounds/lawson.png",                 entry: "/sounds/konbini_enter.mp3" },
+    { poiId: "matsumoto-kiyoshi-akiba", bg: "/backgrounds/pharmacy.png",               entry: "/sounds/shop_bell_enter.mp3" },
+    { poiId: "tokyo-central-post",      bg: "/backgrounds/post_office.png",            entry: "/sounds/sliding_door_enter.mp3" },
+    { poiId: "starbucks-shibuya",       bg: "/backgrounds/starbucks_shibuya.png",      entry: "/sounds/shop_bell_enter.mp3" },
+    { poiId: "mcdonalds-shibuya",       bg: "/backgrounds/mcdo.png",                   entry: "/sounds/shop_bell_enter.mp3" },
+    { poiId: "asahi-super-dry-hall",    bg: "/backgrounds/asahi_izakaya.png" },
+    { poiId: "loft-shibuya",                                                            entry: "/sounds/shop_bell_enter.mp3" },
+    { poiId: "shibuya-109",             bg: "/backgrounds/shibuya109.png",             entry: "/sounds/shop_bell_enter.mp3" },
+    { poiId: "donquijote-shibuya",      bg: "/backgrounds/donki.png",                  entry: "/sounds/shop_bell_enter.mp3" },
+    { poiId: "yodobashi-akiba",         bg: "/backgrounds/yodobashi.png",              entry: "/sounds/shop_bell_enter.mp3" },
+    { poiId: "lumine-est-shinjuku",                                                     entry: "/sounds/shop_bell_enter.mp3" },
+    { poiId: "tokyo-skytree",           bg: "/backgrounds/tokyo_skytree.png" },
+    { poiId: "tokyo-tower",             bg: "/backgrounds/tokyo_tower.png" },
+    { poiId: "meiji-jingu",             bg: "/backgrounds/meiji_jingu.png" },
+    { poiId: "sensoji",                 bg: "/backgrounds/sensoji.png" },
+    { poiId: "tokyo-national-museum",   bg: "/backgrounds/tokyo_national_museum.png" },
     { poiId: "tokyo-metro-theatre" },
-    { poiId: "big-echo-kabukicho" },
-    { poiId: "at-home-cafe-akihabara" },
-    { poiId: "keio-hospital" },
+    { poiId: "big-echo-kabukicho",      bg: "/backgrounds/karaoke.png",                entry: "/sounds/shop_bell_enter.mp3" },
+    { poiId: "at-home-cafe-akihabara",  bg: "/backgrounds/maid_cafe.png",              entry: "/sounds/shop_bell_enter.mp3" },
+    { poiId: "keio-hospital",           bg: "/backgrounds/hospital.png",               entry: "/sounds/sliding_door_enter.mp3" },
+    // Events
+    { poiId: "event-sakura-ueno",       bg: "/backgrounds/sakura_ueno.png" },
+    { poiId: "event-halloween-shibuya", bg: "/backgrounds/shibuya_halloween.png" },
   ];
   for (const s of TOKYO_SCENES) {
     await prisma.scene.upsert({
       where:  { poiId: s.poiId },
-      update: {},
-      create: { poiId: s.poiId, entrySound: s.entry ?? null, ambientSound: null },
+      update: { backgroundImage: s.bg ?? null, entrySound: s.entry ?? null, ambientSound: s.ambient ?? null },
+      create: { poiId: s.poiId, backgroundImage: s.bg ?? null, entrySound: s.entry ?? null, ambientSound: s.ambient ?? null },
     });
   }
   console.log("Tokyo scenes seeded.");
@@ -533,12 +536,13 @@ async function main() {
     greetingMessage: string; greetingTranslation: string;
     greetingWords: object[]; systemPrompt: string;
     isFriendable?: boolean;
+    image?: string;
   };
 
   const NEW_CHARS: CharSeed[] = [
     // ── Thème 1 : Transport ───────────────────────────────────────────────
     {
-      id: "char-yuki",
+      id: "char-yuki", image: "/characters/airport_agent.png",
       name: "Nakamura Yuki", nameJp: "中村 雪", role: "Agente d'accueil — Aéroport Haneda",
       greetingMessage: "ようこそ日本へ！パスポートをご提示ください。",
       greetingTranslation: "Bienvenue au Japon ! Veuillez présenter votre passeport.",
@@ -551,7 +555,7 @@ async function main() {
       systemPrompt: `あなたは羽田空港の入国審査官、中村雪です。丁寧で親切な女性です。旅行者のパスポート確認、入国目的、滞在期間、宿泊先を聞きます。日本語のみで話してください。`,
     },
     {
-      id: "char-ryo",
+      id: "char-ryo", image: "/characters/jr_agent.png",
       name: "Watanabe Ryō", nameJp: "渡辺 亮", role: "Agent JR — Gares de Tokyo",
       greetingMessage: "いらっしゃいませ！新幹線のご乗車ですか？",
       greetingTranslation: "Bienvenue ! Vous prenez le Shinkansen ?",
@@ -564,7 +568,7 @@ async function main() {
     },
     // ── Thème 2 : Hébergement ────────────────────────────────────────────
     {
-      id: "char-mai",
+      id: "char-mai", image: "/characters/capsule_hotel_staff.png",
       name: "Kimura Mai", nameJp: "木村 舞", role: "Réceptionniste — Nine Hours",
       greetingMessage: "こんにちは！ご予約のお名前をお聞かせください。",
       greetingTranslation: "Bonjour ! Puis-je avoir votre nom de réservation ?",
@@ -576,7 +580,7 @@ async function main() {
       systemPrompt: `あなたはナインアワーズ新宿のフロントスタッフ、木村舞です。カプセルホテルのチェックイン・チェックアウト、ロッカーの使い方、施設の説明を行います。日本語のみで話してください。`,
     },
     {
-      id: "char-sora",
+      id: "char-sora", image: "/characters/grand_hyatt_staff.png",
       name: "Inoue Sora", nameJp: "井上 蒼", role: "Concierge — Grand Hyatt Tokyo",
       greetingMessage: "いらっしゃいませ、グランドハイアット東京へようこそ。",
       greetingTranslation: "Bienvenue au Grand Hyatt Tokyo.",
@@ -589,7 +593,7 @@ async function main() {
     },
     // ── Thème 3 : Quotidien ──────────────────────────────────────────────
     {
-      id: "char-kai",
+      id: "char-kai", image: "/characters/seven_eleven_staff.png",
       name: "Aoki Kai", nameJp: "青木 海", role: "Vendeur — 7-Eleven Kabukichō",
       greetingMessage: "いらっしゃいませ！何かお探しですか？",
       greetingTranslation: "Bienvenue ! Vous cherchez quelque chose ?",
@@ -614,7 +618,7 @@ async function main() {
       systemPrompt: `あなたは渋谷のファミリーマートで働く佐藤柚那です。明るくて親切な女性です。おにぎり、お弁当、スイーツ、カフェメニューなどコンビニの商品について説明します。日本語のみで話してください。`,
     },
     {
-      id: "char-leo",
+      id: "char-leo", image: "/characters/lawson_staff.png",
       name: "Hayashi Leo", nameJp: "林 玲央", role: "Gérant — Lawson Harajuku",
       greetingMessage: "いらっしゃいませ、ローソンへようこそ！",
       greetingTranslation: "Bienvenue chez Lawson !",
@@ -626,7 +630,7 @@ async function main() {
       systemPrompt: `あなたは原宿のローソンを担当する林玲央です。スイーツ好きな穏やかな男性です。ウチカフェスイーツや季節限定商品が自慢です。日本語のみで話してください。`,
     },
     {
-      id: "char-nana",
+      id: "char-nana", image: "/characters/pharmacist.png",
       name: "Ogawa Nana", nameJp: "小川 奈々", role: "Pharmacienne — Matsumoto Kiyoshi",
       greetingMessage: "こんにちは！ご用件をお聞かせください。",
       greetingTranslation: "Bonjour ! Comment puis-je vous aider ?",
@@ -639,7 +643,7 @@ async function main() {
       isFriendable: true,
     },
     {
-      id: "char-postal",
+      id: "char-postal", image: "/characters/postal_staff.png",
       name: "Tanaka Hiroshi", nameJp: "田中 博", role: "Agent — Bureau de Poste Central",
       greetingMessage: "いらっしゃいませ。何のご用件でしょうか？",
       greetingTranslation: "Bonjour. En quoi puis-je vous aider ?",
@@ -651,7 +655,7 @@ async function main() {
     },
     // ── Thème 4 : Manger & Boire ─────────────────────────────────────────
     {
-      id: "char-saki",
+      id: "char-saki", image: "/characters/starbucks_staff.png",
       name: "Fujii Saki", nameJp: "藤井 咲", role: "Barista — Starbucks Shibuya",
       greetingMessage: "こんにちは！ご注文はお決まりですか？",
       greetingTranslation: "Bonjour ! Avez-vous choisi votre commande ?",
@@ -663,7 +667,7 @@ async function main() {
       systemPrompt: `あなたは渋谷スクランブルスクエアのスターバックスで働くバリスタ、藤井咲です。コーヒーのサイズ（ショート、トール、グランデ、ベンティ）、カスタマイズ、季節限定メニューについて案内します。日本語のみで話してください。`,
     },
     {
-      id: "char-mia",
+      id: "char-mia", image: "/characters/mcdo_staff.png",
       name: "Nishimura Mia", nameJp: "西村 美亜", role: "Caissière — McDonald's Shibuya",
       greetingMessage: "いらっしゃいませ！ご注文をどうぞ。",
       greetingTranslation: "Bienvenue ! Je vous écoute pour votre commande.",
@@ -675,7 +679,7 @@ async function main() {
       systemPrompt: `あなたは渋谷のマクドナルドの店員、西村美亜です。テリヤキバーガー、照り焼きチキン、マックフルーリーなど日本限定メニューも含めて注文を受け付けます。セットメニューやサイズ変更も対応します。日本語のみで話してください。`,
     },
     {
-      id: "char-bartender",
+      id: "char-bartender", image: "/characters/izakaya_staff.png",
       name: "Itō Ken", nameJp: "伊藤 健", role: "Barman — Asahi Super Dry Hall",
       greetingMessage: "いらっしゃい！アサヒビールはいかがですか？",
       greetingTranslation: "Bienvenue ! Une Asahi vous tente ?",
@@ -701,7 +705,7 @@ async function main() {
       systemPrompt: `あなたは渋谷ロフトの販売員、松田大輝です。文房具、デザイン雑貨、旅行グッズを専門とします。ラッピングや贈り物探しも得意です。日本語のみで話してください。`,
     },
     {
-      id: "char-yuko",
+      id: "char-yuko", image: "/characters/shibuya109_staff.png",
       name: "Nakashima Yuko", nameJp: "中島 由子", role: "Vendeuse — SHIBUYA109",
       greetingMessage: "いらっしゃいませ！今日は何をお探しですか？",
       greetingTranslation: "Bienvenue ! Vous cherchez quoi aujourd'hui ?",
@@ -713,7 +717,7 @@ async function main() {
       systemPrompt: `あなたはSHIBUYA109のファッション販売員、中島由子です。トレンドに詳しく、服のサイズ（S・M・L）、色、素材、コーディネートを提案します。日本語のみで話してください。`,
     },
     {
-      id: "char-kota",
+      id: "char-kota", image: "/characters/donki_staff.png",
       name: "Yamamoto Kota", nameJp: "山本 航太", role: "Vendeur — Mega Don Quijote",
       greetingMessage: "いらっしゃいませ！どこかお探しですか？",
       greetingTranslation: "Bienvenue ! Vous cherchez un rayon en particulier ?",
@@ -724,7 +728,7 @@ async function main() {
       systemPrompt: `あなたはドン・キホーテ渋谷の従業員、山本航太です。エネルギッシュで話が速いです。コスメ、スナック、電子機器など迷路のような店内を案内します。日本語のみで話してください。`,
     },
     {
-      id: "char-yuji",
+      id: "char-yuji", image: "/characters/yodobashi_staff.png",
       name: "Endō Yuji", nameJp: "遠藤 勇二", role: "Expert — Yodobashi-Akiba",
       greetingMessage: "いらっしゃいませ！どのような商品をお探しですか？",
       greetingTranslation: "Bienvenue ! Quel type de produit recherchez-vous ?",
@@ -749,7 +753,7 @@ async function main() {
     },
     // ── Thème 6 : Découvrir Tokyo ────────────────────────────────────────
     {
-      id: "char-ren",
+      id: "char-ren", image: "/characters/skytree_guide.png",
       name: "Katō Ren", nameJp: "加藤 蓮", role: "Guide — Tokyo Skytree",
       greetingMessage: "ようこそ東京スカイツリーへ！チケットはお持ちですか？",
       greetingTranslation: "Bienvenue au Tokyo Skytree ! Avez-vous vos billets ?",
@@ -773,7 +777,7 @@ async function main() {
       systemPrompt: `あなたは東京タワーのガイド、鈴木大です。1958年竣工のタワーの歴史、メインデッキ（150m）、トップデッキ（250m）のチケット、富士山の見え方について話します。日本語のみで話してください。`,
     },
     {
-      id: "char-miko",
+      id: "char-miko", image: "/characters/meiji_miko.png",
       name: "Shimizu Miko", nameJp: "清水 巫女", role: "Miko — Meiji Jingū",
       greetingMessage: "明治神宮へようこそ。どのようなご参拝でしょうか？",
       greetingTranslation: "Bienvenue au Meiji Jingū. Que souhaitez-vous faire ?",
@@ -785,7 +789,7 @@ async function main() {
       systemPrompt: `あなたは明治神宮の巫女、清水です。参拝の作法（お辞儀、手水、賽銭、二拝二拍手一拝）、おみくじ、お守りの意味を丁寧に説明します。静かで落ち着いた口調で話します。日本語のみで話してください。`,
     },
     {
-      id: "char-monk",
+      id: "char-monk", image: "/characters/sensoji_monk.png",
       name: "Tanaka Ryūsei", nameJp: "田中 龍星", role: "Prêtre — Sensō-ji",
       greetingMessage: "浅草寺へようこそ。お参りの方法をご説明しましょうか？",
       greetingTranslation: "Bienvenue au Sensō-ji. Voulez-vous que je vous explique comment prier ?",
@@ -797,7 +801,7 @@ async function main() {
       systemPrompt: `あなたは浅草寺の案内係、田中龍星です。仲見世通り、雷門、本堂でのお参りの作法、おみくじの引き方、お守りの購入を説明します。優しく穏やかな口調で話します。日本語のみで話してください。`,
     },
     {
-      id: "char-curator",
+      id: "char-curator", image: "/characters/museum_guide.png",
       name: "Yamada Keiji", nameJp: "山田 啓二", role: "Conservateur — Musée National de Tokyo",
       greetingMessage: "ようこそ東京国立博物館へ。何かお探しでしょうか？",
       greetingTranslation: "Bienvenue au Musée National de Tokyo. Puis-je vous aider ?",
@@ -822,7 +826,7 @@ async function main() {
       systemPrompt: `あなたは東京芸術劇場の案内スタッフ、小林絵美です。公演プログラム、座席の案内、クロークサービス、開演時間、休憩時間について説明します。日本語のみで話してください。`,
     },
     {
-      id: "char-echo",
+      id: "char-echo", image: "/characters/big_echo_staff.png",
       name: "Nakamura Haru", nameJp: "中村 晴", role: "Staff — Big Echo Kabukichō",
       greetingMessage: "いらっしゃいませ！何名様ですか？",
       greetingTranslation: "Bienvenue ! Vous êtes combien ?",
@@ -833,7 +837,7 @@ async function main() {
       systemPrompt: `あなたはビッグエコー歌舞伎町のスタッフ、中村晴です。部屋の予約、フリータイム、ドリンクバー、曲の検索の仕方を案内します。カラオケのルールやエチケットも教えます。日本語のみで話してください。`,
     },
     {
-      id: "char-maid",
+      id: "char-maid", image: "/characters/maid_cafe_staff.png",
       name: "Kawase Moe", nameJp: "川瀬 萌", role: "Maid — @home café Akihabara",
       greetingMessage: "おかえりなさいませ、ご主人様！今日もお帰りをお待ちしておりました！",
       greetingTranslation: "Bienvenue à la maison, maître ! Je vous attendais !",
@@ -847,7 +851,7 @@ async function main() {
       isFriendable: true,
     },
     {
-      id: "char-nurse",
+      id: "char-nurse", image: "/characters/hospital_nurse.png",
       name: "Fujiwara Aya", nameJp: "藤原 彩", role: "Infirmière — Hôpital Keio",
       greetingMessage: "こんにちは。どのような症状でいらっしゃいますか？",
       greetingTranslation: "Bonjour. Quels sont vos symptômes ?",
@@ -861,12 +865,13 @@ async function main() {
   ];
 
   for (const c of NEW_CHARS) {
+    const img = c.image ?? "/characters/default.png";
     await prisma.character.upsert({
       where:  { id: c.id },
-      update: { greetingTranslation: c.greetingTranslation, greetingWords: c.greetingWords },
+      update: { greetingTranslation: c.greetingTranslation, greetingWords: c.greetingWords, image: img },
       create: {
         ...c,
-        image:    "/characters/default.png",
+        image:    img,
         voiceId:  null,
         isActive: true,
         isFriendable: c.isFriendable ?? false,

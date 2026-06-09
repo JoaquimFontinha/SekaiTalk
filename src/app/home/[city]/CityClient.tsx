@@ -179,6 +179,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
 
   // Modal state
   const [selectedPoi, setSelectedPoi]     = useState<POI | null>(null);
+  const [poiBackground, setPoiBackground] = useState<string | null>(null);
   const [poiQuests, setPoiQuests]         = useState<PoiQuest[]>([]);
   const [questsLoading, setQuestsLoading] = useState(false);
   const [questPreview, setQuestPreview]   = useState<{ quest: PoiQuest; poi: POI } | null>(null);
@@ -279,11 +280,16 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
     const poi = city.pois.find(p => p.id === poiId);
     if (!poi) return;
     setSelectedPoi(poi);
+    setPoiBackground(null);
     setPoiQuests([]);
     setQuestsLoading(true);
     setLessonData(null);
     setSnsConversation(null);
     flyToPoi(poi);
+    fetch(`/api/scenes/poi/${poiId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setPoiBackground(d?.backgroundImage ?? null))
+      .catch(() => {});
     fetch(`/api/sns/poi/${poiId}`)
       .then(r => r.ok ? r.json() : null)
       .then(setSnsConversation)
@@ -606,12 +612,11 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
             {/* Hero image */}
             <div className="relative h-24 shrink-0 overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              {selectedPoi.image ? (
-                <img src={selectedPoi.image} alt={selectedPoi.name} className="h-full w-full object-cover" />
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src="/background_placeholder.png" alt="" className="h-full w-full object-cover" />
-              )}
+              <img
+                src={poiBackground ?? "/background_placeholder.png"}
+                alt=""
+                className="h-full w-full object-cover"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/20 to-transparent" />
               <div className="absolute bottom-3 left-4">
                 <div className="mb-0.5 flex items-center gap-1.5">
@@ -1927,13 +1932,12 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
           >
             {/* Hero */}
             <div className="relative h-52 shrink-0 overflow-hidden">
-              {selectedPoi?.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={selectedPoi.image} alt={selectedPoi.name} className="h-full w-full object-cover" />
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src="/background_placeholder.png" alt="" className="h-full w-full object-cover" />
-              )}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={poiBackground ?? "/background_placeholder.png"}
+                alt=""
+                className="h-full w-full object-cover"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/20 to-transparent" />
               <button
                 onClick={closeModal}
