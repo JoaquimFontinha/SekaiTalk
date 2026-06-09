@@ -19,6 +19,20 @@ function toCityList(cities: Record<string, { name: string; center: [number,numbe
   }));
 }
 
+// World polygon with a hole over Japan's bbox — used to mask hillshade dots on the ocean
+// After hillshade renders, this fill covers everything EXCEPT the Japan area (showing terrain)
+const OCEAN_MASK_GEOJSON = {
+  type: "Feature" as const,
+  geometry: {
+    type: "Polygon" as const,
+    coordinates: [
+      [[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]], // outer: world
+      [[122, 24], [122, 46], [146, 46], [146, 24], [122, 24]],        // hole: Japan bbox
+    ],
+  },
+  properties: {},
+};
+
 const JAPAN_REGIONS_GEOJSON = {
   type: "FeatureCollection" as const,
   features: [
@@ -51,6 +65,10 @@ const MAP_STYLE = {
       type: "geojson" as const,
       data: JAPAN_REGIONS_GEOJSON,
     },
+    "ocean-mask": {
+      type: "geojson" as const,
+      data: OCEAN_MASK_GEOJSON,
+    },
   },
   layers: [
     {
@@ -78,7 +96,6 @@ const MAP_STYLE = {
       id: "japan-hillshade",
       type: "hillshade" as const,
       source: "terrain-dem",
-      minzoom: 6.5,
       paint: {
         "hillshade-illumination-direction": 335,
         "hillshade-exaggeration": 0.45,
@@ -93,6 +110,12 @@ const MAP_STYLE = {
       source: "country-boundaries",
       "source-layer": "country_boundaries",
       filter: ["!=", ["get", "iso_3166_1"], "JP"],
+      paint: { "fill-color": "#1a3568", "fill-opacity": 1, "fill-antialias": false },
+    },
+    {
+      id: "ocean-mask-layer",
+      type: "fill" as const,
+      source: "ocean-mask",
       paint: { "fill-color": "#1a3568", "fill-opacity": 1, "fill-antialias": false },
     },
     {
