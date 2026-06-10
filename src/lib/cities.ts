@@ -46,11 +46,7 @@ const cities: Record<string, CityData> = {
         lat: 35.6812, lng: 139.7671,
         description: "Inaugurée en 1914, sa façade en brique rouge est un symbole de l'ère Meiji. C'est d'ici que partent les Shinkansen pour tout le Japon — Osaka en 2h30, Kyoto en 2h15. Les quais du Tokaido Shinkansen sont parmi les plus animés du monde.",
       },
-      {
-        id: "haneda-airport", name: "Aéroport International Haneda", type: "transport",
-        lat: 35.5502, lng: 139.7798,
-        description: "Le premier aéroport de Tokyo, parmi les plus ponctuels au monde. Le terminal international regorge de boutiques duty-free, restaurants et même un onsen. Les bus limousine relient le centre de Tokyo en 30 à 50 minutes.",
-      },
+
       // ── Konbinis ──────────────────────────────────────────────────────────
       {
         id: "7eleven-shinjuku", name: "7-Eleven Kabukichō", type: "konbini",

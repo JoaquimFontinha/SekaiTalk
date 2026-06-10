@@ -389,9 +389,9 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 - `non-japan-mask` — recouvre tous les autres pays en `#1a3568`
 - `japan-region-labels` — labels des 9 grandes régions (`JAPAN_REGIONS_GEOJSON`) : Hokkaidō, Tōhoku, Kantō, Chūbu, Kansai, Chūgoku, Shikoku, Kyūshū, Okinawa. GeoJSON hardcodé (source `japan-regions`). `minzoom: 5.8`, fade-in entre 5.8 et 6.5. Texte blanc semi-transparent (`rgba(255,255,255,0.55)`), `DIN Offc Pro Bold`, letter-spacing 0.18.
 
-**Interactivité** : `dragPan`, `scrollZoom`, `touchZoomRotate` activés. `minZoom=5.4` (zoom initial = minimum), `maxZoom=9`, `maxBounds=[[122,23],[155,47]]`. Plus de navigation hors du Japon.
+**Interactivité** : `dragPan`, `scrollZoom`, `touchZoomRotate` activés. `minZoom=5.8` (zoom initial = minimum), `maxZoom=9`, `maxBounds=[[122,23],[155,47]]`. Plus de navigation hors du Japon.
 
-**Centrage avec sidebar** : `onLoad` → `map.setPadding({ left: 468 })` + `map.jumpTo({ center: [136.5, 36.8], zoom: 5.4 })`. Le `setPadding` décale le centre optique de Mapbox pour compenser la sidebar. `initialViewState` seul ne suffit pas car la map est persistante (montée une fois). `CENTER_LNG=136.5`, `CENTER_LAT=36.8`, `INIT_ZOOM=5.4`, `SIDEBAR_PX=468`.
+**Centrage avec sidebar** : `onLoad` → `map.setPadding({ left: 468 })` + `map.jumpTo({ center: [136.5, 36.8], zoom: 5.8 })`. Le `setPadding` décale le centre optique de Mapbox pour compenser la sidebar. `initialViewState` seul ne suffit pas car la map est persistante (montée une fois). `CENTER_LNG=136.5`, `CENTER_LAT=36.8`, `INIT_ZOOM=5.8`, `SIDEBAR_PX=468`.
 
 **`japanFlyToRef`** : enregistré dans `onLoad` → `japanFlyToRef.current = (lng, lat, zoom=7) => map.flyTo(...)`. Appelé par `HomeClient` (panneau Lieux) pour zoomer sur une ville.
 
@@ -403,7 +403,7 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 
 **Gradient** : `background: radial-gradient(ellipse farthest-corner at 54% 50%, #3a5fa0, #1a3568)` sur le container.
 
-**Pins** : classe `gm3d-poi japan-poi` (double classe — `japan-poi` applique des overrides CSS plus grands : badge 36×36px, icône 30px, texte 12px). `CITY_LOGOS: Record<string, string> = { tokyo: "/images/cities/tokyo_home.svg" }` — affiche le SVG de la tour si disponible, sinon emoji 🗾.
+**Pins** : classe `gm3d-poi japan-poi` (double classe — `japan-poi` applique des overrides CSS plus grands : badge 36×36px, icône 30px, texte 12px). `CITY_LOGOS: Record<string, string> = { tokyo: "/images/cities/tokyo_home.svg" }` — affiche le SVG de la tour si disponible, sinon emoji 🗾. Icône cadenas pour les villes verrouillées : SVG Material Design filled `#9ca3af` (pas d'emoji). Fond de l'icon-wrap forcé `transparent` sur `.japan-poi` (tous états) pour éviter le cercle coloré derrière l'icône. Bordure sobre sur les villes débloquées : `.japan-poi:not(.gm3d-poi--locked) .gm3d-badge` → `border-color: rgba(210,210,220,0.7)` + ombre douce (pas de glow coloré).
 
 **`gm3d-city-label`** : pill sombre `background: rgba(0,0,0,0.48)`, `padding: 3px 7px`, `border-radius: 4px` — assure la lisibilité sur le fond beige/terre.
 
@@ -635,7 +635,7 @@ type KanaMasteryStore = Record<string, KanaMasteryEntry>;
 
 `src/app/home/[city]/GameMap3D.tsx` — carte 3D interactive pour les villes avec `use3DMap: true` dans `cities.ts`.
 - **Rendu** : Mapbox GL JS + react-map-gl v8 (`react-map-gl/mapbox`), style `mapbox://styles/mapbox/standard`
-- **Architecture persistante** : la map est montée une seule fois dans `src/app/home/layout.tsx` (jamais démontée) → 1 seul Map Load par session. CSS `visibility` toggle pour afficher/masquer. État partagé via `src/app/home/MapContext.tsx`
+- **Architecture persistante** : la map est montée une seule fois dans `src/app/home/layout.tsx` (jamais démontée) → 1 seul Map Load par session. CSS `visibility` toggle pour afficher/masquer. État partagé via `src/app/home/MapContext.tsx`. `PersistentMap` re-fetche `/api/content/cities` à chaque changement de `pathname` (pas de `fetchedRef` guard) → les modifs admin (ex: `isActive`) sont reflétées dès la prochaine navigation.
 - **Clic fond de carte** : `onMapBgClick` prop → `onClick` sur `<Map>` (markers ont `stopPropagation`). Enregistré via `mapBgClickRef` → ferme le panneau sidebar actif
 - **Import SSR** : `dynamic(() => import("./[city]/GameMap3D"), { ssr: false })` dans `home/layout.tsx`
 - **Style** : `setConfigProperty("basemap", "lightPreset", "dusk")` + tous les labels masqués
@@ -672,6 +672,7 @@ Permet aux admins de repositionner les POIs directement sur la carte par drag & 
 
 ### Écrans de chargement
 
+- **Chargement carte Japon** (`JapanMap`) : overlay blanc `z-[2000]` même style que les villes — "JAPON" + "日本" + loadbar + "地図を読み込み中". Déclenché dès `onLoad` (pas `idle`) + 250ms → fondu 250ms → disparaît. `mapLoaded` / `fadeOut` states. Persist tant que le composant est monté (map persistante = pas de rechargement au retour sur `/home`).
 - **Chargement ville** (`CityClient`) : overlay blanc `z-[2000]`, fondu 400ms. Déclenché sur `map.once("idle", ...)` + fallback 3000ms. `mapLoading` / `mapFading` states.
 - **Chargement conversation** (`POIClient`) : affiché quand `!character` — fond blanc, nom du POI, 3 points animés (`dot-pulse`).
 - **Sortie conversation** (`POIClient`) : `leaving` state → overlay blanc `leaving-in 450ms`, puis `router.push`.

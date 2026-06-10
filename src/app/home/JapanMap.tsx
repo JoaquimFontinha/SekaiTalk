@@ -124,7 +124,7 @@ const CITY_LOGOS: Record<string, string> = {
 
 const CENTER_LNG  = 136.5;
 const CENTER_LAT  = 36.8;
-const INIT_ZOOM   = 5.4;
+const INIT_ZOOM   = 5.8;
 const SIDEBAR_PX  = 468; // sidebar width (448) + left offset (20)
 // Mobile: collapsed sheet = 84px + 14px bottom margin = ~98px from bottom
 function getMapPadding() {
@@ -140,6 +140,8 @@ export default function JapanMap() {
   const { japanFlyToRef } = useMapCtx();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [cityList, setCityList] = useState<CityEntry[]>(toCityList(staticCities));
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
     fetch("/api/user/stats")
@@ -159,6 +161,23 @@ export default function JapanMap() {
       height: "100%",
       background: "radial-gradient(ellipse farthest-corner at 54% 50%, #3a5fa0 0%, #1a3568 100%)",
     }}>
+      {/* Overlay de chargement — même style que les villes */}
+      {!mapLoaded && (
+        <div
+          className={`fixed inset-0 z-[2000] flex flex-col items-center justify-center select-none transition-opacity duration-[250ms] ${fadeOut ? "opacity-0" : "opacity-100"}`}
+          style={{ background: "white", pointerEvents: "none" }}
+        >
+          <div className="text-center">
+            <p className="mb-4 text-[9px] font-bold tracking-[0.5em] uppercase text-gray-300">SekaiTalk</p>
+            <h1 className="text-7xl font-black tracking-tight text-gray-900 leading-none">JAPON</h1>
+            <p className="mt-3 text-2xl font-extralight tracking-[0.35em] text-gray-400">日本</p>
+            <div className="mx-auto mt-10 h-[1px] w-44 overflow-hidden rounded-full bg-gray-200">
+              <div className="h-full w-1/3 rounded-full bg-gray-400" style={{ animation: "loadbar-slide 1.4s ease-in-out infinite" }} />
+            </div>
+          </div>
+          <p className="absolute bottom-8 text-[9px] font-medium tracking-[0.35em] text-gray-300">地図を読み込み中</p>
+        </div>
+      )}
     <Map
       ref={mapRef}
       mapboxAccessToken={MAPBOX_TOKEN}
@@ -178,14 +197,16 @@ export default function JapanMap() {
         japanFlyToRef.current = (lng, lat, zoom = 7) => {
           map.flyTo({ center: [lng, lat], zoom, duration: 1200, essential: true });
         };
-        // Update padding on resize (e.g. orientation change)
         const onResize = () => {
           map.setPadding(getMapPadding());
           map.jumpTo({ center: [CENTER_LNG, CENTER_LAT], zoom: INIT_ZOOM });
         };
         window.addEventListener("resize", onResize);
+        // Déclencher immédiatement dès que le style est prêt
+        setFadeOut(true);
+        setTimeout(() => setMapLoaded(true), 250);
       }}
-      minZoom={5.4}
+      minZoom={5.8}
       maxZoom={9}
       maxBounds={[[122, 23], [155, 47]]}
       dragPan={true}
@@ -219,7 +240,9 @@ export default function JapanMap() {
                 <div className="gm3d-icon-wrap">
                   {!isLocked && CITY_LOGOS[city.slug]
                     ? <img src={CITY_LOGOS[city.slug]} alt={city.name} style={{ width: 30, height: 30, objectFit: "contain" }} />
-                    : <span className="gm3d-icon">{isLocked ? "🔒" : "🗾"}</span>
+                    : isLocked
+                      ? <svg viewBox="0 0 24 24" fill="#9ca3af" style={{ width: 22, height: 22 }}><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                      : <span className="gm3d-icon">🗾</span>
                   }
                 </div>
                 <span className="gm3d-name">

@@ -58,17 +58,34 @@ type Contact = {
 
 const CITY_JP: Record<string, string> = { tokyo: "東京", osaka: "大阪", kyoto: "京都" };
 
-const SIDEBAR_BUTTONS: { panel: Exclude<SidebarPanel, null>; label: string; enabled: boolean; color: string; svg: React.ReactNode }[] = [
-  { panel: "guidage",    label: "Thèmes",     enabled: true,  color: "#f97316",
-    svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg> },
-  { panel: "lieux",      label: "Lieux",      enabled: true,  color: "#6366f1",
-    svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> },
-  { panel: "contacts",   label: "Contacts",   enabled: false, color: "#0d9488",
-    svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
-  { panel: "evenements", label: "Évènements", enabled: true,  color: "#d97706",
-    svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> },
-  { panel: "revision",   label: "Révision",   enabled: true,  color: "#2563eb",
-    svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> },
+const GOAL_ICONS: Record<string, React.ReactNode> = {
+  quest:  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>,
+  lesson: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>,
+  chat:   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>,
+  sns:    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>,
+  vocab:  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>,
+  zap:    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>,
+};
+const GOAL_COLORS: Record<string, string> = {
+  quest:  "text-orange-400",
+  lesson: "text-violet-500",
+  chat:   "text-emerald-500",
+  sns:    "text-sky-500",
+  vocab:  "text-indigo-500",
+  zap:    "text-amber-400",
+};
+
+const SIDEBAR_BUTTONS: { panel: Exclude<SidebarPanel, null>; label: string; enabled: boolean; svg: React.ReactNode }[] = [
+  { panel: "guidage",    label: "Thèmes",     enabled: true,
+    svg: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1.1 14.9L7 7l7.19 3.1 3.1 7.19-7.29-3.39zm1.1-4.4c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z"/></svg> },
+  { panel: "lieux",      label: "Lieux",      enabled: true,
+    svg: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> },
+  { panel: "contacts",   label: "Contacts",   enabled: false,
+    svg: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> },
+  { panel: "evenements", label: "Évènements", enabled: true,
+    svg: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> },
+  { panel: "revision",   label: "Révision",   enabled: true,
+    svg: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg> },
 ];
 
 
@@ -801,7 +818,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                   {dailyGoals.map((g) => (
                     <div key={g.type} className={`flex items-center gap-3 rounded-xl px-3 py-3 ${g.done ? "bg-indigo-50" : "bg-gray-50"}`}>
                       {g.done ? <CheckCircle2 className="h-4 w-4 shrink-0 text-indigo-500" /> : <Circle className="h-4 w-4 shrink-0 text-gray-300" />}
-                      <span className="text-base shrink-0 leading-none">{g.icon}</span>
+                      <div className={`h-4 w-4 shrink-0 ${g.done ? "text-indigo-400" : GOAL_COLORS[g.icon]}`}>{GOAL_ICONS[g.icon]}</div>
                       <span className={`flex-1 text-sm font-medium ${g.done ? "line-through text-gray-400" : "text-gray-600"}`}>{g.label}</span>
                       {g.target > 1 && !g.done && <span className="text-[11px] font-bold text-gray-400 shrink-0">{g.progress}/{g.target}</span>}
                     </div>
@@ -983,7 +1000,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
           </button>
           <button onClick={() => setShowRevision(true)}
             className="flex-1 flex flex-col items-center justify-center gap-0.5 py-3 text-gray-400">
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
             <span className="text-[9px] font-bold uppercase tracking-wider">Révision</span>
           </button>
         </div>
@@ -1147,7 +1164,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                 {dailyGoals.map((g) => (
                   <div key={g.type} className={`flex items-center gap-3.5 rounded-xl px-4 py-3.5 transition-colors ${g.done ? "bg-indigo-50" : "bg-gray-50"}`}>
                     {g.done ? <CheckCircle2 className="h-5 w-5 shrink-0 text-indigo-500" /> : <Circle className="h-5 w-5 shrink-0 text-gray-300" />}
-                    <span className="text-lg shrink-0 leading-none">{g.icon}</span>
+                    <div className={`h-5 w-5 shrink-0 ${g.done ? "text-indigo-400" : GOAL_COLORS[g.icon]}`}>{GOAL_ICONS[g.icon]}</div>
                     <span className={`flex-1 text-sm font-medium ${g.done ? "line-through text-gray-400" : "text-gray-600"}`}>{g.label}</span>
                     {g.target > 1 && !g.done && (
                       <span className="text-[11px] font-bold text-gray-400 shrink-0">{g.progress}/{g.target}</span>
@@ -1160,10 +1177,10 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
             <div className="mx-7 h-px bg-gray-100 shrink-0" />
 
             {/* Navigation */}
-            <div className="px-5 pt-8 pb-8 flex-1">
+            <div className="px-5 pt-4 pb-4 shrink-0">
               <span className="px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Navigation</span>
-              <div className="mt-3 flex flex-col gap-1">
-                {SIDEBAR_BUTTONS.map(({ panel, svg, color, label, enabled }) => (
+              <div className="mt-2 flex flex-col gap-0.5">
+                {SIDEBAR_BUTTONS.map(({ panel, svg, label, enabled }) => (
                   <button
                     key={panel}
                     id={`tut-sidebar-${panel}`}
@@ -1173,36 +1190,39 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                       setSidebarPanel(prev => prev === panel ? null : panel);
                     }}
                     className={`group flex items-center gap-3.5 rounded-xl px-3 py-3 text-left transition-colors ${
-                      !enabled ? "cursor-default opacity-40"
-                      : sidebarPanel === panel ? "bg-gray-100"
-                      : "hover:bg-gray-100"
+                      !enabled ? "cursor-default opacity-35"
+                      : sidebarPanel === panel ? "bg-gray-50"
+                      : "hover:bg-gray-50"
                     }`}
                   >
-                    <div
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-2 transition-transform group-hover:scale-105"
-                      style={{ background: enabled ? color : "#d1d5db" }}
-                    >
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
+                      sidebarPanel === panel ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-600"
+                    }`}>
                       {svg}
                     </div>
-                    <span className="text-[15px] font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">{label}</span>
+                    <span className={`text-[15px] font-medium transition-colors ${
+                      sidebarPanel === panel ? "text-gray-900" : "text-gray-600 group-hover:text-gray-800"
+                    }`}>{label}</span>
                     {!enabled
                       ? <span className="ml-auto rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-400">Bientôt</span>
-                      : <ChevronRight className="ml-auto h-4 w-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      : <ChevronRight className={`ml-auto h-4 w-4 transition-opacity ${sidebarPanel === panel ? "text-indigo-400 opacity-100" : "text-gray-300 opacity-0 group-hover:opacity-100"}`} />
                     }
                   </button>
                 ))}
               </div>
             </div>
 
+            <div className="flex-1" />
+
             <div className="mx-7 h-px bg-gray-100 shrink-0" />
 
             {/* Paramètres */}
-            <div className="px-5 pt-5 pb-6 shrink-0">
+            <div className="px-5 pt-4 pb-5 shrink-0">
               <button
                 onClick={() => router.push("/home/settings")}
                 className="group flex w-full items-center gap-4 rounded-xl px-4 py-4 hover:bg-gray-50 transition-colors"
               >
-                <Settings className="h-5 w-5 shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                <svg className="h-5 w-5 shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
                 <span className="text-base font-medium text-gray-500 group-hover:text-gray-700 transition-colors">Paramètres</span>
                 <ChevronRight className="ml-auto h-4 w-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
               </button>
@@ -1217,7 +1237,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
             >
               🗾
             </button>
-            {SIDEBAR_BUTTONS.map(({ panel, svg, color, label, enabled }) => (
+            {SIDEBAR_BUTTONS.map(({ panel, svg, label, enabled }) => (
               <button
                 key={panel}
                 title={label}
@@ -1227,16 +1247,13 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                   setSidebarExpanded(true);
                   setSidebarPanel(panel);
                 }}
-                className={`flex h-10 w-10 items-center justify-center rounded-xl p-2 transition-colors ${
-                  !enabled ? "opacity-40 cursor-default" : "hover:scale-105"
+                className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${
+                  !enabled ? "opacity-30 cursor-default"
+                  : sidebarPanel === panel ? "bg-indigo-50 text-indigo-600"
+                  : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                 }`}
-                style={{ background: sidebarPanel === panel ? color : "transparent",
-                         opacity: !enabled ? 0.4 : sidebarPanel === panel ? 1 : 0.55 }}
               >
-                <div className="flex h-full w-full items-center justify-center"
-                  style={{ filter: sidebarPanel === panel ? "none" : "saturate(0) brightness(0.4)" }}>
-                  {svg}
-                </div>
+                {svg}
               </button>
             ))}
             <div className="flex-1" />

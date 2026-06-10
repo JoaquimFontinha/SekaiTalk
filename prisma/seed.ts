@@ -1770,7 +1770,6 @@ async function main() {
         { id: "konbini-shinjuku", name: "TEST — Konbini Shinjuku", type: "konbini", lat: 35.6940, lng: 139.7036, description: "Les konbini japonais redéfinissent le concept de commodité : onigiri fraîchement préparés, œufs à la coque marinés dans la soja, café torréfié à la minute, desserts sophistiqués. Ouverts 24h/24, ils sont le QG des noctambules de Kabukichō." },
         { id: "jr-shinjuku", name: "Gare JR Shinjuku", type: "transport", lat: 35.6896, lng: 139.7006, description: "La gare la plus fréquentée au monde avec plus de 3 millions de voyageurs par jour." },
         { id: "tokyo-station-shinkansen", name: "Gare de Tokyo — Shinkansen", type: "transport", lat: 35.6812, lng: 139.7671, description: "Inaugurée en 1914, sa façade en brique rouge est un symbole de l'ère Meiji." },
-        { id: "haneda-airport", name: "Aéroport International Haneda", type: "transport", lat: 35.5502, lng: 139.7798, description: "Le premier aéroport de Tokyo, parmi les plus ponctuels au monde." },
         { id: "7eleven-shinjuku", name: "7-Eleven Kabukichō", type: "konbini", lat: 35.6940, lng: 139.7050, description: "7-Eleven est la chaîne de konbini la plus présente au Japon." },
         { id: "familymart-shibuya", name: "FamilyMart Shibuya", type: "konbini", lat: 35.6601, lng: 139.6981, description: "FamilyMart se reconnaît à son jingle d'entrée emblématique." },
         { id: "lawson-harajuku", name: "Lawson Harajuku", type: "konbini", lat: 35.6703, lng: 139.7025, description: "Lawson se distingue par ses Uchi Café desserts haut de gamme." },
@@ -1834,6 +1833,8 @@ async function main() {
     { id: "fukuoka", name: "Fukuoka", nameJp: "福岡", centerLat: 33.5904, centerLng: 130.4017, zoom: 14, pitch: 60, bearing: -20, levelRequired: 99, use3DMap: false, isActive: false, pois: [] },
     { id: "beppu", name: "Beppu", nameJp: "別府", centerLat: 33.2840, centerLng: 131.4914, zoom: 14, pitch: 60, bearing: -20, levelRequired: 99, use3DMap: false, isActive: false, pois: [] },
   ];
+
+  await prisma.pOIRecord.updateMany({ where: { id: "haneda-airport" }, data: { isActive: false } });
 
   for (const city of CITIES_DATA) {
     const { pois, ...cityData } = city;

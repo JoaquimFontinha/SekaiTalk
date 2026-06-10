@@ -13,7 +13,7 @@ type GoalData = {
 const DAY_LABELS = ["L", "M", "M", "J", "V", "S", "D"];
 const PRESETS = [5, 10, 15, 20, 25, 30];
 
-const R = 40;
+const R = 49;
 const C = 2 * Math.PI * R;
 
 export default function MonObjectif() {
@@ -30,11 +30,9 @@ export default function MonObjectif() {
   }, []);
 
   const goalMin = data?.dailyGoalMinutes ?? 10;
-  const weeklyGoal = goalMin * 7;
-  const weeklyMin = data?.weeklyMinutes ?? 0;
   const todayMin = data?.todayMinutes ?? 0;
   const activeDays = data?.activeDays ?? Array(7).fill(false);
-  const percent = Math.min(100, weeklyGoal > 0 ? (weeklyMin / weeklyGoal) * 100 : 0);
+  const percent = Math.min(100, goalMin > 0 ? (todayMin / goalMin) * 100 : 0);
   const done = percent >= 100;
 
   const save = async () => {
@@ -112,20 +110,19 @@ export default function MonObjectif() {
               </button>
             ))}
           </div>
-          <span className="text-[10px] text-gray-400">min 5 · max 30 minutes</span>
         </div>
       ) : (
         /* ── Display mode ── */
         <div className="flex flex-col items-center gap-4">
           {/* Progress ring */}
-          <div className="relative" style={{ width: 96, height: 96 }}>
-            <svg width={96} height={96} style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }}>
-              <circle cx={48} cy={48} r={R} fill="none" stroke="#f3f4f6" strokeWidth={7} />
+          <div className="relative" style={{ width: 116, height: 116 }}>
+            <svg width={116} height={116} style={{ position: "absolute", inset: 0, transform: "rotate(-90deg)" }}>
+              <circle cx={58} cy={58} r={R} fill="none" stroke="#f3f4f6" strokeWidth={8} />
               <circle
-                cx={48} cy={48} r={R}
+                cx={58} cy={58} r={R}
                 fill="none"
                 stroke={done ? "#10b981" : "#6366f1"}
-                strokeWidth={7}
+                strokeWidth={8}
                 strokeLinecap="round"
                 strokeDasharray={C}
                 strokeDashoffset={C * (1 - percent / 100)}
@@ -133,19 +130,17 @@ export default function MonObjectif() {
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-0.5">
-              <span className="text-xl font-black text-gray-800 tabular-nums leading-none">{weeklyMin}</span>
-              <span className="text-[10px] text-gray-400 leading-none">/ {weeklyGoal} min</span>
+              <span className="text-2xl font-black text-gray-800 tabular-nums leading-none">{todayMin}</span>
+              <span className="text-[11px] text-gray-400 leading-none">/ {goalMin} min</span>
             </div>
           </div>
-
-          <span className="text-xs text-gray-500 -mt-1">Cette semaine · {goalMin} min/jour</span>
 
           {/* Day dots */}
           <div className="flex gap-2">
             {DAY_LABELS.map((d, i) => (
               <div
                 key={i}
-                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-colors ${
                   activeDays[i] ? "bg-indigo-600 text-white" : "bg-gray-100 text-gray-400"
                 }`}
               >
@@ -154,13 +149,7 @@ export default function MonObjectif() {
             ))}
           </div>
 
-          {/* Today's progress */}
-          <div className="w-full rounded-xl bg-indigo-50 px-4 py-3 flex items-center justify-between">
-            <span className="text-xs text-gray-600 font-medium">Aujourd'hui</span>
-            <span className="text-xs font-black text-indigo-600 tabular-nums">
-              {todayMin} / {goalMin} min
-            </span>
-          </div>
+
         </div>
       )}
     </div>

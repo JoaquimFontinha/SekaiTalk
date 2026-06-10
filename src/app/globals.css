@@ -403,9 +403,20 @@ body {
 .japan-poi .gm3d-badge {
   padding: 5px;
 }
-.japan-poi .gm3d-icon-wrap {
+
+/* Ombre sobre sur les villes débloquées */
+.japan-poi:not(.gm3d-poi--locked) .gm3d-badge {
+  border-color: rgba(210, 210, 220, 0.7);
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.18),
+    0 1px 4px rgba(0, 0, 0, 0.12);
+}
+.japan-poi .gm3d-icon-wrap,
+.japan-poi:hover .gm3d-icon-wrap,
+.japan-poi.gm3d-poi--pinned .gm3d-icon-wrap {
   width: 36px;
   height: 36px;
+  background: transparent;
 }
 .japan-poi .gm3d-icon {
   font-size: 18px;

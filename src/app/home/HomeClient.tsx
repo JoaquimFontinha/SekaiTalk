@@ -31,22 +31,39 @@ const SHEET_HEIGHTS: Record<SheetState, string | number> = {
   full: "75vh",
 };
 
-const NAV_ITEMS: { label: string; enabled: boolean; color: string; svg: React.ReactNode }[] = [
+const GOAL_ICONS: Record<string, React.ReactNode> = {
+  quest:  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>,
+  lesson: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>,
+  chat:   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>,
+  sns:    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>,
+  vocab:  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>,
+  zap:    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>,
+};
+const GOAL_COLORS: Record<string, string> = {
+  quest:  "text-orange-400",
+  lesson: "text-violet-500",
+  chat:   "text-emerald-500",
+  sns:    "text-sky-500",
+  vocab:  "text-indigo-500",
+  zap:    "text-amber-400",
+};
+
+const NAV_ITEMS: { label: string; enabled: boolean; svg: React.ReactNode }[] = [
   {
-    label: "Lieux", enabled: true, color: "#6366f1",
-    svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+    label: "Lieux", enabled: true,
+    svg: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>,
   },
   {
-    label: "Contacts", enabled: false, color: "#0d9488",
-    svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+    label: "Contacts", enabled: false,
+    svg: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>,
   },
   {
-    label: "Évènements", enabled: true, color: "#d97706",
-    svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+    label: "Évènements", enabled: true,
+    svg: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>,
   },
   {
-    label: "Révision", enabled: true, color: "#2563eb",
-    svg: <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+    label: "Révision", enabled: true,
+    svg: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>,
   },
 ];
 
@@ -383,21 +400,21 @@ export default function HomeClient() {
 
           <div className="mx-6 h-px shrink-0" style={{ background: "#e5e7eb" }} />
 
-          <div id="tut-home-daily" className="px-6 pt-5 pb-5 shrink-0">
+          <div id="tut-home-daily" className="px-6 pt-4 pb-4 shrink-0">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Objectifs du jour</span>
               <span className="text-xs font-semibold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full">
                 {goalsDone} / {dailyGoals.length || 3}
               </span>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2.5">
               {dailyGoals.map((g) => (
-                <div key={g.type} className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-colors ${g.done ? "bg-indigo-50" : "bg-gray-50"}`}>
+                <div key={g.type} className={`flex items-center gap-3.5 rounded-xl px-4 py-3.5 transition-colors ${g.done ? "bg-indigo-50" : "bg-gray-50"}`}>
                   {g.done
-                    ? <CheckCircle2 className="h-4 w-4 shrink-0 text-indigo-500" />
-                    : <Circle className="h-4 w-4 shrink-0 text-gray-300" />
+                    ? <CheckCircle2 className="h-5 w-5 shrink-0 text-indigo-500" />
+                    : <Circle className="h-5 w-5 shrink-0 text-gray-300" />
                   }
-                  <span className="text-lg shrink-0 leading-none">{g.icon}</span>
+                  <div className={`h-5 w-5 shrink-0 ${g.done ? "text-indigo-400" : GOAL_COLORS[g.icon]}`}>{GOAL_ICONS[g.icon]}</div>
                   <span className={`flex-1 text-sm font-medium ${g.done ? "line-through text-gray-400" : "text-gray-600"}`}>
                     {g.label}
                   </span>
@@ -411,33 +428,36 @@ export default function HomeClient() {
 
           <div className="mx-6 h-px shrink-0" style={{ background: "#e5e7eb" }} />
 
-          <div id="tut-home-nav" className="px-4 pt-5 pb-5 flex-1 min-h-0">
+          <div id="tut-home-nav" className="px-4 pt-4 pb-4 shrink-0">
             <span className="px-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">Navigation</span>
             <div className="mt-2 flex flex-col gap-0.5">
-              {NAV_ITEMS.map(({ label, enabled, color, svg }) => {
+              {NAV_ITEMS.map(({ label, enabled, svg }) => {
+                const isActive = label === "Lieux" && showLieux;
                 const handleClick = () => {
                   if (label === "Lieux") { setShowLieux(v => !v); return; }
                   if (label === "Révision") { setShowRevision(true); return; }
                 };
                 return enabled ? (
                   <button key={label} onClick={handleClick}
-                    className={`group flex w-full items-center gap-3.5 rounded-xl px-3 py-3 transition-colors ${label === "Lieux" && showLieux ? "bg-gray-100" : "hover:bg-gray-100"}`}>
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-2 transition-transform group-hover:scale-105" style={{ background: color }}>
+                    className={`group flex w-full items-center gap-3.5 rounded-xl px-3 py-3 transition-colors ${isActive ? "bg-gray-50" : "hover:bg-gray-50"}`}>
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${isActive ? "text-indigo-600" : "text-gray-400 group-hover:text-gray-600"}`}>
                       {svg}
                     </div>
-                    <span className="text-[15px] font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">{label}</span>
-                    <ChevronRight className="ml-auto h-4 w-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className={`text-[15px] font-medium transition-colors ${isActive ? "text-gray-900" : "text-gray-600 group-hover:text-gray-800"}`}>{label}</span>
+                    <ChevronRight className={`ml-auto h-4 w-4 transition-opacity ${isActive ? "text-indigo-400 opacity-100" : "text-gray-300 opacity-0 group-hover:opacity-100"}`} />
                   </button>
                 ) : (
-                  <div key={label} className="flex items-center gap-3.5 rounded-xl px-3 py-3 cursor-default select-none">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl p-2" style={{ background: "#d1d5db" }}>{svg}</div>
-                    <span className="text-[15px] font-semibold text-gray-400">{label}</span>
+                  <div key={label} className="flex items-center gap-3.5 rounded-xl px-3 py-3 cursor-default select-none opacity-35">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-gray-400">{svg}</div>
+                    <span className="text-[15px] font-medium text-gray-500">{label}</span>
                     <span className="ml-auto rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-400">Bientôt</span>
                   </div>
                 );
               })}
             </div>
           </div>
+
+          <div className="flex-1" />
         </div>
 
         <div className="mx-6 h-px shrink-0" style={{ background: "#e5e7eb" }} />
@@ -446,7 +466,7 @@ export default function HomeClient() {
           <button onClick={() => router.push("/home/settings")}
             className="group flex w-full items-center gap-3.5 rounded-xl px-3 py-3 transition-colors hover:bg-gray-100">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-200 transition-transform group-hover:scale-105">
-              <Settings className="h-5 w-5 text-gray-500" />
+              <svg className="h-5 w-5 text-gray-500" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94s-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
             </div>
             <span className="text-[15px] font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">Paramètres</span>
             <ChevronRight className="ml-auto h-4 w-4 text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity" />

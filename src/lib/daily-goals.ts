@@ -24,16 +24,16 @@ export type GoalResult = {
 type GoalDef = { label: string; icon: string; target: number };
 
 const POOL: Record<GoalType, GoalDef> = {
-  complete_quest:       { label: "Complète une quête",                  icon: "📜", target: 1  },
-  complete_2_quests:    { label: "Complète 2 quêtes",                   icon: "📜", target: 2  },
-  complete_lesson:      { label: "Valide une leçon (score ≥ 80 %)",     icon: "🎓", target: 1  },
-  complete_2_lessons:   { label: "Valide 2 leçons",                     icon: "🎓", target: 2  },
-  finish_session:       { label: "Termine une conversation",             icon: "💬", target: 1  },
-  complete_3_sessions:  { label: "Lance 3 conversations",               icon: "💬", target: 3  },
-  complete_sns:         { label: "Complète une discussion SNS",         icon: "📱", target: 1  },
-  practice_vocab_5:     { label: "Révise 5 mots",                       icon: "🔤", target: 5  },
-  practice_vocab_10:    { label: "Révise 10 mots",                      icon: "🔤", target: 10 },
-  quest_and_lesson:     { label: "Complète une quête et une leçon",     icon: "⚡", target: 2  },
+  complete_quest:       { label: "Complète une quête",                  icon: "quest",   target: 1  },
+  complete_2_quests:    { label: "Complète 2 quêtes",                   icon: "quest",   target: 2  },
+  complete_lesson:      { label: "Valide une leçon (score ≥ 80 %)",     icon: "lesson",  target: 1  },
+  complete_2_lessons:   { label: "Valide 2 leçons",                     icon: "lesson",  target: 2  },
+  finish_session:       { label: "Termine une conversation",             icon: "chat",    target: 1  },
+  complete_3_sessions:  { label: "Lance 3 conversations",               icon: "chat",    target: 3  },
+  complete_sns:         { label: "Complète une discussion SNS",         icon: "sns",     target: 1  },
+  practice_vocab_5:     { label: "Révise 5 mots",                       icon: "vocab",   target: 5  },
+  practice_vocab_10:    { label: "Révise 10 mots",                      icon: "vocab",   target: 10 },
+  quest_and_lesson:     { label: "Complète une quête et une leçon",     icon: "zap",     target: 2  },
 };
 
 // 14 sets — un nouveau set tous les jours, cycle de 2 semaines

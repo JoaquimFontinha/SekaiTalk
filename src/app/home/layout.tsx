@@ -13,17 +13,14 @@ function PersistentMap() {
   const pathname = usePathname();
   const { mapRef, activeType, poiClickRef, mapBgClickRef, editMode, poiMoveRef } = useMapCtx();
   const [dbCities, setDbCities] = useState<Record<string, CityData>>(staticCities);
-  const fetchedRef = useRef(false);
 
-  // Charge les données depuis la DB une seule fois (pour refléter les modifs admin)
+  // Re-fetche à chaque navigation pour refléter les modifs admin
   useEffect(() => {
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
     fetch("/api/content/cities")
       .then(r => r.ok ? r.json() : null)
       .then(data => { if (data) setDbCities(data); })
       .catch(() => {});
-  }, []);
+  }, [pathname]);
 
   const parts = pathname.replace(/^\/home\/?/, "").split("/").filter(Boolean);
   const citySlug = parts[0] ?? null;
