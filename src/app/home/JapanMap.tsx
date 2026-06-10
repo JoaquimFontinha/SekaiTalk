@@ -19,20 +19,6 @@ function toCityList(cities: Record<string, { name: string; center: [number,numbe
   }));
 }
 
-// World polygon with a hole over Japan's bbox — used to mask hillshade dots on the ocean
-// After hillshade renders, this fill covers everything EXCEPT the Japan area (showing terrain)
-const OCEAN_MASK_GEOJSON = {
-  type: "Feature" as const,
-  geometry: {
-    type: "Polygon" as const,
-    coordinates: [
-      [[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]], // outer: world
-      [[122, 24], [122, 46], [146, 46], [146, 24], [122, 24]],        // hole: Japan bbox
-    ],
-  },
-  properties: {},
-};
-
 const JAPAN_REGIONS_GEOJSON = {
   type: "FeatureCollection" as const,
   features: [
@@ -58,16 +44,13 @@ const MAP_STYLE = {
     },
     "terrain-dem": {
       type: "raster-dem" as const,
-      url: "mapbox://mapbox.mapbox-terrain-dem-v1",
-      tileSize: 512,
+      encoding: "terrarium" as const,
+      tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
+      tileSize: 256,
     },
     "japan-regions": {
       type: "geojson" as const,
       data: JAPAN_REGIONS_GEOJSON,
-    },
-    "ocean-mask": {
-      type: "geojson" as const,
-      data: OCEAN_MASK_GEOJSON,
     },
   },
   layers: [
@@ -98,10 +81,10 @@ const MAP_STYLE = {
       source: "terrain-dem",
       paint: {
         "hillshade-illumination-direction": 335,
-        "hillshade-exaggeration": 0.45,
-        "hillshade-shadow-color": "#6b4f2a",
-        "hillshade-highlight-color": "#f0e8d0",
-        "hillshade-accent-color": "#8a6640",
+        "hillshade-exaggeration": 0.15,
+        "hillshade-shadow-color": "#1a3568",
+        "hillshade-highlight-color": "#ddd5be",
+        "hillshade-accent-color": "#1a3568",
       },
     },
     {
@@ -110,12 +93,6 @@ const MAP_STYLE = {
       source: "country-boundaries",
       "source-layer": "country_boundaries",
       filter: ["!=", ["get", "iso_3166_1"], "JP"],
-      paint: { "fill-color": "#1a3568", "fill-opacity": 1, "fill-antialias": false },
-    },
-    {
-      id: "ocean-mask-layer",
-      type: "fill" as const,
-      source: "ocean-mask",
       paint: { "fill-color": "#1a3568", "fill-opacity": 1, "fill-antialias": false },
     },
     {
