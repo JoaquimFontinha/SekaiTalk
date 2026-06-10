@@ -84,8 +84,8 @@ const SIDEBAR_BUTTONS: { panel: Exclude<SidebarPanel, null>; label: string; enab
     svg: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg> },
   { panel: "evenements", label: "Évènements", enabled: true,
     svg: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> },
-  { panel: "revision",   label: "Révision",   enabled: true,
-    svg: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg> },
+  { panel: "revision",   label: "Étudier",    enabled: true,
+    svg: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg> },
 ];
 
 
@@ -120,6 +120,7 @@ const POI_META: Record<POIType, { label: string; color: string; icon: React.Reac
   pharmacie:  { label: "Pharmacie",  color: "#059669", icon: <svg viewBox="0 0 24 24" fill="currentColor" style={{width:16,height:16}}><path d="M10.5 15.5h3v-2.5H16v-3h-2.5V7.5h-3V10H8v3h2.5zM19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 16H6c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1z"/></svg> },
   medecin:    { label: "Médecin",    color: "#ef4444", icon: <svg viewBox="0 0 24 24" fill="currentColor" style={{width:16,height:16}}><path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg> },
   poste:      { label: "Poste",      color: "#d97706", icon: <svg viewBox="0 0 24 24" fill="currentColor" style={{width:16,height:16}}><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg> },
+  school:     { label: "École",      color: "#7c3aed", icon: <svg viewBox="0 0 24 24" fill="currentColor" style={{width:16,height:16}}><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg> },
 };
 
 function createMarkerIcon(name: string, type: POIType) {
@@ -314,6 +315,10 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
   const handlePoiClick = useCallback((poiId: string) => {
     const poi = city.pois.find(p => p.id === poiId);
     if (!poi) return;
+    if (poi.type === "school") {
+      router.push(`/home/${citySlug}/school`);
+      return;
+    }
     flyToPoi(poi);
 
     const cached = poiDataCacheRef.current[poiId];
@@ -995,10 +1000,10 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
             <span className="text-[9px] font-bold uppercase tracking-wider">Évènements</span>
           </button>
-          <button onClick={() => setShowRevision(true)}
+          <button onClick={() => router.push(`/home/${citySlug}/school`)}
             className="flex-1 flex flex-col items-center justify-center gap-0.5 py-3 text-gray-400">
-            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
-            <span className="text-[9px] font-bold uppercase tracking-wider">Révision</span>
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+            <span className="text-[9px] font-bold uppercase tracking-wider">Étudier</span>
           </button>
         </div>
       </div>
@@ -1180,7 +1185,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                     id={`tut-sidebar-${panel}`}
                     onClick={() => {
                       if (!enabled) return;
-                      if (panel === "revision") { setShowRevision(true); return; }
+                      if (panel === "revision") { router.push(`/home/${citySlug}/school`); return; }
                       setSidebarPanel(prev => prev === panel ? null : panel);
                     }}
                     className={`group flex items-center gap-3.5 rounded-xl px-3 py-3 text-left transition-colors ${
@@ -1237,7 +1242,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                 title={label}
                 onClick={() => {
                   if (!enabled) return;
-                  if (panel === "revision") { setShowRevision(true); return; }
+                  if (panel === "revision") { router.push(`/home/${citySlug}/school`); return; }
                   setSidebarExpanded(true);
                   setSidebarPanel(panel);
                 }}

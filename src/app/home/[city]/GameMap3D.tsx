@@ -25,6 +25,7 @@ const POI_COLORS: Record<POIType, string> = {
   pharmacie:  "#059669",
   medecin:    "#ef4444",
   poste:      "#d97706",
+  school:     "#7c3aed",
 };
 
 const POI_ICONS: Record<POIType, string> = {
@@ -41,6 +42,7 @@ const POI_ICONS: Record<POIType, string> = {
   pharmacie:  "💊",
   medecin:    "🏥",
   poste:      "📮",
+  school:     "🏫",
 };
 
 
@@ -263,6 +265,7 @@ export default function GameMap3D({
       {pois.map(poi => {
         const lat = poiPositionOverrides[poi.id]?.lat ?? poi.lat;
         const lng = poiPositionOverrides[poi.id]?.lng ?? poi.lng;
+        const isSchool = poi.type === "school";
         return (
         <Marker
           key={poi.id}
@@ -278,21 +281,39 @@ export default function GameMap3D({
             }
           }}
         >
-          <div
-            className={`gm3d-poi${editMode ? " gm3d-poi--edit" : ""}${pinnedPoiId === poi.id ? " gm3d-poi--pinned" : ""}`}
-            style={{ "--pc": POI_COLORS[poi.type] } as React.CSSProperties}
-          >
-            <div className="gm3d-badge">
-              <div className={`gm3d-icon-wrap${POI_LOGOS[poi.id] ? " gm3d-icon-wrap--logo" : ""}`}>
-                {POI_LOGOS[poi.id]
-                  ? <img src={POI_LOGOS[poi.id]} alt="" className="gm3d-logo" />
-                  : <span className="gm3d-icon">{POI_ICONS[poi.type]}</span>
-                }
+          {isSchool ? (
+            <div
+              className={`gm3d-poi gm3d-poi--school${editMode ? " gm3d-poi--edit" : ""}${pinnedPoiId === poi.id ? " gm3d-poi--pinned" : ""}`}
+              style={{ "--pc": POI_COLORS.school } as React.CSSProperties}
+            >
+              <div className="gm3d-badge">
+                <div className="gm3d-icon-wrap">
+                  <span className="gm3d-icon">🏫</span>
+                </div>
+                <div className="gm3d-school-content">
+                  <span className="gm3d-name">{poi.name}</span>
+                  <span className="gm3d-cta">▶ Y aller</span>
+                </div>
               </div>
-              <span className="gm3d-name">{poi.name}</span>
+              <div className="gm3d-stem" />
             </div>
-            <div className="gm3d-stem" />
-          </div>
+          ) : (
+            <div
+              className={`gm3d-poi${editMode ? " gm3d-poi--edit" : ""}${pinnedPoiId === poi.id ? " gm3d-poi--pinned" : ""}`}
+              style={{ "--pc": POI_COLORS[poi.type] } as React.CSSProperties}
+            >
+              <div className="gm3d-badge">
+                <div className={`gm3d-icon-wrap${POI_LOGOS[poi.id] ? " gm3d-icon-wrap--logo" : ""}`}>
+                  {POI_LOGOS[poi.id]
+                    ? <img src={POI_LOGOS[poi.id]} alt="" className="gm3d-logo" />
+                    : <span className="gm3d-icon">{POI_ICONS[poi.type]}</span>
+                  }
+                </div>
+                <span className="gm3d-name">{poi.name}</span>
+              </div>
+              <div className="gm3d-stem" />
+            </div>
+          )}
         </Marker>
         );
       })}

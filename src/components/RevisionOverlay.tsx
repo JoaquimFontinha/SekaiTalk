@@ -281,7 +281,7 @@ function KanaTableSection({ label, rows, isCombo, defaultOpen = true, mastery }:
 
 // ── KanaPanel ─────────────────────────────────────────────────────────────────
 
-function KanaPanel({ onClose }: { onClose: () => void }) {
+function KanaPanel({ onClose, inline }: { onClose: () => void; inline?: boolean }) {
   const [tableScript, setTableScript]       = useState<KanaScript>("hiragana");
   const [practiceScript, setPracticeScript] = useState<KanaScript | "both">("hiragana");
   const [groups, setGroups]                 = useState<Set<KanaGroup>>(new Set<KanaGroup>(["basic"]));
@@ -338,7 +338,7 @@ function KanaPanel({ onClose }: { onClose: () => void }) {
     const isKanaChoice = ex.mode === "romaji_to_kana";
 
     return (
-      <div className="pointer-events-auto fixed inset-0 z-[2010] flex flex-col bg-white">
+      <div className={inline ? "flex flex-col bg-white" : "pointer-events-auto fixed inset-0 z-[2010] flex flex-col bg-white"}>
         <div className="h-2 shrink-0 bg-gray-100">
           <div className="h-full bg-indigo-400 transition-all duration-500" style={{ width: `${(idx / session.length) * 100}%` }} />
         </div>
@@ -646,7 +646,7 @@ function WordList({ words }: { words: RevisionWord[] }) {
 
 type View = "overview" | "session" | "summary";
 
-export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
+export default function RevisionOverlay({ onClose, inline }: { onClose: () => void; inline?: boolean }) {
   const [tab, setTab]             = useState<"vocab" | "kana">("vocab");
   const [view, setView]           = useState<View>("overview");
   const [words, setWords]         = useState<RevisionWord[]>([]);
@@ -720,8 +720,9 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
 
   if (view === "overview") {
     return (
-      <div className="pointer-events-auto fixed inset-0 z-[2000] flex flex-col bg-white">
-        {/* Header */}
+      <div className={inline ? "flex flex-col bg-white" : "pointer-events-auto fixed inset-0 z-[2000] flex flex-col bg-white"}>
+        {/* Header — hidden in inline mode (school page already has a header) */}
+        {!inline && (
         <div className="shrink-0 flex items-center justify-between border-b border-gray-100 px-8 py-5">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-600">
@@ -736,6 +737,7 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
             <X className="h-4 w-4" />
           </button>
         </div>
+        )}
 
         {/* Tab navigation */}
         <div className="shrink-0 flex border-b border-gray-100">
@@ -748,15 +750,15 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
         </div>
 
         {tab === "kana" ? (
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <KanaPanel onClose={onClose} />
+          <div className={inline ? "flex flex-col" : "flex flex-1 flex-col overflow-hidden"}>
+            <KanaPanel onClose={onClose} inline={inline} />
           </div>
         ) : loading ? (
           <div className="flex flex-1 items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-indigo-500" />
           </div>
         ) : words.length === 0 ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-8 text-center">
+          <div className={`flex ${inline ? "" : "flex-1"} flex-col items-center justify-center gap-4 px-8 py-16 text-center`}>
             <p className="text-5xl">📚</p>
             <p className="text-lg font-bold text-gray-700">Aucun vocabulaire pour l&apos;instant</p>
             <p className="text-sm text-gray-400 max-w-sm">
@@ -770,7 +772,7 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
             </button>
           </div>
         ) : (
-          <div className="flex flex-1 flex-col overflow-hidden">
+          <div className={`flex ${inline ? "" : "flex-1"} flex-col overflow-hidden`}>
             {/* Stats */}
             <div className="shrink-0 px-8 py-6 bg-gray-50 border-b border-gray-100">
               <h2 className="text-xl font-black text-gray-900 mb-5">Ton vocabulaire</h2>
@@ -834,7 +836,7 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
             </div>
 
             {/* Word list */}
-            <div className="flex-1 overflow-y-auto divide-y divide-gray-100">
+            <div className={`${inline ? "" : "flex-1"} overflow-y-auto divide-y divide-gray-100`}>
               <WordList words={filteredWords} />
             </div>
           </div>
@@ -853,7 +855,7 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
       : selected === exercise?.correct;
 
     return (
-      <div className="pointer-events-auto fixed inset-0 z-[2000] flex flex-col bg-white">
+      <div className={inline ? "flex flex-col bg-white" : "pointer-events-auto fixed inset-0 z-[2000] flex flex-col bg-white"}>
         {/* Progress bar */}
         <div className="h-2 shrink-0 bg-gray-100">
           <div
@@ -1048,7 +1050,7 @@ export default function RevisionOverlay({ onClose }: { onClose: () => void }) {
   const wrongWords   = results.filter(r => !r.correct);
 
   return (
-    <div className="pointer-events-auto fixed inset-0 z-[2000] flex flex-col items-center justify-center overflow-y-auto bg-white px-8 py-12">
+    <div className={inline ? "flex flex-col items-center justify-center overflow-y-auto bg-white px-8 py-12" : "pointer-events-auto fixed inset-0 z-[2000] flex flex-col items-center justify-center overflow-y-auto bg-white px-8 py-12"}>
       <div className="w-full max-w-lg text-center">
         <div className="flex justify-center mb-6">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-indigo-100">

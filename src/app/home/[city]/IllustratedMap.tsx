@@ -17,6 +17,7 @@ const POI_META: Record<POIType, { label: string; color: string; icon: string }> 
   pharmacie:  { label: "Pharmacie",    color: "#059669", icon: "💊" },
   medecin:    { label: "Médecin",      color: "#ef4444", icon: "🏥" },
   poste:      { label: "Poste",        color: "#d97706", icon: "📮" },
+  school:     { label: "École",        color: "#7c3aed", icon: "🏫" },
 };
 
 interface Props {

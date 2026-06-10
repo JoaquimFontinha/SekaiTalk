@@ -1,4 +1,4 @@
-export type POIType = "transport" | "konbini" | "izakaya" | "site" | "market" | "loisir" | "shop" | "restaurant" | "cafe" | "hotel" | "pharmacie" | "medecin" | "poste";
+export type POIType = "transport" | "konbini" | "izakaya" | "site" | "market" | "loisir" | "shop" | "restaurant" | "cafe" | "hotel" | "pharmacie" | "medecin" | "poste" | "school";
 
 export type POI = {
   id: string;
@@ -29,6 +29,12 @@ const cities: Record<string, CityData> = {
     levelRequired: 1,
     use3DMap: true,
     pois: [
+      // ── École SekaiTalk ────────────────────────────────────────────────────
+      {
+        id: "ecole-sekaitalk-tokyo", name: "École SekaiTalk", type: "school",
+        lat: 35.6598, lng: 139.7440,
+        description: "L'école de langue de SekaiTalk à Tokyo. Cours de japonais, grammaire, flashcards et examens.",
+      },
       // ── TEST (konbini avec quête) ───────────────────────────────────────────
       {
         id: "konbini-shinjuku", name: "TEST — Konbini Shinjuku", type: "konbini",

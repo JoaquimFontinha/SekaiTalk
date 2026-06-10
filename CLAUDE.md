@@ -326,7 +326,7 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 - Header : `<img src="/logo_sekai_talk.png">` (h-[120px]) + bouton `ChevronLeft` (collapse + `setSidebarPanel(null)`) — même logo que HomeClient
 - **Mon Objectif** : `<MonObjectif />` en haut juste après le header (avant les objectifs du jour)
 - Objectifs du jour : 3 objectifs dynamiques via hook `useDailyGoals()` (`src/hooks/useDailyGoals.ts`). Icône emoji + label + compteur `X/Y` pour les objectifs multi-étapes. Fond `bg-indigo-50` quand terminé. Compteur `doneCount / 3` en haut.
-- Navigation : `SIDEBAR_BUTTONS` = [Guidage, Lieux, Contacts, Évènements, Révision] — **tous enabled: true**. Icônes SVG colorées inline (pas de lucide-react). Type `{ panel, label, enabled, color, svg: React.ReactNode }`. Section `flex-1`.
+- Navigation : `SIDEBAR_BUTTONS` = [Guidage, Lieux, Contacts, Évènements, **Étudier**] — **tous enabled: true**. Icônes SVG colorées inline (pas de lucide-react). Type `{ panel, label, enabled, color, svg: React.ReactNode }`. Section `flex-1`. Le bouton **Étudier** (anciennement "Révision", icône mortarboard) → `router.push(`/home/${citySlug}/school`)` au lieu d'ouvrir `RevisionOverlay`.
 - Paramètres : footer fonctionnel → `router.push("/home/settings")`, hover avec `ChevronRight`
 
 **État collapsé (60px)** :
@@ -357,7 +357,7 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 - Badge N5/N4/N3 coloré sur chaque ligne POI (vert=N5, bleu=N4, rouge=N3).
 - Règle d'affectation : N5=konbinis/McDonald's/Starbucks, N4=transport/shopping/loisirs, N3=hôpital/poste/musées/hôtels luxe.
 
-**Panneau Révision** — désactivé dans `CityClient` (`enabled: false`), à implémenter. Actif dans `HomeClient` via bouton "Révision" dans la sidebar (ouvre `RevisionOverlay`).
+**Bouton Étudier** — remplace l'ancien bouton "Révision" dans CityClient et HomeClient. Icône mortarboard SVG. Clic → `router.push(`/home/${citySlug}/school`)`. Depuis HomeClient, navigue vers `/home/tokyo/school?from=home` (param `from=home` pour que le bouton retour de l'école renvoie vers `/home` et affiche "← Accueil" au lieu de "← Tokyo").
 
 **HUD top-right** — identique à `HomeClient` (voir section ci-dessous). Positionnement : `right: selectedPoi ? 440 : 20`.
 
@@ -445,7 +445,7 @@ Clic flèche → `pinPoiRef.current?.(poi.id)` (pin le marker destination) **pui
 - Sections :
   1. **Header** — `<img src="/logo_sekai_talk.png">` `h-[120px]`, `border-b border-gray-200`
   2. **Objectifs du jour** (`id="tut-home-daily"`) — 3 objectifs dynamiques via `useDailyGoals()`. Icône emoji + label + compteur `X/Y` pour objectifs multi-étapes. Fond indigo quand terminé.
-  3. **Navigation** (`id="tut-home-nav"`) — icônes SVG colorées inline. **Lieux** enabled → ouvre panneau flottant `showLieux`. Contacts/Évènements disabled. **Révision** enabled → ouvre `RevisionOverlay`. Section `flex-1`.
+  3. **Navigation** (`id="tut-home-nav"`) — icônes SVG colorées inline. **Lieux** enabled → ouvre panneau flottant `showLieux`. Contacts/Évènements disabled. **Étudier** enabled → `router.push("/home/tokyo/school?from=home")`. Section `flex-1`.
   4. **Mon Objectif** (`id="tut-home-objectif"`) — `<MonObjectif />`
   5. **Paramètres** (`id="tut-home-settings"`) — fonctionnel → `router.push("/home/settings")`, hover `ChevronRight`
 - `pointer-events-auto` explicite
@@ -569,7 +569,11 @@ Modal de conversation SNS simulée, rendu dans un **frame iPhone** réutilisant 
 
 ### RevisionOverlay (`src/components/RevisionOverlay.tsx`)
 
-Modal plein-écran de révision style Busuu. Accessible via le bouton **Révision** dans la sidebar de `HomeClient` (et désactivé dans `CityClient`). Overlay `fixed inset-0 z-[2000] bg-white`.
+Composant de révision style Busuu. Utilisé en deux modes :
+- **Overlay plein-écran** (mode par défaut) : `fixed inset-0 z-[2000] bg-white`. N'est plus déclenché depuis les sidebars — uniquement disponible si invoqué directement.
+- **Inline** (`inline={true}`) : pas de `fixed`, pas de header "Révision" (masqué), `flex-col` naturel dans le scroll de la page parente. Utilisé dans l'onglet **Pratique** de `SchoolClient`. Les vues session et summary s'adaptent aussi (pas de fixed). `KanaPanel` accepte aussi `inline` et adapte sa vue session.
+
+**Prop** : `{ onClose: () => void; inline?: boolean }`. En mode inline, `onClose` n'est pas affiché mais reste requis (utilisé si 0 mots).
 
 **Deux onglets** : `"vocab"` (défaut) et `"kana"`.
 
@@ -876,6 +880,49 @@ Remplace le push-to-talk. Le micro est ouvert en permanence après le chargement
 - `handleBack` → `router.push(/home/${citySlug}?poi=${poiId})` (rouvre le drawer du POI)
 
 **Seed** : leçon `konbini-shinjuku` avec 8 steps : 2 INTRO (いらっしゃいませ, おにぎり) → TRUE_FALSE → CHOOSE_ANSWER → CULTURE_NOTE → COMPLETE_WORD → MATCH_PAIRS → CHOOSE_ANSWER. Steps recréés via `deleteMany` + `createMany` à chaque seed.
+
+### Page École (`/home/[city]/school`)
+
+Route statique `src/app/home/[city]/school/` — prend la priorité sur le segment dynamique `[poi]`. Accessible depuis le marker "École SekaiTalk" sur la carte 3D.
+
+**POI école** : `id: "ecole-sekaitalk-tokyo"`, `type: "school"`, seedé dans `prisma/seed.ts` CITIES_DATA + `src/lib/cities.ts` (pour fallback statique). Type `school` ajouté dans `POI_META` (IllustratedMap, CityClient) et `POI_COLORS`/`POI_ICONS` (GameMap3D). Couleur accent `#7c3aed` (violet).
+
+**CSS marker** : le hover générique (`.gm3d-poi:hover .gm3d-badge`, spécificité 0,3,0) écrasait le style du type school (0,2,0). Fix dans `globals.css` : règle `.gm3d-poi--school:hover .gm3d-badge` avec spécificité égale, qui réapplique le gradient violet.
+
+**`SchoolClient.tsx`** (`src/app/home/[city]/school/SchoolClient.tsx`) — composant client, fond `bg-gray-50`, thème blanc/light. Props : `citySlug`, `cityName`.
+
+**Constantes** :
+- `ACCENT = "#7c3aed"` (violet)
+- `TABS: { id: Tab; label: string; locked: boolean }[]` — 6 onglets : Dashboard, Basiques, **Pratique** (déverrouillé), Grammaire (🔒), Flashcards (🔒), Examen (🔒)
+
+**Header (`<nav>`)** : sticky, `h-14`, `bg-white/95 backdrop-blur-md`, `border-b border-gray-100`. Structure en 3 blocs `flex-1` :
+- **Gauche** : bouton retour (→ `backUrl`) + `|` + `SekaiTalk` (→ `/home`). Label : `"← Accueil"` si `?from=home`, sinon `"← cityName"`. `backUrl` calculé depuis `useSearchParams()` : `/home` si `from=home`, sinon `/home/${citySlug}`.
+- **Centre** : onglets avec underline active (barre `h-0.5` ACCENT en `absolute bottom-0`)
+- **Droite** : badge niveau N5 + avatar initiale
+
+**Onglet Dashboard** : carte profil (avatar initiale gradient, pseudo, niveau, XP bar `XpBar`, streak 🔥) + citation 一期一会 + 3 `ProgressCard` (Vocabulaire live, Grammaire 🔒, Kanji 🔒). Fetche `GET /api/user/stats` + `GET /api/revision/vocab` au mount.
+
+**Onglet Basiques — `BasiquesView`** : chemin de leçons style Sakuraflow.
+- **Header** : titre dégradé + barre de progression globale
+- **Carte chapitre** (glassmorphism) : barre accent gauche gradient, boutons "Revoir l'intro" / "Déjà familier ? Passer les leçons"
+- **"Commencer ici ↓"** : animation `startHereBob` (bounce CSS `@keyframes`)
+- **Chemin zigzag** : `CHAPTER1_LESSONS` (6 leçons, 1 active + 5 locked). Index pair → carte alignée à gauche, index impair → droite. Numéro de leçon affiché côté opposé à la carte. Connecteurs SVG courbes pointillés entre leçons (`M 230 0 C 230 24, 70 24, 70 48` / `M 70 0 C 70 24, 230 24, 230 48`). Couleur connecteur : violet avec glow si précédent unlocked, gris sinon.
+- **Carte active** : glassmorphism, icône 🌸 gradient, grille kana+romaji, stats cartes/XP, bouton "Commencer" gradient. `hover:-translate-y-1 hover:scale-[1.03]`
+- **Cartes locked** : `opacity-50`, fond neutre, icône cadenas, ★★★ grisées
+- **Chapitres 2 & 3** (Katakana, Vocabulaire N5) : cartes locked en bas, barre grise gauche, mention "Disponible après le Chapitre N"
+
+**Onglet Pratique** : `<RevisionOverlay inline onClose={() => setTab("dashboard")} />` — contenu de révision vocab + kana intégré inline dans la page. Importé via `dynamic(..., { ssr: false })`.
+
+**Onglets locked (Grammaire, Flashcards, Examen)** : `LockedSection` — fond grisé `border-dashed`, icône cadenas, message "à venir".
+
+**Animations CSS** (`globals.css`) :
+```css
+@keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.animate-fadeIn { animation: fadeIn 0.4s ease both; }
+@keyframes startHereBob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(4px); } }
+```
+
+**TODO** : bouton "Commencer" leçon 1 sans fonctionnalité (placeholder). Écoles Osaka/Kyoto pas encore seedées.
 
 ### Interface Admin (`/admin`)
 

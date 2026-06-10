@@ -5,7 +5,6 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Bell, User, Flame, Settings, CheckCircle2, Circle, ChevronRight, Lock } from "lucide-react";
-import RevisionOverlay from "@/components/RevisionOverlay";
 import MonObjectif from "@/components/MonObjectif";
 import PricingModal from "@/components/PricingModal";
 import TutorialLayer from "@/components/TutorialLayer";
@@ -62,8 +61,8 @@ const NAV_ITEMS: { label: string; enabled: boolean; svg: React.ReactNode }[] = [
     svg: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>,
   },
   {
-    label: "Révision", enabled: true,
-    svg: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>,
+    label: "Étudier", enabled: true,
+    svg: <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>,
   },
 ];
 
@@ -151,7 +150,7 @@ export default function HomeClient() {
   const router = useRouter();
   const { japanFlyToRef } = useMapCtx();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
-  const [showRevision, setShowRevision] = useState(false);
+
   const { goals: dailyGoals, doneCount: goalsDone } = useDailyGoals();
   const [showPricing, setShowPricing] = useState(false);
   const [showStreakPopover, setShowStreakPopover] = useState(false);
@@ -196,7 +195,7 @@ export default function HomeClient() {
   const streak = 0;
 
   const handleTabClick = (tab: MobileTab) => {
-    if (tab === "revision") { setShowRevision(true); return; }
+    if (tab === "revision") { router.push("/home/tokyo/school?from=home"); return; }
     if (tab === mobileTab && sheetState !== "collapsed") {
       setSheetState("collapsed");
       return;
@@ -349,20 +348,17 @@ export default function HomeClient() {
 
             <div className="w-px my-3 bg-gray-100" />
 
-            {/* Révision */}
+            {/* Étudier */}
             <button
               className="flex-1 flex flex-col items-center justify-center gap-1 py-3 text-gray-400 transition-colors active:text-indigo-600"
-              onClick={() => handleTabClick("revision")}
+              onClick={() => router.push("/home/tokyo/school?from=home")}
             >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-              </svg>
-              <span className="text-[10px] font-bold uppercase tracking-wider">Révision</span>
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
+              <span className="text-[10px] font-bold uppercase tracking-wider">Étudier</span>
             </button>
           </div>
         </div>
 
-        {showRevision && <RevisionOverlay onClose={() => setShowRevision(false)} />}
         {showPricing && <PricingModal onClose={() => { storeTutoStep("complete"); setShowPricing(false); }} />}
       </div>
     );
@@ -423,7 +419,7 @@ export default function HomeClient() {
                 const isActive = label === "Lieux" && showLieux;
                 const handleClick = () => {
                   if (label === "Lieux") { setShowLieux(v => !v); return; }
-                  if (label === "Révision") { setShowRevision(true); return; }
+                  if (label === "Étudier") { router.push("/home/tokyo/school?from=home"); return; }
                 };
                 return enabled ? (
                   <button key={label} onClick={handleClick}
@@ -494,7 +490,6 @@ export default function HomeClient() {
         </div>
       )}
 
-      {showRevision && <RevisionOverlay onClose={() => setShowRevision(false)} />}
       {showPricing && <PricingModal onClose={() => { storeTutoStep("complete"); setShowPricing(false); }} />}
 
       <TutorialLayer onAdvance={(step) => { if (step === "pricing") setShowPricing(true); }} />

@@ -1794,6 +1794,7 @@ async function main() {
         { id: "tokyo-metro-theatre", name: "Tokyo Metropolitan Theatre", type: "site", lat: 35.7296, lng: 139.7107, description: "La Tokyo Gei-Jutsu Gekijō à Ikebukuro est la plus grande salle de spectacle." },
         { id: "big-echo-kabukicho", name: "Big Echo Kabukichō", type: "loisir", lat: 35.6940, lng: 139.7027, description: "Big Echo est l'une des plus grandes chaînes de karaoke au Japon." },
         { id: "at-home-cafe-akihabara", name: "@home café Akihabara", type: "loisir", lat: 35.6991, lng: 139.7741, description: "@home café est la chaîne de maid café la plus connue d'Akihabara." },
+        { id: "ecole-sekaitalk-tokyo", name: "École SekaiTalk", type: "school", lat: 35.6598, lng: 139.7440, description: "L'école de langue de SekaiTalk à Tokyo. Cours de japonais, grammaire, vocabulaire et culture japonaise." },
       ],
     },
     {
