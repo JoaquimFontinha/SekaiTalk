@@ -7,7 +7,7 @@ import { signOut, useSession } from "next-auth/react";
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { Bell, User, Flame, ArrowLeft, X, Loader2, CheckCircle, CheckCircle2, Circle, Settings, ChevronLeft, ChevronRight, GraduationCap, Compass, MessageCircle } from "lucide-react";
+import { Bell, User, Flame, ArrowLeft, X, Loader2, CheckCircle, CheckCircle2, Circle, Settings, ChevronLeft, ChevronRight, Compass, MessageCircle } from "lucide-react";
 import RevisionOverlay from "@/components/RevisionOverlay";
 import SnsOverlay from "@/components/SnsOverlay";
 import MonObjectif from "@/components/MonObjectif";
@@ -97,20 +97,29 @@ function getFriendshipLevel(count: number): { label: string; color: string } {
   return                   { label: "Proche",        color: "#a855f7" };
 }
 
-const POI_META: Record<POIType, { label: string; color: string; icon: string }> = {
-  transport:  { label: "Transport",  color: "#0ea5e9", icon: "🚇" },
-  konbini:    { label: "Konbini",    color: "#22c55e", icon: "🏪" },
-  izakaya:    { label: "Izakaya",    color: "#f97316", icon: "🍶" },
-  site:       { label: "Site",       color: "#8b5cf6", icon: "🏛️" },
-  market:     { label: "Marché",     color: "#eab308", icon: "🛒" },
-  loisir:     { label: "Loisir",     color: "#14b8a6", icon: "🎭" },
-  shop:       { label: "Shop",       color: "#ec4899", icon: "🛍️" },
-  restaurant: { label: "Restaurant", color: "#f43f5e", icon: "🍔" },
-  cafe:       { label: "Café",       color: "#92400e", icon: "☕" },
-  hotel:      { label: "Hôtel",      color: "#0891b2", icon: "🏨" },
-  pharmacie:  { label: "Pharmacie",  color: "#059669", icon: "💊" },
-  medecin:    { label: "Médecin",    color: "#ef4444", icon: "🏥" },
-  poste:      { label: "Poste",      color: "#d97706", icon: "📮" },
+const THEME_ICONS: Record<string, React.ReactNode> = {
+  "theme-transport": <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>,
+  "theme-hotel":     <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/></svg>,
+  "theme-quotidien": <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>,
+  "theme-food":      <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><path d="M18.06 22.99h1.66c.84 0 1.53-.64 1.63-1.46L23 5.05h-5V1h-1.97v4.05h-4.97l.3 2.34c1.71.47 3.31 1.32 4.27 2.26 1.44 1.42 2.43 2.89 2.43 5.29v8.05zM1 21.99V21h15.03v.99c0 .55-.45 1-1.01 1H2.01c-.56 0-1.01-.45-1.01-1zm15.03-7c0-3.5-15.03-3.5-15.03 0h15.03zM1.02 17h15v2h-15z"/></svg>,
+  "theme-shopping":  <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><path d="M19 6h-2c0-2.76-2.24-5-5-5S7 3.24 7 6H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-7-3c1.66 0 3 1.34 3 3H9c0-1.66 1.34-3 3-3zm0 10c-1.66 0-3-1.34-3-3h2c0 .55.45 1 1 1s1-.45 1-1h2c0 1.66-1.34 3-3 3z"/></svg>,
+  "theme-culture":   <svg viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5"><path d="M12 3L2 12h3v8h6v-5h2v5h6v-8h3L12 3zm0 12.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>,
+};
+
+const POI_META: Record<POIType, { label: string; color: string; icon: React.ReactNode }> = {
+  transport:  { label: "Transport",  color: "#0ea5e9", icon: <svg viewBox="0 0 24 24" fill="currentColor" style={{width:16,height:16}}><path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/></svg> },
+  konbini:    { label: "Konbini",    color: "#22c55e", icon: <svg viewBox="0 0 24 24" fill="currentColor" style={{width:16,height:16}}><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg> },
+  izakaya:    { label: "Izakaya",    color: "#f97316", icon: <svg viewBox="0 0 24 24" fill="currentColor" style={{width:16,height:16}}><path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/></svg> },
+  site:       { label: "Site",       color: "#8b5cf6", icon: <svg viewBox="0 0 24 24" fill="currentColor" style={{width:16,height:16}}><path d="M12 3L2 12h3v8h6v-5h2v5h6v-8h3L12 3zm0 12.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg> },
+  market:     { label: "Marché",     color: "#eab308", icon: <svg viewBox="0 0 24 24" fill="currentColor" style={{width:16,height:16}}><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 6.9 18 9 18h12v-2H9.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49A1 1 0 0 0 23.43 5H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg> },
+  loisir:     { label: "Loisir",     color: "#14b8a6", icon: <svg viewBox="0 0 24 24" fill="currentColor" style={{width:16,height:16}}><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 16L12 15.45 7.77 18l1.12-4.81-3.73-3.23 4.92-.42L12 5l1.92 4.53 4.92.42-3.73 3.23L16.23 18z"/></svg> },
+  shop:       { label: "Shop",       color: "#ec4899", icon: <svg viewBox="0 0 24 24" fill="currentColor" style={{width:16,height:16}}><path d="M19 6h-2c0-2.76-2.24-5-5-5S7 3.24 7 6H5c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-7-3c1.66 0 3 1.34 3 3H9c0-1.66 1.34-3 3-3zm0 10c-1.66 0-3-1.34-3-3h2c0 .55.45 1 1 1s1-.45 1-1h2c0 1.66-1.34 3-3 3z"/></svg> },
+  restaurant: { label: "Restaurant", color: "#f43f5e", icon: <svg viewBox="0 0 24 24" fill="currentColor" style={{width:16,height:16}}><path d="M18.06 22.99h1.66c.84 0 1.53-.64 1.63-1.46L23 5.05h-5V1h-1.97v4.05h-4.97l.3 2.34c1.71.47 3.31 1.32 4.27 2.26 1.44 1.42 2.43 2.89 2.43 5.29v8.05zM1 21.99V21h15.03v.99c0 .55-.45 1-1.01 1H2.01c-.56 0-1.01-.45-1.01-1zm15.03-7c0-3.5-15.03-3.5-15.03 0h15.03zM1.02 17h15v2h-15z"/></svg> },
+  cafe:       { label: "Café",       color: "#92400e", icon: <svg viewBox="0 0 24 24" fill="currentColor" style={{width:16,height:16}}><path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/></svg> },
+  hotel:      { label: "Hôtel",      color: "#0891b2", icon: <svg viewBox="0 0 24 24" fill="currentColor" style={{width:16,height:16}}><path d="M7 13c1.66 0 3-1.34 3-3S8.66 7 7 7s-3 1.34-3 3 1.34 3 3 3zm12-6h-8v7H3V5H1v15h2v-3h18v3h2v-9c0-2.21-1.79-4-4-4z"/></svg> },
+  pharmacie:  { label: "Pharmacie",  color: "#059669", icon: <svg viewBox="0 0 24 24" fill="currentColor" style={{width:16,height:16}}><path d="M10.5 15.5h3v-2.5H16v-3h-2.5V7.5h-3V10H8v3h2.5zM19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 16H6c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1z"/></svg> },
+  medecin:    { label: "Médecin",    color: "#ef4444", icon: <svg viewBox="0 0 24 24" fill="currentColor" style={{width:16,height:16}}><path d="M19 3H5c-1.1 0-1.99.9-1.99 2L3 19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg> },
+  poste:      { label: "Poste",      color: "#d97706", icon: <svg viewBox="0 0 24 24" fill="currentColor" style={{width:16,height:16}}><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg> },
 };
 
 function createMarkerIcon(name: string, type: POIType) {
@@ -190,7 +199,7 @@ function EventCard({ ev, tick, onClick }: {
 export default function CityClient({ citySlug, initialCity }: { citySlug: string; initialCity?: import("@/lib/cities").CityData | null }) {
   const router       = useRouter();
   const searchParams = useSearchParams();
-  const { activeType, poiClickRef, mapBgClickRef, mapRef, editMode, setEditMode, poiMoveRef, setActiveEvents } = useMapCtx();
+  const { activeType, poiClickRef, mapBgClickRef, mapRef, editMode, setEditMode, poiMoveRef, pinPoiRef, setActiveEvents, mapReady } = useMapCtx();
   const { data: session } = useSession();
   const isAdmin = (session?.user as any)?.isAdmin === true;
 
@@ -201,6 +210,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
   const [questsLoading, setQuestsLoading] = useState(false);
   const [questPreview, setQuestPreview]   = useState<{ quest: PoiQuest; poi: POI } | null>(null);
   const [lessonData, setLessonData]       = useState<{ id: string; title: string; validated: boolean; score: number } | null | "none">(null);
+  const poiDataCacheRef = useRef<Record<string, { backgroundImage: string | null; snsConversation: SnsConversation | null; quests: PoiQuest[]; lesson: { id: string; title: string; validated: boolean; score: number } | null }>>({});
 
   // Sidebar state
   const { goals: dailyGoals, doneCount: goalsDone } = useDailyGoals();
@@ -293,42 +303,46 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
     map.flyTo({ center: [poi.lng, poi.lat], zoom: 19, pitch: 75, duration: 1800, ...(padding ? { padding } : {}) });
   }, [mapRef, isMobile]);
 
+  const applyPoiData = useCallback((data: { backgroundImage: string | null; snsConversation: SnsConversation | null; quests: PoiQuest[]; lesson: { id: string; title: string; validated: boolean; score: number } | null }) => {
+    setPoiBackground(data.backgroundImage);
+    setSnsConversation(data.snsConversation);
+    setPoiQuests(data.quests ?? []);
+    setQuestsLoading(false);
+    setLessonData(data.lesson === null ? "none" : data.lesson);
+  }, []);
+
   const handlePoiClick = useCallback((poiId: string) => {
     const poi = city.pois.find(p => p.id === poiId);
     if (!poi) return;
-    setSelectedPoi(poi);
-    setPoiBackground(null);
-    setPoiQuests([]);
-    setQuestsLoading(true);
-    setLessonData(null);
-    setSnsConversation(null);
     flyToPoi(poi);
-    fetch(`/api/scenes/poi/${poiId}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(d => setPoiBackground(d?.backgroundImage ?? null))
-      .catch(() => {});
-    fetch(`/api/sns/poi/${poiId}`)
-      .then(r => r.ok ? r.json() : null)
-      .then(setSnsConversation)
-      .catch(() => {});
-    fetch(`/api/quests/poi/${poiId}`)
-      .then(r => r.ok ? r.json() : [])
-      .then(setPoiQuests)
-      .catch(() => setPoiQuests([]))
-      .finally(() => setQuestsLoading(false));
-    fetch(`/api/lessons/poi/${poiId}`)
+
+    const cached = poiDataCacheRef.current[poiId];
+    if (cached) {
+      setSelectedPoi(poi);
+      applyPoiData(cached);
+    } else {
+      setSelectedPoi(poi);
+      setPoiBackground(null);
+      setPoiQuests([]);
+      setQuestsLoading(true);
+      setLessonData(null);
+      setSnsConversation(null);
+    }
+
+    fetch(`/api/poi-data/${poiId}`)
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        if (!data) { setLessonData("none"); return; }
-        setLessonData({
-          id: data.id,
-          title: data.title,
-          validated: data.userProgress?.validated ?? false,
-          score: data.userProgress?.score ?? 0,
+        if (!data) { setQuestsLoading(false); return; }
+        poiDataCacheRef.current[poiId] = data;
+        // only update state if this POI is still selected
+        setSelectedPoi(cur => {
+          if (cur?.id === poiId) applyPoiData(data);
+          return cur;
         });
       })
-      .catch(() => setLessonData("none"));
-  }, [city, flyToPoi]);
+      .catch(() => setQuestsLoading(false));
+  }, [city, flyToPoi, applyPoiData]);
+
 
   const closeModal = useCallback(() => {
     setSelectedPoi(null);
@@ -361,29 +375,21 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // City loading screen — hide once map has finished flying in
+
+  // City loading screen — show on mount, hide once GameMap3D signals idle
   useEffect(() => {
     if (!cities[citySlug]?.use3DMap) return;
     setMapLoading(true);
     setMapFading(false);
-    let done = false;
-    const triggerReady = () => {
-      if (done) return;
-      done = true;
-      setMapFading(true);
-      setTimeout(() => setMapLoading(false), 400);
-    };
-    const fallback = setTimeout(triggerReady, 3000);
-    let pollId: ReturnType<typeof setTimeout>;
-    const tryListen = () => {
-      const map = (mapRef as React.RefObject<any>).current?.getMap?.();
-      if (map) { map.once("idle", triggerReady); }
-      else      { pollId = setTimeout(tryListen, 100); }
-    };
-    const initId = setTimeout(tryListen, 80);
-    return () => { done = true; clearTimeout(fallback); clearTimeout(pollId!); clearTimeout(initId); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [citySlug]);
+
+  useEffect(() => {
+    if (!mapLoading || !mapReady) return;
+    setMapFading(true);
+    const id = setTimeout(() => setMapLoading(false), 400);
+    return () => clearTimeout(id);
+  }, [mapReady, mapLoading]);
 
   // Neighborhood from local static table — zero API calls
   useEffect(() => {
@@ -602,7 +608,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
 
       {/* POI Drawer — slides up from bottom */}
       <div
-        className="pointer-events-auto fixed inset-x-0 bottom-0 z-[1020] flex flex-col rounded-t-3xl bg-gray-950/98 backdrop-blur-xl overflow-hidden"
+        className="pointer-events-auto fixed inset-x-0 bottom-0 z-[1020] flex flex-col rounded-t-3xl bg-white overflow-hidden"
         style={{
           height: selectedPoi ? "58vh" : 0,
           transition: "height 0.38s cubic-bezier(0.32, 0.72, 0, 1)",
@@ -617,9 +623,9 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
             if (dy > 60) closeModal();
           }}
         >
-          <div className="w-10 h-1 rounded-full bg-white/20" />
+          <div className="w-10 h-1 rounded-full bg-gray-200" />
           <button onClick={closeModal}
-            className="absolute right-4 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white/70 hover:bg-white/20">
+            className="absolute right-4 flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-gray-100 text-gray-500 hover:bg-gray-200">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -634,7 +640,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                 alt=""
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
               <div className="absolute bottom-3 left-4">
                 <div className="mb-0.5 flex items-center gap-1.5">
                   <span className="text-sm">{POI_META[selectedPoi.type].icon}</span>
@@ -650,40 +656,41 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
             <div className="flex-1 overflow-y-auto min-h-0 px-4 py-4 flex flex-col gap-4">
               {selectedPoi.description && (
                 <div>
-                  <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">À savoir</p>
-                  <p className="text-[13px] leading-relaxed text-white/65">{selectedPoi.description}</p>
+                  <p className="mb-1.5 text-[9px] font-bold uppercase tracking-[0.18em] text-gray-400">À savoir</p>
+                  <p className="text-[13px] leading-relaxed text-gray-600">{selectedPoi.description}</p>
                 </div>
               )}
 
               {lessonData !== "none" && (
                 <div>
-                  <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">Leçon</p>
+                  <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.18em] text-gray-400">Leçon</p>
                   {lessonData === null ? (
-                    <div className="flex justify-center py-2"><Loader2 className="h-4 w-4 animate-spin text-white/30" /></div>
+                    <div className="flex justify-center py-2"><Loader2 className="h-4 w-4 animate-spin text-gray-300" /></div>
                   ) : (
-                    <div className="rounded-xl border border-white/8 bg-white/4 p-4">
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/20">
-                          <GraduationCap className="h-4 w-4 text-indigo-300" />
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100">
+                          <svg viewBox="0 0 24 24" className="h-4 w-4"><defs><linearGradient id="lg-lesson-m" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#3b82f6"/><stop offset="100%" stopColor="#4f46e5"/></linearGradient></defs><path fill="url(#lg-lesson-m)" d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold text-white truncate">{lessonData.title}</p>
-                          {lessonData.validated ? (
-                            <p className="mt-0.5 text-[10px] text-emerald-400 font-semibold">Validée ✓ — {lessonData.score}%</p>
-                          ) : lessonData.score > 0 ? (
-                            <p className="mt-0.5 text-[10px] text-amber-400">Score : {lessonData.score}% (min. 80%)</p>
+                          <p className="text-base font-bold text-gray-900 truncate">{lessonData.title}</p>
+                          {lessonData.validated ? null : lessonData.score > 0 ? (
+                            <p className="mt-0.5 text-[10px] text-amber-500">Score : {lessonData.score}% (min. 80%)</p>
                           ) : (
-                            <p className="mt-0.5 text-[10px] text-white/35">Non commencée</p>
+                            <span />
                           )}
                         </div>
                       </div>
                       <button
                         onClick={() => { if (!selectedPoi) return; if (getTutoStep() === "drawer_lesson") storeTutoStep("lesson_active"); router.push(`/home/${citySlug}/${selectedPoi.id}/lesson`); }}
                         className={`mt-3 w-full rounded-lg py-2.5 text-xs font-bold transition-all ${
-                          lessonData.validated ? "border border-white/10 bg-white/5 text-white/40 hover:bg-white/10" : "border border-indigo-500/50 bg-indigo-600/80 text-white hover:bg-indigo-500"
+                          lessonData.validated
+                            ? "border border-gray-200 bg-white text-gray-400 hover:bg-gray-50"
+                            : "border-0 text-white"
                         }`}
+                        style={!lessonData.validated ? { background: "linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%)" } : undefined}
                       >
-                        {lessonData.validated ? "🔄 Refaire la leçon" : lessonData.score > 0 ? "🔄 Réessayer" : "🎓 Commencer la leçon"}
+                        {lessonData.validated ? "Refaire la leçon" : lessonData.score > 0 ? "Réessayer" : "Commencer la leçon"}
                       </button>
                     </div>
                   )}
@@ -691,9 +698,9 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
               )}
 
               <div>
-                <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">Quêtes</p>
+                <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.18em] text-gray-400">Quêtes</p>
                 {questsLoading ? (
-                  <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-indigo-400" /></div>
+                  <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div>
                 ) : poiQuests.length > 0 ? (
                   <div className="flex flex-col gap-2">
                     {poiQuests.map((quest, questIdx) => {
@@ -703,49 +710,44 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                       const isResume = progress?.status === "IN_PROGRESS" && !progress.firstCompletedAt;
                       const doneTasks = isResume ? progress.taskProgress.filter(tp => tp.status === "COMPLETED").length : isDone ? quest.tasks.length : 0;
                       return (
-                        <div key={quest.id} className="rounded-xl border border-white/8 bg-white/4 p-4">
+                        <div key={quest.id} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <p className="text-sm font-bold text-white">{quest.title}</p>
-                              {quest.description && <p className="mt-0.5 text-[11px] text-white/40">{quest.description}</p>}
+                              <p className="text-sm font-bold text-gray-900">{quest.title}</p>
+                              {quest.description && <p className="mt-0.5 text-[11px] text-gray-500">{quest.description}</p>}
                             </div>
                             {isDone && (
-                              <span className="flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
-                                <CheckCircle className="h-3 w-3" /> OK
+                              <span className="flex shrink-0 items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
+                                <CheckCircle className="h-3 w-3" />
                               </span>
                             )}
                           </div>
                           {quest.xpReward > 0 && (
                             <div className="mt-1.5 flex items-center gap-1.5">
-                              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${isDone || isReplay ? "border-white/10 text-white/25" : "border-indigo-500/40 bg-indigo-500/10 text-indigo-300"}`}>
+                              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${isDone || isReplay ? "border-gray-200 text-gray-400" : "border-gray-200 bg-gray-50 text-gray-700"}`}>
                                 +{quest.xpReward} XP
                               </span>
-                              {(isDone || isReplay) && <span className="text-[10px] italic text-white/20">déjà obtenu</span>}
+                              {(isDone || isReplay) && <span className="text-[10px] italic text-gray-400">déjà obtenu</span>}
                             </div>
                           )}
-                          <div className="mt-1.5 flex items-center gap-1">
-                            {quest.tasks.map((_, i) => (
-                              <div key={i} className={`h-1.5 w-1.5 rounded-full ${i < doneTasks ? "bg-emerald-400" : isResume && i === doneTasks ? "bg-yellow-400" : "bg-white/20"}`} />
-                            ))}
-                            <span className="ml-1 text-[10px] text-white/30">{quest.tasks.length} tâches</span>
-                          </div>
                           <button
                             id={questIdx === 0 ? "tut-quest-btn" : undefined}
                             onClick={() => { if (selectedPoi) setQuestPreview({ quest, poi: selectedPoi }); }}
                             className={`mt-3 w-full rounded-lg py-2.5 text-xs font-bold transition-all ${
-                              isDone || isReplay ? "border border-white/10 bg-white/5 text-white/40"
-                              : isResume ? "border border-yellow-400/30 bg-yellow-400/15 text-yellow-400"
-                              : "border border-indigo-500/50 bg-indigo-600/80 text-white hover:bg-indigo-500"
+                              isDone || isReplay ? "border border-gray-200 bg-white text-gray-400 hover:bg-gray-50"
+                              : isResume ? "border border-yellow-400/50 bg-yellow-50 text-yellow-600 hover:bg-yellow-100"
+                              : "border-0 text-white"
                             }`}
+                            style={!(isDone || isReplay) && !isResume ? { background: "linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%)" } : undefined}
                           >
-                            {isDone || isReplay ? "🔄 Refaire" : isResume ? `▶ Continuer (tâche ${doneTasks + 1}/${quest.tasks.length})` : "▶ Faire la quête"}
+                            {isDone || isReplay ? "Refaire" : isResume ? `▶ Continuer (tâche ${doneTasks + 1}/${quest.tasks.length})` : "Faire la quête"}
                           </button>
                         </div>
                       );
                     })}
                   </div>
                 ) : (
-                  <p className="py-3 text-center text-[11px] text-white/25">Aucune quête disponible ici pour l&apos;instant.</p>
+                  <p className="py-3 text-center text-[11px] text-gray-400">Aucune quête disponible ici pour l&apos;instant.</p>
                 )}
               </div>
 
@@ -754,18 +756,18 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                 return (
                   <div>
                     <span className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/30">Discussion SNS</span>
-                      <span className="text-[9px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30 px-1.5 py-0.5 rounded-full">Beta</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Discussion SNS</span>
+                      <span className="text-[9px] font-bold bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-full">Beta</span>
                     </span>
                     <button onClick={() => setShowSns(true)}
-                      className="mt-2 w-full rounded-2xl border border-emerald-500/30 bg-emerald-950/40 p-3.5 text-left hover:bg-emerald-900/50 transition-colors">
+                      className="mt-2 w-full rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-left hover:bg-emerald-100 transition-colors">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-xl shrink-0">{conv.contact.avatar}</div>
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center text-xl shrink-0">{conv.contact.avatar}</div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-white truncate">{conv.contact.name}</p>
-                          <p className="text-[11px] text-emerald-400 truncate">{conv.context}</p>
+                          <p className="text-sm font-bold text-gray-900 truncate">{conv.contact.name}</p>
+                          <p className="text-[11px] text-emerald-600 truncate">{conv.context}</p>
                         </div>
-                        <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold shrink-0">+{conv.xpReward} XP</span>
+                        <span className="text-[10px] bg-emerald-50 border border-emerald-200 text-emerald-600 px-2 py-0.5 rounded-full font-bold shrink-0">+{conv.xpReward} XP</span>
                       </div>
                     </button>
                   </div>
@@ -810,10 +812,6 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
             <div className="px-4 pb-4">
               <MonObjectif />
               <div className="mt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Objectifs du jour</span>
-                  <span className="text-xs font-semibold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full">{goalsDone} / {dailyGoals.length || 3}</span>
-                </div>
                 <div className="flex flex-col gap-2">
                   {dailyGoals.map((g) => (
                     <div key={g.type} className={`flex items-center gap-3 rounded-xl px-3 py-3 ${g.done ? "bg-indigo-50" : "bg-gray-50"}`}>
@@ -856,12 +854,12 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                     <div key={theme.id}>
                       <button
                         className="flex w-full items-center gap-3 px-4 py-3 text-left"
-                        style={{ background: "linear-gradient(to right, #f5f3ff, #eef2ff)" }}
+                        style={{ background: "linear-gradient(to right, #f8fafc, #f1f5f9)" }}
                         onClick={() => setCollapsedThemes(prev => { const next = new Set(prev); next.has(theme.id) ? next.delete(theme.id) : next.add(theme.id); return next; })}
                       >
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-base" style={{ background: "#ede9fe" }}>{theme.emoji}</div>
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-500" style={{ background: "#f1f5f9" }}>{THEME_ICONS[theme.id] ?? theme.emoji}</div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-indigo-400">Thème {ti + 1}</p>
+                          <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">Thème {ti + 1}</p>
                           <p className="text-sm font-extrabold text-gray-900">{theme.title}</p>
                         </div>
                         <ChevronRight className="h-4 w-4 shrink-0 text-indigo-300 transition-transform duration-200" style={{ transform: collapsedThemes.has(theme.id) ? "rotate(0deg)" : "rotate(90deg)" }} />
@@ -876,13 +874,15 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                         return (
                           <button key={poiId} onClick={() => { handlePoiClick(poi.id); setSheetState("collapsed"); }}
                             className="flex w-full items-center gap-3 border-b border-gray-50 px-4 py-3 text-left hover:bg-indigo-50/40">
-                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold"
-                              style={{ background: isDone ? "#22c55e" : "#f3f4f6", color: isDone ? "white" : "#9ca3af" }}>
-                              {isDone ? "✓" : pi + 1}
+                            <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full overflow-hidden"
+                              style={{ background: "#f3f4f6" }}>
+                              {POI_LOGOS[poi.id]
+                                ? <img src={POI_LOGOS[poi.id]} alt={poi.name} className="h-6 w-6 object-contain" />
+                                : <span className="text-sm">{meta.icon}</span>}
+                              {isDone && <div className="absolute inset-0 flex items-center justify-center rounded-full bg-green-500/90 text-[10px] font-black text-white">✓</div>}
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-sm font-semibold text-gray-800">{poi.name}</p>
-                              <p className="text-[11px] text-gray-400">{meta.label}</p>
                             </div>
                             {lvl && <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-black text-white" style={{ background: lvlColor[lvl] }}>N{lvl}</span>}
                             <ChevronRight className="h-4 w-4 shrink-0 text-gray-300" />
@@ -930,9 +930,6 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                         : <span className="text-xl shrink-0">{POI_META[poi.type].icon}</span>}
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-gray-800 truncate">{poi.name}</p>
-                        {qd !== undefined && qd.total > 0 ? (
-                          <p className="text-[10px] text-gray-400">{qd.done}/{qd.total} quête{qd.total > 1 ? "s" : ""}{qd.done === qd.total && <span className="ml-1 text-emerald-500">✓</span>}</p>
-                        ) : <p className="text-[10px] text-gray-300">{qd !== undefined ? "Aucune quête" : "..."}</p>}
                       </div>
                       <ChevronRight className="h-4 w-4 text-gray-300 shrink-0" />
                     </button>
@@ -1052,7 +1049,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                   </div>
                   <div className="flex items-center gap-2 mt-3 flex-wrap">
                     <span className="text-[9px] font-bold uppercase tracking-widest text-gray-300">{quest.tasks.length} tâche{quest.tasks.length > 1 ? "s" : ""}</span>
-                    {quest.xpReward > 0 && <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-600">+{quest.xpReward} XP</span>}
+                    {quest.xpReward > 0 && <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-bold text-gray-700">+{quest.xpReward} XP</span>}
                   </div>
                 </div>
                 <div className="px-6 pt-4 pb-2">
@@ -1092,7 +1089,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                 <div className="px-6 py-5 flex gap-3">
                   <button onClick={() => setQuestPreview(null)} className="flex-1 rounded-xl border border-gray-200 py-3 text-sm font-bold text-gray-500 hover:bg-gray-50">Annuler</button>
                   <button onClick={() => { if (getTutoStep() === "drawer_quest") storeTutoStep("quest_active"); setQuestPreview(null); closeModal(); router.push(`/home/${citySlug}/${poi.id}?quest=${quest.id}`); }}
-                    className="flex-1 rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white hover:bg-indigo-500">Commencer →</button>
+                    className="flex-1 rounded-xl bg-gray-800 py-3 text-sm font-bold text-white hover:bg-gray-900">Commencer →</button>
                 </div>
               </div>
             </div>
@@ -1123,6 +1120,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
           <p className="absolute bottom-8 text-[9px] font-medium tracking-[0.35em] text-gray-300">地図を読み込み中</p>
         </div>
       )}
+
 
       {/* ── Sidebar flottante (rétractable) ── */}
       <aside
@@ -1156,10 +1154,6 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
 
             {/* Objectifs du jour */}
             <div className="px-7 pb-8 shrink-0">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Objectifs du jour</span>
-                <span className="text-xs font-semibold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full">{goalsDone} / {dailyGoals.length || 3}</span>
-              </div>
               <div className="flex flex-col gap-2.5">
                 {dailyGoals.map((g) => (
                   <div key={g.type} className={`flex items-center gap-3.5 rounded-xl px-4 py-3.5 transition-colors ${g.done ? "bg-indigo-50" : "bg-gray-50"}`}>
@@ -1485,9 +1479,6 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                     style={tutoRestrictFilters ? { opacity: 0.3, pointerEvents: "none" } : undefined}
                   >
                     <span>Tous</span>
-                    <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[9px] font-bold text-gray-500">
-                      {city.pois.length}
-                    </span>
                   </button>
 
                   {(Object.keys(POI_META) as POIType[]).map(type => {
@@ -1515,12 +1506,6 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                         <span className="flex items-center gap-1.5">
                           <span>{meta.icon}</span>
                           <span>{meta.label}</span>
-                        </span>
-                        <span
-                          className="rounded-full px-1.5 py-0.5 text-[9px] font-bold"
-                          style={{ background: isActive ? `${meta.color}20` : "rgba(0,0,0,0.06)", color: isActive ? meta.color : "#9ca3af" }}
-                        >
-                          {count}
                         </span>
                       </button>
                     );
@@ -1559,16 +1544,6 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                               <p className="text-sm font-semibold leading-tight text-gray-700 transition-colors group-hover:text-gray-900">
                                 {poi.name}
                               </p>
-                              {qd !== undefined && qd.total > 0 ? (
-                                <p className="mt-0.5 text-[10px] text-gray-400">
-                                  {qd.done}/{qd.total} quête{qd.total > 1 ? "s" : ""}
-                                  {qd.done === qd.total && <span className="ml-1 text-emerald-500">✓</span>}
-                                </p>
-                              ) : qd !== undefined ? (
-                                <p className="mt-0.5 text-[10px] text-gray-300">Aucune quête</p>
-                              ) : (
-                                <p className="mt-0.5 text-[10px] text-gray-300">...</p>
-                              )}
                             </div>
                           </div>
                         </button>
@@ -1640,18 +1615,18 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                       {/* Theme header */}
                       <button
                         className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition-opacity hover:opacity-80"
-                        style={{ background: "linear-gradient(to right, #f5f3ff, #eef2ff)" }}
+                        style={{ background: "linear-gradient(to right, #f8fafc, #f1f5f9)" }}
                         onClick={() => setCollapsedThemes(prev => {
                           const next = new Set(prev);
                           next.has(theme.id) ? next.delete(theme.id) : next.add(theme.id);
                           return next;
                         })}
                       >
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg" style={{ background: "#ede9fe" }}>
-                          {theme.emoji}
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500" style={{ background: "#f1f5f9" }}>
+                          {THEME_ICONS[theme.id] ?? theme.emoji}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-indigo-400">Thème {ti + 1}</p>
+                          <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400">Thème {ti + 1}</p>
                           <p className="text-sm font-extrabold text-gray-900 leading-tight">{theme.title}</p>
                         </div>
                         <ChevronRight
@@ -1682,13 +1657,15 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                             className="flex w-full items-center gap-3 border-b border-gray-50 px-5 text-left transition-colors hover:bg-indigo-50/40"
                             style={{ height: 56, minHeight: 56, flexShrink: 0 }}
                           >
-                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors"
-                              style={{ background: isDone ? "#22c55e" : "#f3f4f6", color: isDone ? "white" : "#9ca3af" }}>
-                              {isDone ? "✓" : pi + 1}
+                            <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full overflow-hidden"
+                              style={{ background: "#f3f4f6" }}>
+                              {POI_LOGOS[poi.id]
+                                ? <img src={POI_LOGOS[poi.id]} alt={poi.name} className="h-6 w-6 object-contain" />
+                                : <span className="text-sm">{meta.icon}</span>}
+                              {isDone && <div className="absolute inset-0 flex items-center justify-center rounded-full bg-green-500/90 text-[10px] font-black text-white">✓</div>}
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-sm font-semibold text-gray-800">{poi.name}</p>
-                              <p className="text-[11px] text-gray-400">{meta.label}</p>
                             </div>
                             {lvl && (
                               <span className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-black text-white"
@@ -1919,17 +1896,21 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
             return (
               <div
                 className="pointer-events-auto absolute bottom-6 z-[1001] flex items-center gap-3 transition-all duration-300 ease-in-out"
-                style={{ left: `calc(50% - ${selectedPoi ? 210 : 0}px)`, transform: "translateX(-50%)" }}
+                style={(() => {
+                  const leftPx = sidebarPanel ? 864 : sidebarExpanded ? 468 : 80;
+                  const rightPx = selectedPoi ? 420 : 0;
+                  return { left: `calc(50% + ${(leftPx - rightPx) / 2}px)`, transform: "translateX(-50%)" };
+                })()}
               >
                 <button
-                  onClick={() => handlePoiClick(prev.id)}
+                  onClick={() => { pinPoiRef.current?.(prev.id); handlePoiClick(prev.id); }}
                   className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/50 backdrop-blur-md hover:bg-black/65 hover:text-white transition-all"
                   title={prev.name}
                 >
                   <ArrowLeft className="h-4 w-4" />
                 </button>
                 <button
-                  onClick={() => handlePoiClick(next.id)}
+                  onClick={() => { pinPoiRef.current?.(next.id); handlePoiClick(next.id); }}
                   className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white/50 backdrop-blur-md hover:bg-black/65 hover:text-white transition-all"
                   title={next.name}
                 >
@@ -1941,7 +1922,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
 
           {/* ── POI Drawer ── */}
           <div
-            className="absolute right-0 top-0 z-[1000] flex h-full w-[420px] flex-col border-l border-white/10 bg-gray-950/96 backdrop-blur-xl transition-transform duration-300 ease-in-out"
+            className="absolute right-0 top-0 z-[1000] flex h-full w-[420px] flex-col border-l border-gray-200 bg-white transition-transform duration-300 ease-in-out"
             style={{
               transform:     selectedPoi ? "translateX(0)"    : "translateX(100%)",
               pointerEvents: selectedPoi ? "auto"             : "none",
@@ -1955,10 +1936,10 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                 alt=""
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
               <button
                 onClick={closeModal}
-                className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/50 text-white/60 backdrop-blur-sm transition-all hover:border-white/30 hover:text-white"
+                className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/40 text-white/70 backdrop-blur-sm transition-all hover:bg-black/60 hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -1982,42 +1963,38 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
               {/* Travel tip */}
               {selectedPoi?.description && (
                 <div>
-                  <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">À savoir</p>
-                  <p className="text-[13px] leading-relaxed text-white/65">{selectedPoi.description}</p>
+                  <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.18em] text-gray-400">À savoir</p>
+                  <p className="text-[13px] leading-relaxed text-gray-600">{selectedPoi.description}</p>
                 </div>
               )}
 
               {/* Lesson */}
               {lessonData !== "none" && (
                 <div>
-                  <p className="mb-3 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">Leçon</p>
+                  <p className="mb-3 text-[9px] font-bold uppercase tracking-[0.18em] text-gray-400">Leçon</p>
                   {lessonData === null ? (
                     <div className="flex justify-center py-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-white/30" />
+                      <Loader2 className="h-4 w-4 animate-spin text-gray-300" />
                     </div>
                   ) : (
-                    <div className="rounded-xl border border-white/8 bg-white/4 p-4">
+                    <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500/20">
-                          <GraduationCap className="h-4.5 w-4.5 text-indigo-300" />
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100">
+                          <svg viewBox="0 0 24 24" className="h-4.5 w-4.5"><defs><linearGradient id="lg-lesson-d" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#3b82f6"/><stop offset="100%" stopColor="#4f46e5"/></linearGradient></defs><path fill="url(#lg-lesson-d)" d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold text-white truncate">{lessonData.title}</p>
-                          {lessonData.validated ? (
-                            <p className="mt-0.5 text-[10px] text-emerald-400 font-semibold">
-                              Validée ✓  — {lessonData.score} %
-                            </p>
-                          ) : lessonData.score > 0 ? (
-                            <p className="mt-0.5 text-[10px] text-amber-400">
+                          <p className="text-base font-bold text-gray-900 truncate">{lessonData.title}</p>
+                          {lessonData.validated ? null : lessonData.score > 0 ? (
+                            <p className="mt-0.5 text-[10px] text-amber-500">
                               Score précédent : {lessonData.score} % (min. 80 %)
                             </p>
                           ) : (
-                            <p className="mt-0.5 text-[10px] text-white/35">Non commencée</p>
+                            <span />
                           )}
                         </div>
                         {lessonData.validated && (
-                          <span className="flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
-                            <CheckCircle className="h-3 w-3" /> OK
+                          <span className="flex shrink-0 items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
+                            <CheckCircle className="h-3 w-3" />
                           </span>
                         )}
                       </div>
@@ -2030,11 +2007,12 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                         }}
                         className={`mt-3 w-full rounded-lg py-2.5 text-xs font-bold transition-all ${
                           lessonData.validated
-                            ? "border border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60"
-                            : "border border-indigo-500/50 bg-indigo-600/80 text-white hover:bg-indigo-500"
+                            ? "border border-gray-200 bg-white text-gray-400 hover:bg-gray-50 hover:text-gray-600"
+                            : "border-0 text-white"
                         }`}
+                        style={!lessonData.validated ? { background: "linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%)" } : undefined}
                       >
-                        {lessonData.validated ? "🔄 Refaire la leçon" : lessonData.score > 0 ? "🔄 Réessayer" : "🎓 Commencer la leçon"}
+                        {lessonData.validated ? "Refaire la leçon" : lessonData.score > 0 ? "Réessayer" : "Commencer la leçon"}
                       </button>
                     </div>
                   )}
@@ -2043,10 +2021,10 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
 
               {/* Quests */}
               <div>
-                <p className="mb-3 text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">Quêtes</p>
+                <p className="mb-3 text-[9px] font-bold uppercase tracking-[0.18em] text-gray-400">Quêtes</p>
                 {questsLoading ? (
                   <div className="flex justify-center py-4">
-                    <Loader2 className="h-5 w-5 animate-spin text-indigo-400" />
+                    <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
                   </div>
                 ) : poiQuests.length > 0 ? (
                   <div className="flex flex-col gap-2">
@@ -2059,53 +2037,48 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                         ? progress.taskProgress.filter(tp => tp.status === "COMPLETED").length
                         : isDone ? quest.tasks.length : 0;
                       return (
-                        <div key={quest.id} className="rounded-xl border border-white/8 bg-white/4 p-4">
+                        <div key={quest.id} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                              <p className="text-sm font-bold text-white">{quest.title}</p>
+                              <p className="text-sm font-bold text-gray-900">{quest.title}</p>
                               {quest.description && (
-                                <p className="mt-0.5 text-[11px] leading-snug text-white/40">{quest.description}</p>
+                                <p className="mt-0.5 text-[11px] leading-snug text-gray-500">{quest.description}</p>
                               )}
                             </div>
                             {isDone && (
-                              <span className="flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
-                                <CheckCircle className="h-3 w-3" /> OK
+                              <span className="flex shrink-0 items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
+                                <CheckCircle className="h-3 w-3" />
                               </span>
                             )}
                           </div>
                           {quest.xpReward > 0 && (
                             <div className="mt-2 flex items-center gap-1.5">
-                              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${isDone || isReplay ? "border-white/10 text-white/25" : "border-indigo-500/40 bg-indigo-500/10 text-indigo-300"}`}>
+                              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${isDone || isReplay ? "border-gray-200 text-gray-400" : "border-gray-200 bg-gray-50 text-gray-700"}`}>
                                 +{quest.xpReward} XP
                               </span>
-                              {(isDone || isReplay) && <span className="text-[10px] italic text-white/20">déjà obtenu</span>}
+                              {(isDone || isReplay) && <span className="text-[10px] italic text-gray-400">déjà obtenu</span>}
                             </div>
                           )}
-                          <div className="mt-2 flex items-center gap-1.5">
-                            {quest.tasks.map((_, i) => (
-                              <div key={i} className={`h-1.5 w-1.5 rounded-full ${i < doneTasks ? "bg-emerald-400" : isResume && i === doneTasks ? "bg-yellow-400" : "bg-white/20"}`} />
-                            ))}
-                            <span className="ml-1 text-[10px] text-white/30">{quest.tasks.length} tâches</span>
-                          </div>
                           <button
                             id={questIdx === 0 ? "tut-quest-btn" : undefined}
                             onClick={() => {
                               if (selectedPoi) setQuestPreview({ quest, poi: selectedPoi });
                             }}
                             className={`mt-3 w-full rounded-lg py-2.5 text-xs font-bold transition-all ${
-                              isDone || isReplay ? "border border-white/10 bg-white/5 text-white/40 hover:bg-white/10 hover:text-white/60"
-                              : isResume ? "border border-yellow-400/30 bg-yellow-400/15 text-yellow-400 hover:bg-yellow-400/25"
-                              : "border border-indigo-500/50 bg-indigo-600/80 text-white hover:bg-indigo-500"
+                              isDone || isReplay ? "border border-gray-200 bg-white text-gray-400 hover:bg-gray-50 hover:text-gray-600"
+                              : isResume ? "border border-yellow-400/50 bg-yellow-50 text-yellow-600 hover:bg-yellow-100"
+                              : "border-0 text-white"
                             }`}
+                            style={!(isDone || isReplay) && !isResume ? { background: "linear-gradient(135deg, #3b82f6 0%, #4f46e5 100%)" } : undefined}
                           >
-                            {isDone || isReplay ? "🔄 Refaire (sans récompense)" : isResume ? `▶ Continuer (tâche ${doneTasks + 1}/${quest.tasks.length})` : "▶ Faire la quête"}
+                            {isDone || isReplay ? "Refaire" : isResume ? `▶ Continuer (tâche ${doneTasks + 1}/${quest.tasks.length})` : "Faire la quête"}
                           </button>
                         </div>
                       );
                     })}
                   </div>
                 ) : (
-                  <p className="py-3 text-center text-[11px] text-white/25">Aucune quête disponible ici pour l&apos;instant.</p>
+                  <p className="py-3 text-center text-[11px] text-gray-400">Aucune quête disponible ici pour l&apos;instant.</p>
                 )}
               </div>
 
@@ -2115,26 +2088,26 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                 return (
                   <div className="mt-2 px-4 pb-4">
                     <span className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-white/30">Discussion SNS</span>
-                      <span className="text-[9px] font-bold uppercase tracking-wide bg-amber-400/20 text-amber-300 border border-amber-400/30 px-1.5 py-0.5 rounded-full">Beta</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Discussion SNS</span>
+                      <span className="text-[9px] font-bold uppercase tracking-wide bg-amber-50 text-amber-600 border border-amber-200 px-1.5 py-0.5 rounded-full">Beta</span>
                     </span>
                     <button
                       onClick={() => setShowSns(true)}
-                      className="mt-3 w-full rounded-2xl border border-emerald-500/30 bg-emerald-950/40 p-3.5 text-left hover:bg-emerald-900/50 transition-colors"
+                      className="mt-3 w-full rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-left hover:bg-emerald-100 transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-xl shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center text-xl shrink-0">
                           {conv.contact.avatar}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-white truncate">{conv.contact.name}</p>
-                          <p className="text-[11px] text-emerald-400 truncate">{conv.context}</p>
+                          <p className="text-sm font-bold text-gray-900 truncate">{conv.contact.name}</p>
+                          <p className="text-[11px] text-emerald-600 truncate">{conv.context}</p>
                         </div>
                         <div className="flex flex-col items-end gap-1 shrink-0">
-                          <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold">
+                          <span className="text-[10px] bg-emerald-50 border border-emerald-200 text-emerald-600 px-2 py-0.5 rounded-full font-bold">
                             +{conv.xpReward} XP
                           </span>
-                          <MessageCircle className="h-4 w-4 text-emerald-500/50" />
+                          <MessageCircle className="h-4 w-4 text-emerald-400" />
                         </div>
                       </div>
                     </button>
@@ -2221,7 +2194,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                       {quest.tasks.length} tâche{quest.tasks.length > 1 ? "s" : ""}
                     </span>
                     {quest.xpReward > 0 && (
-                      <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-600">
+                      <span className="rounded-full border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-bold text-gray-700">
                         +{quest.xpReward} XP
                       </span>
                     )}
@@ -2262,8 +2235,8 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                           </div>
                         ))}
                       </div>
-                      <div className="rounded-xl bg-indigo-50 border border-indigo-100 px-4 py-2.5 text-center">
-                        <p className="text-xs text-indigo-600 font-medium">
+                      <div className="rounded-xl bg-gray-50 border border-gray-100 px-4 py-2.5 text-center">
+                        <p className="text-xs text-gray-500 font-medium">
                           Ces mots seront détectés dans ta prononciation 🎯
                         </p>
                       </div>
@@ -2291,7 +2264,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                       closeModal();
                       router.push(`/home/${citySlug}/${poi.id}?quest=${quest.id}`);
                     }}
-                    className="flex-1 rounded-xl bg-indigo-600 py-3 text-sm font-bold text-white hover:bg-indigo-500 transition-colors"
+                    className="flex-1 rounded-xl bg-gray-800 py-3 text-sm font-bold text-white hover:bg-gray-900 transition-colors"
                   >
                     Commencer →
                   </button>

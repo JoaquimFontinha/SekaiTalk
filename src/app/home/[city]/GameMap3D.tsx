@@ -63,9 +63,11 @@ export default function GameMap3D({
 }) {
   const internalRef = useRef<MapRef>(null);
   const mapRef = (externalRef ?? internalRef) as React.RefObject<MapRef>;
-  const { poiPositionOverrides, updatePoiPosition, activeEvents } = useMapCtx();
+  const { poiPositionOverrides, updatePoiPosition, activeEvents, pinPoiRef, setMapReady } = useMapCtx();
   const [pinnedPoiId, setPinnedPoiId] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => { pinPoiRef.current = setPinnedPoiId; }, [pinPoiRef]);
 
   // Tick every minute pour mettre à jour l'expiry des events
   useEffect(() => {
@@ -229,7 +231,10 @@ export default function GameMap3D({
       duration: 1800,
       easing:   (t: number) => 1 - Math.pow(1 - t, 3),
     });
-  }, []);
+
+    // Signal ready AFTER easeTo completes + all tiles loaded
+    map.once("idle", () => setMapReady(true));
+  }, [setMapReady]);
 
   return (
     <Map

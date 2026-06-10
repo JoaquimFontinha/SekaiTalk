@@ -55,7 +55,6 @@ function PersistentMap() {
         right: 0,
         bottom: "-40px",
         zIndex: 0,
-        visibility: isOnCityPage ? "visible" : "hidden",
         pointerEvents: isOnCityPage ? "auto" : "none",
       }}
     >
@@ -82,7 +81,7 @@ function PersistentJapanMap() {
       style={{
         position: "fixed",
         top: 0, left: 0, right: 0, bottom: 0,
-        zIndex: 0,
+        zIndex: 1,
         visibility: isOnHomePage ? "visible" : "hidden",
         pointerEvents: isOnHomePage ? "auto" : "none",
       }}

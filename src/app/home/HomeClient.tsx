@@ -76,12 +76,6 @@ function TabObjectif({ dailyGoals, goalsDone }: { dailyGoals: ReturnType<typeof 
       </div>
       <div className="mx-5 h-px" style={{ background: "#e5e7eb" }} />
       <div id="tut-home-daily" className="px-5 pt-4 pb-5">
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Objectifs du jour</span>
-          <span className="text-xs font-semibold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full">
-            {goalsDone} / {dailyGoals.length || 3}
-          </span>
-        </div>
         <div className="flex flex-col gap-2">
           {dailyGoals.map((g) => (
             <div key={g.type} className={`flex items-center gap-3 rounded-xl px-4 py-3 ${g.done ? "bg-indigo-50" : "bg-gray-50"}`}>
@@ -401,12 +395,6 @@ export default function HomeClient() {
           <div className="mx-6 h-px shrink-0" style={{ background: "#e5e7eb" }} />
 
           <div id="tut-home-daily" className="px-6 pt-4 pb-4 shrink-0">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Objectifs du jour</span>
-              <span className="text-xs font-semibold text-indigo-500 bg-indigo-50 px-2.5 py-1 rounded-full">
-                {goalsDone} / {dailyGoals.length || 3}
-              </span>
-            </div>
             <div className="flex flex-col gap-2.5">
               {dailyGoals.map((g) => (
                 <div key={g.type} className={`flex items-center gap-3.5 rounded-xl px-4 py-3.5 transition-colors ${g.done ? "bg-indigo-50" : "bg-gray-50"}`}>

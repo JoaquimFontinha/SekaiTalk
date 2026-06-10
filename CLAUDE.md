@@ -225,7 +225,7 @@ Deux fichiers d'env :
 ### Flux quête complet
 
 1. L'utilisateur clique un POI sur la carte → **drawer POI** dans `CityClient` avec les quêtes disponibles
-2. Il clique "▶ Faire la quête" ou "🔄 Refaire" → **modale de prévisualisation** (`questPreview`) : titre, récompenses, vocabulaire groupé par JLPT
+2. Il clique "Faire la quête" ou "Refaire" → **modale de prévisualisation** (`questPreview`) : titre, récompenses, vocabulaire groupé par JLPT
 3. Il clique "Commencer →" → navigue vers `/home/[city]/[poi]?quest=<questId>`
 4. `POIClient` charge personnage + quêtes en parallèle. `sessionStartRef` est initialisé à `Date.now()`
 5. Si `questId` présent : initialise `activeQuest` avec `vocab: VocabEntry[]`, appelle `POST /api/quests/[questId]/start`
@@ -363,10 +363,18 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 
 **Titre ville** : `position: absolute, top: 20`, `left: sidebarPanel ? 864 : sidebarExpanded ? 488 : 96` — se décale dynamiquement selon l'état sidebar/panneau.
 
+**Flèches navigation POI** (← / →, desktop uniquement) : `position: fixed, bottom: 80px`. Position horizontale calculée dynamiquement pour être centrée dans la zone de carte visible :
+```ts
+const leftPx  = sidebarPanel ? 864 : sidebarExpanded ? 468 : 80;
+const rightPx = selectedPoi ? 420 : 0;
+{ left: `calc(50% + ${(leftPx - rightPx) / 2}px)`, transform: "translateX(-50%)" }
+```
+Clic flèche → `pinPoiRef.current?.(poi.id)` (pin le marker destination) **puis** `handlePoiClick(poi.id)`.
+
 **Drawer POI** (420px, `right-0`, slide-in, fond `bg-gray-950/96`)
 - **Hero image** : state `poiBackground: string | null` — fetché via `GET /api/scenes/poi/${poiId}` à chaque sélection de POI (réinitialisé à `null` à chaque changement). Affiche `poiBackground` si non-null, sinon fallback `"/background_placeholder.png"`. Deux drawers utilisent ce state : desktop (h-52) et mobile sheet (h-24). Titre, description, leçon (si disponible) puis quêtes avec barre de progression.
-- **Section Leçon** : fetche `GET /api/lessons/poi/${poiId}` en parallèle avec les quêtes. État `lessonData` : `null` (chargement) | `"none"` (aucune leçon) | `{ id, title, validated, score }`. Affiche un spinner puis une carte avec GraduationCap, statut ("Non commencée" / score précédent / "Validée ✓") et bouton "🎓 Commencer la leçon" / "🔄 Réessayer" / "🔄 Refaire la leçon". Navigue vers `/home/${citySlug}/${poi.id}/lesson`.
-- Bouton "▶ Faire la quête" / "🔄 Refaire" → ouvre `questPreview` (état local).
+- **Section Leçon** : fetche `GET /api/lessons/poi/${poiId}` en parallèle avec les quêtes. État `lessonData` : `null` (chargement) | `"none"` (aucune leçon) | `{ id, title, validated, score }`. Affiche un spinner puis une carte avec icône graduation (SVG gradient bleu→indigo via `<linearGradient>` inline, fond `bg-gray-100`), titre en `text-base`, statut (score si > 0, rien si validé — pas de texte "Validée ✓" redondant), badge `<CheckCircle>` uniquement (sans texte "OK"). Boutons "Commencer la leçon" / "Réessayer" / "Refaire la leçon" (sans emoji). Navigue vers `/home/${citySlug}/${poi.id}/lesson`.
+- Bouton "Faire la quête" / "Refaire" → ouvre `questPreview` (état local). Le bouton "Faire la quête" a un fond gradient `linear-gradient(135deg, #3b82f6, #4f46e5)` appliqué via `style` inline (pas de classe Tailwind — gradient conditionnel). Texte sans emoji. Refaire/Réessayer : `border border-gray-200 bg-white text-gray-400`.
 - **Section SNS** : si `snsConversation` (state, fetchée via `GET /api/sns/poi/[poiId]` à la sélection du POI) est non-null, affiche une carte verte "Discussion SNS" avec l'avatar/nom du contact, le contexte et les XP. Badge **"Beta"** amber affiché à côté du label "Discussion SNS" (`text-[9px] bg-amber-400/20 text-amber-300 border border-amber-400/30 rounded-full`). Clic → `setShowSns(true)` → `SnsOverlay`. State `snsConversation` réinitialisée à `null` à chaque changement de POI.
 - Pas de bouton "Conversation libre" — toute navigation vers un POI requiert un `questId`.
 
@@ -413,7 +421,9 @@ La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), larg
 
 **Architecture persistante** — `PersistentJapanMap` dans `src/app/home/layout.tsx` :
 ```tsx
-<div style={{ position:"fixed", inset:0, zIndex:0,
+// zIndex:1 → couvre GameMap3D (zIndex:0) sur /home
+// visibility:hidden sur les pages non-home → bloque aussi l'écran de chargement Japon (position:fixed hérite visibility)
+<div style={{ position:"fixed", inset:0, zIndex:1,
   visibility: isOnHomePage ? "visible" : "hidden",
   pointerEvents: isOnHomePage ? "auto" : "none" }}>
   <JapanMap />
@@ -630,12 +640,14 @@ type KanaMasteryStore = Record<string, KanaMasteryEntry>;
 | `poiPositionOverrides` | `Record<string, {lat, lng}>` | Coordonnées overridées post-drag, prioritaires sur `city.pois` |
 | `updatePoiPosition` | `(id, lat, lng) => void` | Met à jour `poiPositionOverrides` immédiatement (avant réponse API) |
 | `activeEvents` / `setActiveEvents` | `ActiveEvent[]` | Events actifs (seasonal + daily instances) partagés entre CityClient et GameMap3D. Peuplé au mount de CityClient via `GET /api/events`. |
+| `mapReady` / `setMapReady` | `boolean` | Passe à `true` quand GameMap3D a fini de charger (idle après easeTo). CityClient l'observe pour masquer l'écran de chargement. |
+| `pinPoiRef` | `MutableRefObject<(id: string \| null) => void>` | Exposé par GameMap3D (wraps `setPinnedPoiId`). Appelé par CityClient lors de la navigation par flèches pour pinner le POI de destination. |
 
 ### Carte 3D Tokyo (`GameMap3D`)
 
 `src/app/home/[city]/GameMap3D.tsx` — carte 3D interactive pour les villes avec `use3DMap: true` dans `cities.ts`.
 - **Rendu** : Mapbox GL JS + react-map-gl v8 (`react-map-gl/mapbox`), style `mapbox://styles/mapbox/standard`
-- **Architecture persistante** : la map est montée une seule fois dans `src/app/home/layout.tsx` (jamais démontée) → 1 seul Map Load par session. CSS `visibility` toggle pour afficher/masquer. État partagé via `src/app/home/MapContext.tsx`. `PersistentMap` re-fetche `/api/content/cities` à chaque changement de `pathname` (pas de `fetchedRef` guard) → les modifs admin (ex: `isActive`) sont reflétées dès la prochaine navigation.
+- **Architecture persistante** : la map est montée une seule fois dans `src/app/home/layout.tsx` (jamais démontée) → 1 seul Map Load par session. **Toujours rendue** (pas de `visibility: hidden`) pour que Mapbox charge les tuiles en continu — `pointerEvents: isOnCityPage ? "auto" : "none"` contrôle l'interactivité. `PersistentJapanMap` utilise `visibility: hidden` sur les pages non-home (bloque aussi ses enfants `fixed`, dont l'écran de chargement Japon). État partagé via `src/app/home/MapContext.tsx`. `PersistentMap` re-fetche `/api/content/cities` à chaque changement de `pathname` (pas de `fetchedRef` guard) → les modifs admin (ex: `isActive`) sont reflétées dès la prochaine navigation.
 - **Clic fond de carte** : `onMapBgClick` prop → `onClick` sur `<Map>` (markers ont `stopPropagation`). Enregistré via `mapBgClickRef` → ferme le panneau sidebar actif
 - **Import SSR** : `dynamic(() => import("./[city]/GameMap3D"), { ssr: false })` dans `home/layout.tsx`
 - **Style** : `setConfigProperty("basemap", "lightPreset", "dusk")` + tous les labels masqués
@@ -644,7 +656,8 @@ type KanaMasteryStore = Record<string, KanaMasteryEntry>;
 - **Contraintes caméra** : `minZoom=14`, `maxPitch=85`, `minPitch=20`, `maxBounds` Tokyo + Haneda (`[139.58, 35.52]` → `[139.85, 35.75]`), bearing clampé ±25° autour de −20°
 - **Pins** : classe CSS `gm3d-poi` avec `--pc` (couleur par type). Logo POI via `POI_LOGOS[poi.id]` → `<img>` sinon emoji. Hover expand via `max-width` transition. En mode placement : classe `gm3d-poi--edit` (bordure orange pointillée, curseur `grab`)
 - **Props** : `editMode?: boolean`, `onPoiMove?: (id, lat, lng) => void`. Coordonnées des markers : `poiPositionOverrides[poi.id] ?? poi.lat/lng` (override context prioritaire sur les données statiques)
-- **`pinnedPoiId`** : state local dans `GameMap3D` — persiste l'état "ouvert" du badge après un clic. Clic POI → `setPinnedPoiId(poi.id)` (badge reste ouvert). Clic fond → `setPinnedPoiId(null)`. Drag carte → `onDragStart` → `setPinnedPoiId(null)`. Classe CSS `gm3d-poi--pinned` — mêmes styles que `:hover`. Note : `onMoveStart` NON utilisé (déclenche aussi sur `flyTo` programmatique) → `onDragStart` uniquement.
+- **`pinnedPoiId`** : state local dans `GameMap3D` — persiste l'état "ouvert" du badge après un clic. Clic POI → `setPinnedPoiId(poi.id)` (badge reste ouvert). Clic fond → `setPinnedPoiId(null)`. Drag carte → `onDragStart` → `setPinnedPoiId(null)`. Classe CSS `gm3d-poi--pinned` — mêmes styles que `:hover`. Note : `onMoveStart` NON utilisé (déclenche aussi sur `flyTo` programmatique) → `onDragStart` uniquement. `setPinnedPoiId` est exposé dans `MapContext.pinPoiRef` via `useEffect` → CityClient l'appelle lors de la navigation par flèches POI.
+- **Signal `mapReady`** : dans `handleLoad`, après `map.easeTo({ pitch: 55 })`, `map.once("idle", () => setMapReady(true))` est enregistré → se déclenche seulement quand l'animation ET toutes les tuiles pitch-55 sont chargées. `mapReady` dans `MapContext` est observé par CityClient pour masquer l'écran de chargement.
 - **Event markers** : lit `activeEvents` depuis `useMapCtx()`. Calcule `visibleEvents = activeEvents.filter(ev => new Date(ev.expiresAt) > now)` (tick toutes les 60s → disparition automatique). Les POI IDs des events visibles sont dans `eventPoiIds` → exclus du rendu normal des POIs. Rendu séparé avec classe `gm3d-poi--event` : badge fond coloré (`var(--pc)`), texte blanc, grand emoji 34px, anneau beacon pulsant (`gm3d-event-pulse` — double ring via `::before`, `@keyframes eventPulse` 2.6s décalé 1.3s). Clic → `onPoiClick(ev.poiId)` (ouvre drawer POI normal du POI event).
 
 ### Mode placement admin (`editMode`)
@@ -673,7 +686,7 @@ Permet aux admins de repositionner les POIs directement sur la carte par drag & 
 ### Écrans de chargement
 
 - **Chargement carte Japon** (`JapanMap`) : overlay blanc `z-[2000]` même style que les villes — "JAPON" + "日本" + loadbar + "地図を読み込み中". Déclenché dès `onLoad` (pas `idle`) + 250ms → fondu 250ms → disparaît. `mapLoaded` / `fadeOut` states. Persist tant que le composant est monté (map persistante = pas de rechargement au retour sur `/home`).
-- **Chargement ville** (`CityClient`) : overlay blanc `z-[2000]`, fondu 400ms. Déclenché sur `map.once("idle", ...)` + fallback 3000ms. `mapLoading` / `mapFading` states.
+- **Chargement ville** (`CityClient`) : overlay blanc `z-[2000]`, fondu 400ms. `mapLoading` / `mapFading` states. L'écran s'affiche au mount puis se cache dès que `mapReady` (MapContext) passe à `true` — `mapReady` est positionné par GameMap3D via `map.once("idle")` enregistré dans `handleLoad` après `easeTo`. Pas de polling ni de fallback timer : le flow est entièrement state-driven.
 - **Chargement conversation** (`POIClient`) : affiché quand `!character` — fond blanc, nom du POI, 3 points animés (`dot-pulse`).
 - **Sortie conversation** (`POIClient`) : `leaving` state → overlay blanc `leaving-in 450ms`, puis `router.push`.
 - **Keyframes CSS** (`globals.css`) : `loadbar-slide`, `dot-pulse`, `leaving-in`, `screen-fadein`.
