@@ -204,6 +204,7 @@ Deux fichiers d'env :
 ```
 /home                          → liste des villes (carte)
 /home/[city]                   → carte 3D de la ville (CityClient)
+/home/[city]/school            → page École (SchoolClient) — route statique, priorité sur [poi]
 /home/[city]/[poi]             → conversation IA avec le personnage (POIClient)
 /home/[city]/[poi]?quest=<id>  → même page, démarre directement la quête
 /home/[city]/[poi]/lesson      → leçon interactive du POI (LessonClient)
@@ -323,7 +324,7 @@ Helper server-side (uniquement `import` côté serveur / route handlers / `page.
 La sidebar est **rétractable** : état `sidebarExpanded` (défaut `true`), largeur 448px étendue / 60px collapsée. Transition CSS `transition-all duration-200`. `position: fixed, left: 20px, top: 50%, translateY(-50%)`, hauteur `calc(100vh - 40px)`, `rounded-2xl bg-white`.
 
 **État étendu (448px)** :
-- Header : `<img src="/logo_sekai_talk.png">` (h-[120px]) + bouton `ChevronLeft` (collapse + `setSidebarPanel(null)`) — même logo que HomeClient
+- Header : logo `h-[72px] w-[72px]` + texte `"SekaiTalk"` en `#1e3fad` (`text-2xl font-black tracking-tight`), `gap-0` entre logo et texte + bouton `ChevronLeft` (collapse + `setSidebarPanel(null)`) — même visuel que HomeClient
 - **Mon Objectif** : `<MonObjectif />` en haut juste après le header (avant les objectifs du jour)
 - Objectifs du jour : 3 objectifs dynamiques via hook `useDailyGoals()` (`src/hooks/useDailyGoals.ts`). Icône emoji + label + compteur `X/Y` pour les objectifs multi-étapes. Fond `bg-indigo-50` quand terminé. Compteur `doneCount / 3` en haut.
 - Navigation : `SIDEBAR_BUTTONS` = [Guidage, Lieux, Contacts, Évènements, **Étudier**] — **tous enabled: true**. Icônes SVG colorées inline (pas de lucide-react). Type `{ panel, label, enabled, color, svg: React.ReactNode }`. Section `flex-1`. Le bouton **Étudier** (anciennement "Révision", icône mortarboard) → `router.push(`/home/${citySlug}/school`)` au lieu d'ouvrir `RevisionOverlay`.
@@ -443,7 +444,7 @@ Clic flèche → `pinPoiRef.current?.(poi.id)` (pin le marker destination) **pui
 - Toujours déployée (pas de toggle), largeur 448px, hauteur `calc(100vh - 40px)`
 - `overflow-y: auto` pour les petits écrans
 - Sections :
-  1. **Header** — `<img src="/logo_sekai_talk.png">` `h-[120px]`, `border-b border-gray-200`
+  1. **Header** — logo `h-[72px] w-[72px]` + texte `"SekaiTalk"` en `#1e3fad` (`text-2xl font-black tracking-tight`), `gap-0`, `border-b border-gray-200`
   2. **Objectifs du jour** (`id="tut-home-daily"`) — 3 objectifs dynamiques via `useDailyGoals()`. Icône emoji + label + compteur `X/Y` pour objectifs multi-étapes. Fond indigo quand terminé.
   3. **Navigation** (`id="tut-home-nav"`) — icônes SVG colorées inline. **Lieux** enabled → ouvre panneau flottant `showLieux`. Contacts/Évènements disabled. **Étudier** enabled → `router.push("/home/tokyo/school?from=home")`. Section `flex-1`.
   4. **Mon Objectif** (`id="tut-home-objectif"`) — `<MonObjectif />`
@@ -1026,6 +1027,18 @@ Sélection déterministe : `dayIndex = floor((Date.now() - 2026-01-01 UTC) / 864
 - `scripts/update-ai-tasks.js` / `apply-ai-tasks-all.js` / `restore-qcm-tasks.js` — gestion des tâches IA vs QCM.
 - `scripts/generate-poi-doc.js` — génère `POIs_Tokyo_SekaiTalk.html` (document Word-compatible avec tous les POIs, quêtes, tâches, vocab). `node scripts/generate-poi-doc.js`
 - `scripts/scrape-busuu.js` — scraper Playwright pour récupérer le contenu pédagogique Busuu (nécessite `.env.busuu` avec `BUSUU_EMAIL` + `BUSUU_PASSWORD`, résolution CAPTCHA manuelle).
+
+### Favicon
+
+`public/favicon-icon.png` — favicon du site (fichier PNG dédié, distinct du logo). Référencé dans `src/app/layout.tsx` via `export const metadata`:
+```ts
+icons: {
+  icon: "/favicon-icon.png",
+  shortcut: "/favicon-icon.png",
+  apple: "/favicon-icon.png",
+},
+```
+**Piège** : `src/app/favicon.ico` prend la priorité sur `icon.png` et les métadonnées `icons` — s'il existe, le supprimer. Hard refresh (Ctrl+Shift+R) nécessaire après changement (cache navigateur).
 
 ### SessionProvider
 `src/app/providers.tsx` wrappe l'app avec le `SessionProvider` NextAuth, inclus dans `src/app/layout.tsx`.

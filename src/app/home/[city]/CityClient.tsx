@@ -673,7 +673,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                     <div className="flex justify-center py-2"><Loader2 className="h-4 w-4 animate-spin text-gray-300" /></div>
                   ) : (
                     <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100">
                           <svg viewBox="0 0 24 24" className="h-4 w-4"><defs><linearGradient id="lg-lesson-m" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#3b82f6"/><stop offset="100%" stopColor="#4f46e5"/></linearGradient></defs><path fill="url(#lg-lesson-m)" d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
                         </div>
@@ -766,7 +766,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                     </span>
                     <button onClick={() => setShowSns(true)}
                       className="mt-2 w-full rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-left hover:bg-emerald-100 transition-colors">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1">
                         <div className="w-10 h-10 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center text-xl shrink-0">{conv.contact.avatar}</div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-bold text-gray-900 truncate">{conv.contact.name}</p>
@@ -1141,7 +1141,10 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
           <div className="flex flex-col h-full overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between px-6 pt-3 pb-2 shrink-0 border-b border-gray-200">
-              <img src="/logo_sekai_talk.png" alt="SekaiTalk" className="h-[120px] object-contain" />
+              <div className="flex items-center gap-0">
+                <img src="/logo_sekai_talk.png" alt="SekaiTalk" className="h-[72px] w-[72px] object-contain shrink-0" />
+                <span className="text-2xl font-black tracking-tight" style={{ color: "#1e3fad" }}>SekaiTalk</span>
+              </div>
               <button
                 onClick={() => { setSidebarExpanded(false); setSidebarPanel(null); }}
                 className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
@@ -1983,7 +1986,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                     </div>
                   ) : (
                     <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gray-100">
                           <svg viewBox="0 0 24 24" className="h-4.5 w-4.5"><defs><linearGradient id="lg-lesson-d" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#3b82f6"/><stop offset="100%" stopColor="#4f46e5"/></linearGradient></defs><path fill="url(#lg-lesson-d)" d="M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82zM12 3L1 9l11 6 9-4.91V17h2V9L12 3z"/></svg>
                         </div>
@@ -2100,7 +2103,7 @@ export default function CityClient({ citySlug, initialCity }: { citySlug: string
                       onClick={() => setShowSns(true)}
                       className="mt-3 w-full rounded-2xl border border-emerald-200 bg-emerald-50 p-3.5 text-left hover:bg-emerald-100 transition-colors"
                     >
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1">
                         <div className="w-10 h-10 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center text-xl shrink-0">
                           {conv.contact.avatar}
                         </div>

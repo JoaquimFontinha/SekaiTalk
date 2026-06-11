@@ -378,8 +378,9 @@ export default function HomeClient() {
         }}
       >
         {/* Header */}
-        <div className="flex items-center px-6 pt-3 pb-2 shrink-0 border-b border-gray-200">
-          <img src="/logo_sekai_talk.png" alt="SekaiTalk" className="h-[120px] object-contain" />
+        <div className="flex items-center gap-0 px-6 pt-3 pb-2 shrink-0 border-b border-gray-200">
+          <img src="/logo_sekai_talk.png" alt="SekaiTalk" className="h-[72px] w-[72px] object-contain shrink-0" />
+          <span className="text-2xl font-black tracking-tight" style={{ color: "#1e3fad" }}>SekaiTalk</span>
         </div>
 
         {/* Scrollable content */}

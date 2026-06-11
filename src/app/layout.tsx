@@ -17,6 +17,11 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "SekaiTalk",
   description: "SekaiTalk – connecte-toi au monde",
+  icons: {
+    icon: "/favicon-icon.png",
+    shortcut: "/favicon-icon.png",
+    apple: "/favicon-icon.png",
+  },
 };
 
 export default function RootLayout({
