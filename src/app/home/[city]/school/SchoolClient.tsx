@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import dynamic from "next/dynamic";
+import { ALL_LESSONS, BASICS_CHAPTERS, type BasicsLesson, type KanaSlide } from "@/lib/basics-lessons";
 
 const RevisionOverlay = dynamic(() => import("@/components/RevisionOverlay"), { ssr: false });
 
@@ -97,32 +98,18 @@ function LockedSection({ label }: { label: string }) {
 
 // ── Basiques data ──────────────────────────────────────────────────────────────
 
-type Lesson = {
-  id: number; title: string; subtitle: string;
-  chars?: { kana: string; romaji: string }[];
-  cards: number; xp: number; locked: boolean;
-};
+// Les 10 chapitres SakuraFlow (noms, sous-titres et total réels). `available` =
+// nombre de leçons jouables ici ; `total` = nombre de leçons du cours d'origine.
+const CHAPTERS_META = BASICS_CHAPTERS.map((c) => ({
+  num: c.num,
+  name: c.name,
+  subtitle: c.subtitle,
+  total: c.total,
+  available: ALL_LESSONS.filter((l) => l.chapter === c.num).length,
+})).filter((c) => c.available > 0);
 
-const CHAPTER1_LESSONS: Lesson[] = [
-  { id: 1, title: "Les voyelles",  subtitle: "あいうえお", locked: false, cards: 5, xp: 20,
-    chars: [{ kana:"あ",romaji:"a" },{ kana:"い",romaji:"i" },{ kana:"う",romaji:"u" },{ kana:"え",romaji:"e" },{ kana:"お",romaji:"o" }] },
-  { id: 2, title: "Premiers mots", subtitle: "Applique, ne mémorise pas",      locked: true,  cards: 6, xp: 20 },
-  { id: 3, title: "K — か行",      subtitle: "かきくけこ", locked: true,  cards: 5, xp: 20,
-    chars: [{ kana:"か",romaji:"ka" },{ kana:"き",romaji:"ki" },{ kana:"く",romaji:"ku" },{ kana:"け",romaji:"ke" },{ kana:"こ",romaji:"ko" }] },
-  { id: 4, title: "Mots en K",     subtitle: "Premiers mots avec か–こ",        locked: true,  cards: 6, xp: 20 },
-  { id: 5, title: "S — さ行",      subtitle: "さしすせそ", locked: true,  cards: 5, xp: 20,
-    chars: [{ kana:"さ",romaji:"sa" },{ kana:"し",romaji:"shi" },{ kana:"す",romaji:"su" },{ kana:"せ",romaji:"se" },{ kana:"そ",romaji:"so" }] },
-  { id: 6, title: "Mots en S",     subtitle: "Premiers mots avec さ–そ",        locked: true,  cards: 6, xp: 20 },
-];
-
-const CHAPTERS_META = [
-  { id: 1, title: "Hiragana",       description: "Maîtrise les 46 hiragana, la base de toute lecture.", lessonCount: 12 },
-  { id: 2, title: "Katakana",       description: "Apprends les katakana pour lire les mots étrangers.", lessonCount: 12 },
-  { id: 3, title: "Vocabulaire N5", description: "Les 100 mots essentiels du JLPT N5.",                  lessonCount: 8  },
-];
-
-function BasiquesView({ accent }: { accent: string }) {
-  const totalLessons = CHAPTERS_META.reduce((s, c) => s + c.lessonCount, 0);
+function BasiquesView({ accent, citySlug }: { accent: string; citySlug: string }) {
+  const router = useRouter();
   const pct = 0;
   const accentDark = "#9333ea";
   const accentGlow = "rgba(124,58,237,0.25)";
@@ -156,32 +143,21 @@ function BasiquesView({ accent }: { accent: string }) {
             style={{ background: `linear-gradient(180deg, ${accent}, ${accentDark})`, boxShadow: `0 0 12px ${accentGlow}` }} />
           <div className="relative z-10">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-[11px] font-bold uppercase tracking-[0.25em]" style={{ color: accent }}>Chapitre 1</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.25em]" style={{ color: accent }}>Parcours N5</p>
               <span className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider"
                 style={{ background: "rgba(0,0,0,0.03)", color: "rgba(0,0,0,0.5)", border: "1px solid rgba(0,0,0,0.05)" }}>
-                {CHAPTERS_META[0].lessonCount} leçons
+                {BASICS_CHAPTERS.length} chapitres · {BASICS_CHAPTERS.reduce((s, c) => s + c.total, 0)} leçons
               </span>
             </div>
-            <h2 className="mt-2 text-xl font-bold" style={{ color: "rgba(0,0,0,0.9)" }}>{CHAPTERS_META[0].title}</h2>
-            <p className="mt-1 text-sm" style={{ color: "rgba(0,0,0,0.45)" }}>{CHAPTERS_META[0].description}</p>
-            <div className="mt-4 flex items-center gap-3">
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "rgba(0,0,0,0.05)" }}>
-                <div className="h-full rounded-full" style={{ width: "0%", background: `linear-gradient(90deg,${accent},${accentDark})` }} />
-              </div>
-              <span className="text-xs font-semibold tabular-nums" style={{ color: "rgba(0,0,0,0.45)" }}>0/{CHAPTERS_META[0].lessonCount}</span>
-            </div>
-            <div className="mt-3.5 flex flex-wrap items-center justify-between gap-3">
-              <button className="inline-flex items-center gap-1.5 text-[11px] font-medium opacity-85 transition-opacity hover:opacity-100"
-                style={{ color: "rgba(0,0,0,0.5)" }}>
-                <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                </svg>
-                Revoir l&apos;intro
-              </button>
-              <button className="text-[11px] font-medium underline decoration-dotted underline-offset-[3px] opacity-90 transition-opacity hover:opacity-100"
-                style={{ color: "rgba(0,0,0,0.4)" }}>
-                Déjà familier ? Passer les leçons
-              </button>
+            <h2 className="mt-2 text-xl font-bold" style={{ color: "rgba(0,0,0,0.9)" }}>Hiragana, Katakana & Vocabulaire</h2>
+            <p className="mt-1 text-sm" style={{ color: "rgba(0,0,0,0.45)" }}>Des voyelles jusqu&apos;au vocabulaire N5, chapitre par chapitre.</p>
+            <div className="mt-4 flex flex-wrap gap-1.5">
+              {CHAPTERS_META.map((c) => (
+                <span key={c.num} className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold"
+                  style={{ background: "rgba(124,58,237,0.07)", color: accent, border: "1px solid rgba(124,58,237,0.12)" }}>
+                  {c.num}
+                </span>
+              ))}
             </div>
           </div>
         </div>
@@ -198,10 +174,14 @@ function BasiquesView({ accent }: { accent: string }) {
 
       {/* ── Lesson path ─────────────────────────────────────────── */}
       <div className="flex w-full max-w-2xl flex-col items-center">
-        {CHAPTER1_LESSONS.map((lesson, i) => {
+        {ALL_LESSONS.map((lesson, i) => {
+          const locked = false;
+          const prevLocked = false;
           const isLeft = i % 2 === 0;
           const isFirst = i === 0;
-          const prevActive = i > 0 && !CHAPTER1_LESSONS[i - 1].locked;
+          const newChapter = isFirst || lesson.chapter !== ALL_LESSONS[i - 1].chapter;
+          const chMeta = CHAPTERS_META.find((c) => c.num === lesson.chapter);
+          const prevActive = i > 0 && !prevLocked;
           const connectorColor = prevActive ? accent : "rgba(0,0,0,0.08)";
           const connectorGlow = prevActive ? accentGlow : "none";
 
@@ -212,8 +192,40 @@ function BasiquesView({ accent }: { accent: string }) {
 
           return (
             <div key={lesson.id} className="flex w-full flex-col">
+              {/* Chapter card (style SakuraFlow) */}
+              {newChapter && chMeta && (
+                <div className={`w-full max-w-2xl ${isFirst ? "mb-6" : "mb-6 mt-12"}`}>
+                  <div className="relative overflow-hidden rounded-3xl py-5 pl-7 pr-6 sm:pl-9 sm:pr-8 sm:py-6"
+                    style={{ background: "linear-gradient(135deg,rgba(255,255,255,0.7),rgba(255,255,255,0.45))", backdropFilter: "blur(12px)" }}>
+                    <div className="absolute bottom-5 left-3 top-5 w-1 rounded-full sm:bottom-6 sm:top-6"
+                      style={{ background: `linear-gradient(180deg, ${accent}, ${accentDark})`, boxShadow: `0 0 12px ${accentGlow}` }} />
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[11px] font-black uppercase tracking-[0.25em]" style={{ color: accent }}>
+                          Chapitre {lesson.chapter}
+                        </p>
+                        <span className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider"
+                          style={{ background: "rgba(0,0,0,0.03)", color: "rgba(0,0,0,0.5)", border: "1px solid rgba(0,0,0,0.05)" }}>
+                          {chMeta.total} leçons
+                        </span>
+                      </div>
+                      <h2 className="mt-2 text-xl font-bold" style={{ color: "rgba(0,0,0,0.9)" }}>{chMeta.name}</h2>
+                      <p className="mt-1 text-sm" style={{ color: "rgba(0,0,0,0.45)" }}>{chMeta.subtitle}</p>
+                      <div className="mt-4 flex items-center gap-3">
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full" style={{ background: "rgba(0,0,0,0.05)" }}>
+                          <div className="h-full rounded-full"
+                            style={{ width: "0%", background: `linear-gradient(90deg,${accent},${accentDark})` }} />
+                        </div>
+                        <span className="text-xs font-semibold tabular-nums" style={{ color: "rgba(0,0,0,0.45)" }}>
+                          0/{chMeta.total}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* Connector SVG */}
-              {!isFirst && (
+              {!isFirst && !newChapter && (
                 <div className="flex w-full justify-center" style={{ height: 48, marginTop: -4, marginBottom: -4 }}>
                   <svg width="300" height="48" viewBox="0 0 300 48" fill="none" className="overflow-visible">
                     <path d={svgPath} stroke={connectorColor} strokeWidth="1.5" strokeDasharray="6 4"
@@ -229,14 +241,14 @@ function BasiquesView({ accent }: { accent: string }) {
                 {!isLeft && (
                   <div className="hidden shrink-0 select-none flex-col items-center justify-center px-1 sm:flex">
                     <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.2em]"
-                      style={{ color: lesson.locked ? "rgba(0,0,0,0.18)" : accent, opacity: 0.8 }}>Leçon</span>
+                      style={{ color: locked ? "rgba(0,0,0,0.18)" : accent, opacity: 0.8 }}>Leçon</span>
                     <span className="mt-1 text-2xl font-black leading-none tabular-nums"
-                      style={{ color: lesson.locked ? "rgba(0,0,0,0.18)" : accent }}>{lesson.id}</span>
+                      style={{ color: locked ? "rgba(0,0,0,0.18)" : accent }}>{lesson.id}</span>
                   </div>
                 )}
 
                 {/* Card */}
-                {lesson.locked ? (
+                {locked ? (
                   <button disabled className="group w-[360px] cursor-not-allowed overflow-hidden rounded-3xl p-6 opacity-50 sm:w-[460px] sm:p-7"
                     style={{ background: "rgba(0,0,0,0.02)", border: "1.5px solid rgba(0,0,0,0.04)" }}>
                     <div className="relative z-10 flex flex-col items-center">
@@ -249,13 +261,13 @@ function BasiquesView({ accent }: { accent: string }) {
                         </svg>
                       </div>
                       <h3 className="mt-3 text-center text-base font-bold leading-tight sm:text-lg"
-                        style={{ color: "rgba(0,0,0,0.2)" }}>{lesson.subtitle}</h3>
+                        style={{ color: "rgba(0,0,0,0.2)" }}>{lesson.title}</h3>
                       <p className="mt-1.5 max-w-[28ch] text-center text-[13px] leading-snug sm:text-sm"
-                        style={{ color: "rgba(0,0,0,0.1)" }}>{lesson.title}</p>
+                        style={{ color: "rgba(0,0,0,0.1)" }}>{lesson.subtitle}</p>
                     </div>
                     <div className="relative z-10 mt-4 flex items-center justify-center gap-4 sm:mt-5">
                       <span className="text-[11px] font-medium" style={{ color: "rgba(0,0,0,0.12)" }}>
-                        📄 {lesson.cards}
+                        📄 {lesson.newCount}
                       </span>
                       <span className="text-[11px] font-bold" style={{ color: "rgba(0,0,0,0.12)" }}>✦ {lesson.xp} XP</span>
                     </div>
@@ -271,7 +283,7 @@ function BasiquesView({ accent }: { accent: string }) {
                     </div>
                   </button>
                 ) : (
-                  <button className="group relative w-[360px] cursor-pointer overflow-hidden rounded-3xl p-6 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] active:scale-[0.98] sm:w-[460px] sm:p-7"
+                  <button onClick={() => router.push(`/home/${citySlug}/school/basics/lesson/${lesson.id}`)} className="group relative w-[360px] cursor-pointer overflow-hidden rounded-3xl p-6 transition-all duration-300 hover:-translate-y-1 hover:scale-[1.03] active:scale-[0.98] sm:w-[460px] sm:p-7"
                     style={{
                       background: "linear-gradient(135deg,rgba(255,255,255,0.95),rgba(255,255,255,0.8))",
                       border: "1.5px solid rgba(0,0,0,0.06)",
@@ -286,32 +298,50 @@ function BasiquesView({ accent }: { accent: string }) {
                           background: `linear-gradient(135deg, ${accent}, ${accentDark})`,
                           boxShadow: `0 4px 20px ${accentGlow}, 0 0 40px ${accentGlow}, inset 0 1px 0 rgba(255,255,255,0.15)`,
                         }}>
-                        <span className="drop-shadow-md">🌸</span>
+                        <span className="drop-shadow-md">{lesson.emoji}</span>
                       </div>
-                      <h3 className="mt-3 text-center text-base font-bold leading-tight sm:text-lg"
-                        style={{ color: "rgba(0,0,0,0.9)" }}>{lesson.subtitle}</h3>
+                      {lesson.kind !== "kana" && lesson.kind !== "word" && (() => {
+                        const b = lesson.kind === "review"
+                          ? { t: "Révision", c: "#d97706", bg: "rgba(245,158,11,0.12)" }
+                          : lesson.kind === "quiz"
+                          ? { t: /Méga/.test(lesson.title) ? "Méga Quiz" : "Quiz", c: accent, bg: "rgba(124,58,237,0.1)" }
+                          : { t: "Entraînement", c: "#2563eb", bg: "rgba(59,130,246,0.1)" };
+                        return (
+                          <span className="mt-2.5 rounded-full px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.15em]"
+                            style={{ color: b.c, background: b.bg }}>{b.t}</span>
+                        );
+                      })()}
+                      <h3 className="mt-2 text-center text-base font-bold leading-tight sm:text-lg"
+                        style={{ color: "rgba(0,0,0,0.9)", fontFamily: /[ぁ-ゖァ-ヺ]/.test(lesson.title) ? '"Hiragino Kana","Yu Gothic",serif' : undefined }}>
+                        {lesson.title}
+                      </h3>
                       <p className="mt-1.5 max-w-[28ch] text-center text-[13px] leading-snug sm:text-sm"
-                        style={{ color: "rgba(0,0,0,0.5)" }}>{lesson.title}</p>
+                        style={{ color: "rgba(0,0,0,0.5)" }}>{lesson.subtitle}</p>
                     </div>
-                    {lesson.chars && (
+                    {lesson.slides.some(s => s.type === "kana") && (
                       <div className="relative z-10 mt-4 flex flex-wrap items-center justify-center gap-2 sm:mt-5">
-                        {lesson.chars.map(c => (
-                          <div key={c.kana} className="flex min-w-[42px] flex-col items-center rounded-xl px-3 py-2"
-                            style={{ background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.04)" }}>
-                            <span className="text-lg font-medium" style={{ color: "rgba(0,0,0,0.75)" }}>{c.kana}</span>
-                            <span className="mt-0.5 text-[9px]" style={{ color: "rgba(0,0,0,0.3)" }}>{c.romaji}</span>
-                          </div>
-                        ))}
+                        {lesson.slides.filter(s => s.type === "kana").map(s => {
+                          const k = s as KanaSlide;
+                          return (
+                            <div key={k.char} className="flex min-w-[42px] flex-col items-center rounded-xl px-3 py-2"
+                              style={{ background: "rgba(0,0,0,0.04)", border: "1px solid rgba(0,0,0,0.04)" }}>
+                              <span className="text-lg font-medium" style={{ color: "rgba(0,0,0,0.75)" }}>{k.char}</span>
+                              <span className="mt-0.5 text-[9px]" style={{ color: "rgba(0,0,0,0.3)" }}>{k.romaji}</span>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                     <div className="relative z-10 mt-4 flex items-center justify-center gap-4 sm:mt-5">
-                      <div className="flex items-center gap-1" style={{ color: "rgba(0,0,0,0.55)" }}>
-                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                        <span className="text-[11px] font-medium">{lesson.cards}</span>
-                      </div>
+                      {lesson.newCount > 0 && (
+                        <div className="flex items-center gap-1" style={{ color: "rgba(0,0,0,0.55)" }}>
+                          <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          </svg>
+                          <span className="text-[11px] font-medium">{lesson.newCount}</span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-1" style={{ color: "rgba(0,0,0,0.55)" }}>
                         <span className="text-[11px] font-bold">✦</span>
                         <span className="text-[11px] font-medium">{lesson.xp} XP</span>
@@ -333,9 +363,9 @@ function BasiquesView({ accent }: { accent: string }) {
                 {isLeft && (
                   <div className="hidden shrink-0 select-none flex-col items-center justify-center px-1 sm:flex">
                     <span className="text-[10px] font-semibold uppercase leading-none tracking-[0.2em]"
-                      style={{ color: lesson.locked ? "rgba(0,0,0,0.18)" : accent, opacity: 0.8 }}>Leçon</span>
+                      style={{ color: locked ? "rgba(0,0,0,0.18)" : accent, opacity: 0.8 }}>Leçon</span>
                     <span className="mt-1 text-2xl font-black leading-none tabular-nums"
-                      style={{ color: lesson.locked ? "rgba(0,0,0,0.18)" : accent }}>{lesson.id}</span>
+                      style={{ color: locked ? "rgba(0,0,0,0.18)" : accent }}>{lesson.id}</span>
                   </div>
                 )}
               </div>
@@ -344,29 +374,6 @@ function BasiquesView({ accent }: { accent: string }) {
         })}
       </div>
 
-      {/* ── Chapters 2 & 3 (locked) ─────────────────────────────── */}
-      <div className="mt-12 w-full max-w-2xl space-y-4">
-        {CHAPTERS_META.slice(1).map(ch => (
-          <div key={ch.id} className="relative overflow-hidden rounded-3xl py-5 pl-7 pr-6 sm:pl-9 sm:py-7"
-            style={{ background: "rgba(0,0,0,0.02)", border: "1.5px solid rgba(0,0,0,0.04)" }}>
-            <div className="absolute bottom-5 left-3 top-5 w-1 rounded-full sm:bottom-7 sm:top-7 bg-gray-200" />
-            <div className="relative z-10 opacity-50">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-gray-400">Chapitre {ch.id}</p>
-                <span className="shrink-0 rounded-full border border-gray-100 px-2.5 py-1 text-[10px] font-semibold text-gray-400">
-                  {ch.lessonCount} leçons
-                </span>
-              </div>
-              <h2 className="mt-2 text-xl font-bold text-gray-300">{ch.title}</h2>
-              <p className="mt-1 text-sm text-gray-300">{ch.description}</p>
-              <div className="mt-3 flex items-center gap-2 text-[11px] text-gray-300">
-                <LockIcon size={11} color="#d1d5db" />
-                Disponible après le Chapitre {ch.id - 1}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
@@ -535,7 +542,7 @@ export default function SchoolClient({ citySlug, cityName }: { citySlug: string;
         )}
 
         {/* ── Basiques ─────────────────────────────────────────── */}
-        {tab === "basiques" && <BasiquesView accent={ACCENT} />}
+        {tab === "basiques" && <BasiquesView accent={ACCENT} citySlug={citySlug} />}
 
         {tab === "grammaire"  && <LockedSection label="Grammaire" />}
         {tab === "pratique"   && (

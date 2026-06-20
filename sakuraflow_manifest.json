@@ -1,0 +1,652 @@
+[
+ {
+  "real": 1,
+  "title": "あいうえお / Hiragana vowels",
+  "learn": [
+   "あ",
+   "い",
+   "う",
+   "え",
+   "お"
+  ]
+ },
+ {
+  "real": 2,
+  "title": "First Mini Words / Apply, don't just memorize",
+  "learn": [
+   "あい",
+   "あお",
+   "うえ"
+  ]
+ },
+ {
+  "real": 4,
+  "title": "かきくけこ / K-row",
+  "learn": [
+   "か",
+   "き",
+   "く",
+   "け",
+   "こ"
+  ]
+ },
+ {
+  "real": 5,
+  "title": "K-row Words / First real words with か–こ",
+  "learn": [
+   "かお",
+   "えき",
+   "いく",
+   "いけ"
+  ]
+ },
+ {
+  "real": 8,
+  "title": "G-row Words / First words with が–ご (かぎ, えいが, かいぎ…)",
+  "learn": [
+   "かぎ",
+   "えいが",
+   "かいぎ"
+  ]
+ },
+ {
+  "real": 10,
+  "title": "さしすせそ / S-row (し = shi)",
+  "learn": [
+   "さ",
+   "し",
+   "す",
+   "せ",
+   "そ"
+  ]
+ },
+ {
+  "real": 11,
+  "title": "Known Kana Words / First reading experience",
+  "learn": [
+   "すし",
+   "あさ",
+   "ここ",
+   "さくら"
+  ]
+ },
+ {
+  "real": 12,
+  "title": "S-row Words / Everyday words with さ–そ",
+  "learn": [
+   "かさ",
+   "いす",
+   "あし",
+   "せかい"
+  ]
+ },
+ {
+  "real": 14,
+  "title": "ざじずぜぞ / Z-row: Dakuten of the S-row (じ = ji)",
+  "learn": [
+   "ざ",
+   "じ",
+   "ず",
+   "ぜ",
+   "ぞ"
+  ]
+ },
+ {
+  "real": 15,
+  "title": "Z-row Words / First words with ざ–ぞ (かぜ, かぞく, すうじ…)",
+  "learn": [
+   "かぜ",
+   "かぞく",
+   "すうじ",
+   "すずしい"
+  ]
+ },
+ {
+  "real": 18,
+  "title": "たちつてと / T-row (ち = chi, つ = tsu)",
+  "learn": [
+   "た",
+   "ち",
+   "つ",
+   "て",
+   "と"
+  ]
+ },
+ {
+  "real": 19,
+  "title": "T-row Words / First words with た–と",
+  "learn": [
+   "うた",
+   "いち",
+   "たこ",
+   "とけい"
+  ]
+ },
+ {
+  "real": 21,
+  "title": "だぢづでど / D-row: Dakuten of the T-row",
+  "learn": [
+   "だ",
+   "ぢ",
+   "づ",
+   "で",
+   "ど"
+  ]
+ },
+ {
+  "real": 24,
+  "title": "なにぬねの / N-row",
+  "learn": [
+   "な",
+   "に",
+   "ぬ",
+   "ね",
+   "の"
+  ]
+ },
+ {
+  "real": 25,
+  "title": "N-row & Animals / ねこ, いぬ, なつ and more",
+  "learn": [
+   "なに",
+   "ねこ",
+   "いぬ",
+   "さかな"
+  ]
+ },
+ {
+  "real": 27,
+  "title": "はひふへほ / H-row (ふ = fu)",
+  "learn": [
+   "は",
+   "ひ",
+   "ふ",
+   "へ",
+   "ほ"
+  ]
+ },
+ {
+  "real": 28,
+  "title": "H-row Words / はな, ひと, ほし and more",
+  "learn": [
+   "はな",
+   "ひと",
+   "ふね",
+   "ほし"
+  ]
+ },
+ {
+  "real": 30,
+  "title": "ばびぶべぼ / B-row: Dakuten of the H-row",
+  "learn": [
+   "ば",
+   "び",
+   "ぶ",
+   "べ",
+   "ぼ"
+  ]
+ },
+ {
+  "real": 33,
+  "title": "ぱぴぷぺぽ / P-row: Handakuten of the H-row",
+  "learn": [
+   "ぱ",
+   "ぴ",
+   "ぷ",
+   "ぺ",
+   "ぽ"
+  ]
+ },
+ {
+  "real": 36,
+  "title": "Polite Phrases / Thanks, sorry & introducing yourself",
+  "learn": [
+   "「ありがとう」",
+   "「すみません」"
+  ]
+ },
+ {
+  "real": 38,
+  "title": "まみむめも / M-row",
+  "learn": [
+   "ま",
+   "み",
+   "む",
+   "め",
+   "も"
+  ]
+ },
+ {
+  "real": 39,
+  "title": "M-Words / まめ, みみ, むし and more",
+  "learn": [
+   "まめ",
+   "みみ",
+   "むし",
+   "もも"
+  ]
+ },
+ {
+  "real": 41,
+  "title": "やゆよ / Y-row (only 3 characters)",
+  "learn": [
+   "や",
+   "ゆ",
+   "よ"
+  ]
+ },
+ {
+  "real": 42,
+  "title": "Y-Words / やま, ゆめ, よむ",
+  "learn": [
+   "やま",
+   "ゆめ",
+   "よむ"
+  ]
+ },
+ {
+  "real": 44,
+  "title": "らりるれろ / R-row",
+  "learn": [
+   "ら",
+   "り",
+   "る",
+   "れ",
+   "ろ"
+  ]
+ },
+ {
+  "real": 47,
+  "title": "わをん / The final three: W-row + ん",
+  "learn": [
+   "わ",
+   "を",
+   "ん",
+   "わに",
+   "にわ",
+   "かわ",
+   "みんな"
+  ]
+ },
+ {
+  "real": 49,
+  "title": "Dakuten Words / でんわ, ぎんこう, だいがく & more",
+  "learn": [
+   "でんわ",
+   "ぎんこう",
+   "だいがく",
+   "べんきょう"
+  ]
+ },
+ {
+  "real": 50,
+  "title": "Introductions / はじめまして & よろしく",
+  "learn": [
+   "くるま",
+   "せんせい",
+   "おかあさん",
+   "はなみ",
+   "「はじめまして」",
+   "「よろしくおねがいします」"
+  ]
+ },
+ {
+  "real": 53,
+  "title": "Katakana Vowel Words / First words with ア–オ (アイ, エア)",
+  "learn": [
+   "アイ",
+   "エア"
+  ]
+ },
+ {
+  "real": 55,
+  "title": "カキクケコ / K-row",
+  "learn": [
+   "カ",
+   "キ",
+   "ク",
+   "ケ",
+   "コ"
+  ]
+ },
+ {
+  "real": 58,
+  "title": "ガギグゲゴ / Katakana G-row",
+  "learn": [
+   "ガ",
+   "ギ",
+   "グ",
+   "ゲ",
+   "ゴ"
+  ]
+ },
+ {
+  "real": 62,
+  "title": "サシスセソ / S-row (シ = shi)",
+  "learn": [
+   "サ",
+   "シ",
+   "ス",
+   "セ",
+   "ソ"
+  ]
+ },
+ {
+  "real": 65,
+  "title": "ザジズゼゾ / Katakana Z-row (ジ = ji)",
+  "learn": [
+   "ザ",
+   "ジ",
+   "ズ",
+   "ゼ",
+   "ゾ"
+  ]
+ },
+ {
+  "real": 68,
+  "title": "タチツテト / T-row (チ = chi, ツ = tsu)",
+  "learn": [
+   "タ",
+   "チ",
+   "ツ",
+   "テ",
+   "ト"
+  ]
+ },
+ {
+  "real": 71,
+  "title": "ダヂヅデド / Katakana D-row",
+  "learn": [
+   "ダ",
+   "ヂ",
+   "ヅ",
+   "デ",
+   "ド"
+  ]
+ },
+ {
+  "real": 74,
+  "title": "Katakana Loanwords / Loanwords in Japanese",
+  "learn": [
+   "コスト",
+   "タコス",
+   "トマト",
+   "ココア"
+  ]
+ },
+ {
+  "real": 76,
+  "title": "ナニヌネノ / N-row",
+  "learn": [
+   "ナ",
+   "ニ",
+   "ヌ",
+   "ネ",
+   "ノ"
+  ]
+ },
+ {
+  "real": 80,
+  "title": "ハヒフヘホ / H-row (フ = fu)",
+  "learn": [
+   "ハ",
+   "ヒ",
+   "フ",
+   "ヘ",
+   "ホ"
+  ]
+ },
+ {
+  "real": 83,
+  "title": "バビブベボ / Katakana B-row",
+  "learn": [
+   "バ",
+   "ビ",
+   "ブ",
+   "ベ",
+   "ボ"
+  ]
+ },
+ {
+  "real": 86,
+  "title": "パピプペポ / Katakana P-row (Handakuten)",
+  "learn": [
+   "パ",
+   "ピ",
+   "プ",
+   "ペ",
+   "ポ"
+  ]
+ },
+ {
+  "real": 89,
+  "title": "マミムメモ / M-row",
+  "learn": [
+   "マ",
+   "ミ",
+   "ム",
+   "メ",
+   "モ"
+  ]
+ },
+ {
+  "real": 92,
+  "title": "Katakana Everyday Words / Knife, mask and more",
+  "learn": [
+   "ハム",
+   "メモ",
+   "ナイフ",
+   "マスク"
+  ]
+ },
+ {
+  "real": 94,
+  "title": "ヤユヨ / Y-row",
+  "learn": [
+   "ヤ",
+   "ユ",
+   "ヨ"
+  ]
+ },
+ {
+  "real": 97,
+  "title": "ラリルレロ / R-row",
+  "learn": [
+   "ラ",
+   "リ",
+   "ル",
+   "レ",
+   "ロ"
+  ]
+ },
+ {
+  "real": 100,
+  "title": "ワヲン / The last Katakana",
+  "learn": [
+   "ワ",
+   "ヲ",
+   "ン"
+  ]
+ },
+ {
+  "real": 103,
+  "title": "Katakana Dakuten Words / バス, ビール, ゲーム, ドア, パン",
+  "learn": [
+   "バス",
+   "ビール",
+   "ゲーム",
+   "ドア"
+  ]
+ },
+ {
+  "real": 106,
+  "title": "Small っ/ッ / Double consonants",
+  "learn": [
+   "きって",
+   "きっぷ",
+   "ざっし",
+   "がっこう"
+  ]
+ },
+ {
+  "real": 107,
+  "title": "しゃ・ちゃ / Yōon: sha, shu, sho, cha, chu, cho",
+  "learn": [
+   "しゃ",
+   "しゅ",
+   "しょ",
+   "ちゃ",
+   "ちゅ",
+   "ちょ"
+  ]
+ },
+ {
+  "real": 108,
+  "title": "きゃ・にゃ・りゃ / Yōon: kya, nya, rya and more",
+  "learn": [
+   "きゃ",
+   "きゅ",
+   "きょ",
+   "にゃ",
+   "にゅ",
+   "にょ",
+   "りゃ",
+   "りゅ",
+   "+1"
+  ]
+ },
+ {
+  "real": 109,
+  "title": "Yōon Words / おちゃ, しゃしん and more",
+  "learn": [
+   "おちゃ",
+   "きょう",
+   "しゃしん",
+   "りょこう"
+  ]
+ },
+ {
+  "real": 111,
+  "title": "Long Vowels ー / コーヒー, ケーキ, ラーメン",
+  "learn": [
+   "コーヒー",
+   "ケーキ",
+   "ラーメン",
+   "ゲーム"
+  ]
+ },
+ {
+  "real": 112,
+  "title": "Big Loanwords / チョコレート, ジュース...",
+  "learn": [
+   "チョコレート",
+   "ジュース",
+   "シャワー",
+   "レストラン"
+  ]
+ },
+ {
+  "real": 117,
+  "title": "Numbers 6–10 + Kanji / roku–juu and 六七八九十",
+  "learn": [
+   "ろく",
+   "なな",
+   "はち",
+   "きゅう"
+  ]
+ },
+ {
+  "real": 120,
+  "title": "Counters / ～にん, ～こ: People & pieces",
+  "learn": [
+   "ひとり",
+   "ふたり",
+   "さんにん",
+   "いっこ"
+  ]
+ },
+ {
+  "real": 122,
+  "title": "How old are you? / なんさいですか？ ＿さいです",
+  "learn": [
+   "「なんさいですか」",
+   "「＿さいです」"
+  ]
+ },
+ {
+  "real": 123,
+  "title": "What time is it? / いまなんじですか",
+  "learn": [
+   "いちじ",
+   "にじ",
+   "さんじ",
+   "ごぜん",
+   "「いまなんじですか」"
+  ]
+ },
+ {
+  "real": 127,
+  "title": "これ・それ・あれ / This, that, that over there (by distance)",
+  "learn": [
+   "これ",
+   "それ",
+   "あれ",
+   "「これはなんですか」"
+  ]
+ },
+ {
+  "real": 131,
+  "title": "Question Words / なに, だれ, どこ, いつ, どれ",
+  "learn": [
+   "なに",
+   "だれ",
+   "どこ",
+   "いつ",
+   "「＿はどこですか」"
+  ]
+ },
+ {
+  "real": 132,
+  "title": "Languages & Origin / にほんご, ドイツご, にほんじん",
+  "learn": [
+   "にほんご",
+   "えいご",
+   "ドイツご",
+   "にほんじん",
+   "「にほんごをべんきょうしています」",
+   "「＿からきました」"
+  ]
+ },
+ {
+  "real": 135,
+  "title": "Shopping & Ordering / いくらですか, ください",
+  "learn": [
+   "おかね",
+   "みせ",
+   "えん",
+   "きっぷ",
+   "「いくらですか」",
+   "「これをください」"
+  ]
+ },
+ {
+  "real": 136,
+  "title": "Home & Food / ただいま, いただきます and more",
+  "learn": [
+   "「いってきます」",
+   "「ただいま」"
+  ]
+ },
+ {
+  "real": 138,
+  "title": "Getting Around / でんしゃ, えき, みぎ, ひだり",
+  "learn": [
+   "でんしゃ",
+   "えき",
+   "みぎ",
+   "ひだり",
+   "「だいじょうぶ」",
+   "「おつかれさまです」"
+  ]
+ }
+]

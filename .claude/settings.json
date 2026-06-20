@@ -24,7 +24,8 @@
       "WebFetch(domain:web.meetcleo.com)",
       "WebFetch(domain:traqo.fr)",
       "Skill(claude-md-management:revise-claude-md)",
-      "Skill(claude-md-management:revise-claude-md:*)"
+      "Skill(claude-md-management:revise-claude-md:*)",
+      "WebFetch(domain:www.sakuraflow.app)"
     ]
   }
 }

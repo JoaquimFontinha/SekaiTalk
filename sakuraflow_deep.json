@@ -1,0 +1,1699 @@
+{
+  "scrapedAt": "2026-06-11T22:05:58.124Z",
+  "totalLessons": 9,
+  "lessons": [
+    {
+      "lessonNum": 1,
+      "url": "https://www.sakuraflow.app/basics/lesson/1",
+      "slides": [
+        {
+          "slideNum": 1,
+          "kanaChar": "あ",
+          "romaji": "a",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound a.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": "あ is hiding inside an apple: like the \"A\" in apple.",
+          "slideProgress": {
+            "current": 1,
+            "total": 5
+          },
+          "hasStrokeOrder": true,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Stroke order",
+            "R",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L1_S1_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-a-apple.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L1_S1_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 1\nHIRAGANA\nあ\nStroke order\nR\na\n\nThis hiragana character stands for the sound a. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nあ is hiding inside an apple: like the \"A\" in apple.\n\nNext\n\n1 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L1_S1.png"
+        },
+        {
+          "slideNum": 2,
+          "kanaChar": "い",
+          "romaji": "i",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound i.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 2,
+            "total": 5
+          },
+          "hasStrokeOrder": true,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Stroke order",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L1_S2_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-i-twogirls.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L1_S2_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 1\nHIRAGANA\nい\nStroke order\nR\ni\n\nThis hiragana character stands for the sound i. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nTwo little girls stand side by side and together they spell \"ii\".\n\nBack\nNext\n\n2 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L1_S2.png"
+        },
+        {
+          "slideNum": 3,
+          "kanaChar": "う",
+          "romaji": "u",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound u.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 3,
+            "total": 5
+          },
+          "hasStrokeOrder": true,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Stroke order",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L1_S3_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-u-uhh.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L1_S3_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 1\nHIRAGANA\nう\nStroke order\nR\nu\n\nThis hiragana character stands for the sound u. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nSomeone bends forward in surprise and goes \"uuh!\".\n\nBack\nNext\n\n3 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L1_S3.png"
+        },
+        {
+          "slideNum": 4,
+          "kanaChar": "え",
+          "romaji": "e",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound e.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 4,
+            "total": 5
+          },
+          "hasStrokeOrder": true,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Stroke order",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L1_S4_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-e-ninja.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L1_S4_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 1\nHIRAGANA\nえ\nStroke order\nR\ne\n\nThis hiragana character stands for the sound e. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nAn energetic ninja leaps into action: \"energetic\" starts with \"e\".\n\nBack\nNext\n\n4 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L1_S4.png"
+        },
+        {
+          "slideNum": 5,
+          "kanaChar": "お",
+          "romaji": "o",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound o.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 5,
+            "total": 5
+          },
+          "hasStrokeOrder": true,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Stroke order",
+            "R",
+            "Back",
+            "Start exercises"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L1_S5_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-o-ufo.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L1_S5_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 1\nHIRAGANA\nお\nStroke order\nR\no\n\nThis hiragana character stands for the sound o. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nA U.F.O. gently lands: and the \"O\" sits right in the middle.\n\nBack\nStart exercises\n\n5 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L1_S5.png"
+        }
+      ]
+    },
+    {
+      "lessonNum": 2,
+      "url": "https://www.sakuraflow.app/basics/lesson/2",
+      "slides": [
+        {
+          "slideNum": 1,
+          "kanaChar": null,
+          "romaji": "ai",
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 1,
+            "total": 3
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "R",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L2_S1_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/word-illustrations/unit1/ai.webp",
+              "alt": "",
+              "classes": "w-full h-full object-cover select-none",
+              "width": 1024,
+              "height": 683,
+              "localPath": "/sakuraflow_assets/L2_S1_w-full_h-full_object-cover_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 2\nNEW WORD\nあい\nR\nai\n\nLove\n\nNext\n\n1 / 3\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L2_S1.png"
+        },
+        {
+          "slideNum": 2,
+          "kanaChar": null,
+          "romaji": "ao",
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 2,
+            "total": 3
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L2_S2_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/word-illustrations/unit1/ao.webp",
+              "alt": "",
+              "classes": "w-full h-full object-cover select-none",
+              "width": 1024,
+              "height": 683,
+              "localPath": "/sakuraflow_assets/L2_S2_w-full_h-full_object-cover_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 2\nNEW WORD\nあお\nR\nao\n\nBlue\n\nBack\nNext\n\n2 / 3\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L2_S2.png"
+        },
+        {
+          "slideNum": 3,
+          "kanaChar": null,
+          "romaji": "ue",
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 3,
+            "total": 3
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "R",
+            "Back",
+            "Start exercises"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L2_S3_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/word-illustrations/unit1/ue.webp",
+              "alt": "",
+              "classes": "w-full h-full object-cover select-none",
+              "width": 1024,
+              "height": 683,
+              "localPath": "/sakuraflow_assets/L2_S3_w-full_h-full_object-cover_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 2\nNEW WORD\nうえ\nR\nue\n\nAbove\n\nBack\nStart exercises\n\n3 / 3\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L2_S3.png"
+        }
+      ]
+    },
+    {
+      "lessonNum": 3,
+      "url": "https://www.sakuraflow.app/basics/lesson/3",
+      "slides": [
+        {
+          "slideNum": 1,
+          "kanaChar": "か",
+          "romaji": "ka",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound ka.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 1,
+            "total": 5
+          },
+          "hasStrokeOrder": true,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Stroke order",
+            "R",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L3_S1_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-ka-katana.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L3_S1_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 4\nHIRAGANA\nか\nStroke order\nR\nka\n\nThis hiragana character stands for the sound ka. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nA curved katana blade: katana → ka.\n\nNext\n\n1 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L3_S1.png"
+        },
+        {
+          "slideNum": 2,
+          "kanaChar": "き",
+          "romaji": "ki",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound ki.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 2,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Writing…",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L3_S2_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-ki-key.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L3_S2_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 4\nHIRAGANA\nき\nWriting…\nR\nki\n\nThis hiragana character stands for the sound ki. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nAn old-fashioned key with bow and bit: key → ki.\n\nBack\nNext\n\n2 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L3_S2.png"
+        },
+        {
+          "slideNum": 3,
+          "kanaChar": "く",
+          "romaji": "ku",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound ku.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 3,
+            "total": 5
+          },
+          "hasStrokeOrder": true,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Stroke order",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L3_S3_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-ku-cuckoo.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L3_S3_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 4\nHIRAGANA\nく\nStroke order\nR\nku\n\nThis hiragana character stands for the sound ku. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nA cuckoo bird calling out \"ku-ku!\": cuckoo → ku.\n\nBack\nNext\n\n3 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L3_S3.png"
+        },
+        {
+          "slideNum": 4,
+          "kanaChar": "け",
+          "romaji": "ke",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound ke.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 4,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Writing…",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L3_S4_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-ke-keg.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L3_S4_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 4\nHIRAGANA\nけ\nWriting…\nR\nke\n\nThis hiragana character stands for the sound ke. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nA tipped-over keg with a dripping tap: keg → ke.\n\nBack\nNext\n\n4 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L3_S4.png"
+        },
+        {
+          "slideNum": 5,
+          "kanaChar": "こ",
+          "romaji": "ko",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound ko.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 5,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Writing…",
+            "R",
+            "Back",
+            "Start exercises"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L3_S5_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-ko-koi.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L3_S5_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 4\nHIRAGANA\nこ\nWriting…\nR\nko\n\nThis hiragana character stands for the sound ko. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nA playful koi fish gliding through the water: koi → ko.\n\nBack\nStart exercises\n\n5 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L3_S5.png"
+        }
+      ]
+    },
+    {
+      "lessonNum": 4,
+      "url": "https://www.sakuraflow.app/basics/lesson/4",
+      "slides": [
+        {
+          "slideNum": 1,
+          "kanaChar": null,
+          "romaji": "kao",
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 1,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "R",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L4_S1_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/word-illustrations/unit1/kao.webp",
+              "alt": "",
+              "classes": "w-full h-full object-cover select-none",
+              "width": 1024,
+              "height": 683,
+              "localPath": "/sakuraflow_assets/L4_S1_w-full_h-full_object-cover_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 5\nNEW WORD\nかお\nR\nkao\n\nFace\n\nNext\n\n1 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L4_S1.png"
+        },
+        {
+          "slideNum": 2,
+          "kanaChar": null,
+          "romaji": "eki",
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 2,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L4_S2_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/word-illustrations/unit1/eki.webp",
+              "alt": "",
+              "classes": "w-full h-full object-cover select-none",
+              "width": 1024,
+              "height": 683,
+              "localPath": "/sakuraflow_assets/L4_S2_w-full_h-full_object-cover_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 5\nNEW WORD\nえき\nR\neki\n\nStation\n\nBack\nNext\n\n2 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L4_S2.png"
+        },
+        {
+          "slideNum": 3,
+          "kanaChar": null,
+          "romaji": "iku",
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 3,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L4_S3_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/word-illustrations/unit1/iku.webp",
+              "alt": "",
+              "classes": "w-full h-full object-cover select-none",
+              "width": 1024,
+              "height": 683,
+              "localPath": "/sakuraflow_assets/L4_S3_w-full_h-full_object-cover_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 5\nNEW WORD\nいく\nR\niku\n\nto go\n\nBack\nNext\n\n3 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L4_S3.png"
+        },
+        {
+          "slideNum": 4,
+          "kanaChar": null,
+          "romaji": "ike",
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 4,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L4_S4_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/word-illustrations/unit1/ike.webp",
+              "alt": "",
+              "classes": "w-full h-full object-cover select-none",
+              "width": 1024,
+              "height": 683,
+              "localPath": "/sakuraflow_assets/L4_S4_w-full_h-full_object-cover_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 5\nNEW WORD\nいけ\nR\nike\n\nPond\n\nBack\nNext\n\n4 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L4_S4.png"
+        },
+        {
+          "slideNum": 5,
+          "kanaChar": null,
+          "romaji": "koe",
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 5,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "R",
+            "Back",
+            "Start exercises"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L4_S5_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/word-illustrations/unit1/koe.webp",
+              "alt": "",
+              "classes": "w-full h-full object-cover select-none",
+              "width": 1024,
+              "height": 683,
+              "localPath": "/sakuraflow_assets/L4_S5_w-full_h-full_object-cover_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 5\nNEW WORD\nこえ\nR\nkoe\n\nVoice\n\nBack\nStart exercises\n\n5 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L4_S5.png"
+        }
+      ]
+    },
+    {
+      "lessonNum": 5,
+      "url": "https://www.sakuraflow.app/basics/lesson/5",
+      "slides": [
+        {
+          "slideNum": 1,
+          "kanaChar": "さ",
+          "romaji": "sa",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound sa.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 1,
+            "total": 5
+          },
+          "hasStrokeOrder": true,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Stroke order",
+            "R",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L5_S1_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-sa-sad.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L5_S1_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 10\nHIRAGANA\nさ\nStroke order\nR\nsa\n\nThis hiragana character stands for the sound sa. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nA sad little face with a single tear: sad → sa.\n\nNext\n\n1 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L5_S1.png"
+        },
+        {
+          "slideNum": 2,
+          "kanaChar": "し",
+          "romaji": "shi",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound shi.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 2,
+            "total": 5
+          },
+          "hasStrokeOrder": true,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Stroke order",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L5_S2_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-shi-hook.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L5_S2_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 10\nHIRAGANA\nし\nStroke order\nR\nshi\n\nThis hiragana character stands for the sound shi. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nA single fishing hook dropping into the water: \"sheee…\" as it goes in.\n\nBack\nNext\n\n2 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L5_S2.png"
+        },
+        {
+          "slideNum": 3,
+          "kanaChar": "す",
+          "romaji": "su",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound su.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 3,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Writing…",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L5_S3_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-su-straw.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L5_S3_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 10\nHIRAGANA\nす\nWriting…\nR\nsu\n\nThis hiragana character stands for the sound su. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nA straw poking out of a sweet drink: straw → su.\n\nBack\nNext\n\n3 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L5_S3.png"
+        },
+        {
+          "slideNum": 4,
+          "kanaChar": "せ",
+          "romaji": "se",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound se.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 4,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Writing…",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L5_S4_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-se-saying.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L5_S4_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 10\nHIRAGANA\nせ\nWriting…\nR\nse\n\nThis hiragana character stands for the sound se. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nAn open mouth mid-\"say!\": shouting a \"se\".\n\nBack\nNext\n\n4 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L5_S4.png"
+        },
+        {
+          "slideNum": 5,
+          "kanaChar": "そ",
+          "romaji": "so",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound so.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 5,
+            "total": 5
+          },
+          "hasStrokeOrder": true,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Stroke order",
+            "R",
+            "Back",
+            "Start exercises"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L5_S5_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-so-stitch.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L5_S5_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 10\nHIRAGANA\nそ\nStroke order\nR\nso\n\nThis hiragana character stands for the sound so. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nA thread with a tiny stitch: sew/stitch → so.\n\nBack\nStart exercises\n\n5 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L5_S5.png"
+        }
+      ]
+    },
+    {
+      "lessonNum": 6,
+      "url": "https://www.sakuraflow.app/basics/lesson/6",
+      "slides": [
+        {
+          "slideNum": 1,
+          "kanaChar": null,
+          "romaji": "sushi",
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 1,
+            "total": 4
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "R",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L6_S1_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/word-illustrations/unit1/sushi.webp",
+              "alt": "",
+              "classes": "w-full h-full object-cover select-none",
+              "width": 1024,
+              "height": 683,
+              "localPath": "/sakuraflow_assets/L6_S1_w-full_h-full_object-cover_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 11\nNEW WORD\nすし\nR\nsushi\n\nSushi\n\nNext\n\n1 / 4\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L6_S1.png"
+        },
+        {
+          "slideNum": 2,
+          "kanaChar": null,
+          "romaji": "asa",
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 2,
+            "total": 4
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L6_S2_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/word-illustrations/unit1/asa.webp",
+              "alt": "",
+              "classes": "w-full h-full object-cover select-none",
+              "width": 1024,
+              "height": 683,
+              "localPath": "/sakuraflow_assets/L6_S2_w-full_h-full_object-cover_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 11\nNEW WORD\nあさ\nR\nasa\n\nMorning\n\nBack\nNext\n\n2 / 4\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L6_S2.png"
+        },
+        {
+          "slideNum": 3,
+          "kanaChar": null,
+          "romaji": "koko",
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 3,
+            "total": 4
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L6_S3_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/word-illustrations/unit1/koko.webp",
+              "alt": "",
+              "classes": "w-full h-full object-cover select-none",
+              "width": 1024,
+              "height": 683,
+              "localPath": "/sakuraflow_assets/L6_S3_w-full_h-full_object-cover_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 11\nNEW WORD\nここ\nR\nkoko\n\nHere\n\nBack\nNext\n\n3 / 4\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L6_S3.png"
+        },
+        {
+          "slideNum": 4,
+          "kanaChar": null,
+          "romaji": null,
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 4,
+            "total": 4
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "R",
+            "Back",
+            "Start exercises"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L6_S4_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/word-illustrations/unit1/sakura.webp",
+              "alt": "",
+              "classes": "w-full h-full object-cover select-none",
+              "width": 1024,
+              "height": 683,
+              "localPath": "/sakuraflow_assets/L6_S4_w-full_h-full_object-cover_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 11\nNEW WORD\nさくら\nR\nsakura\n\nCherry blossom\n\nBack\nStart exercises\n\n4 / 4\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L6_S4.png"
+        }
+      ]
+    },
+    {
+      "lessonNum": 7,
+      "url": "https://www.sakuraflow.app/basics/lesson/7",
+      "slides": [
+        {
+          "slideNum": 1,
+          "kanaChar": null,
+          "romaji": "kasa",
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 1,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "R",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L7_S1_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/word-illustrations/unit1/kasa.webp",
+              "alt": "",
+              "classes": "w-full h-full object-cover select-none",
+              "width": 1024,
+              "height": 683,
+              "localPath": "/sakuraflow_assets/L7_S1_w-full_h-full_object-cover_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 12\nNEW WORD\nかさ\nR\nkasa\n\nUmbrella\n\nNext\n\n1 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L7_S1.png"
+        },
+        {
+          "slideNum": 2,
+          "kanaChar": null,
+          "romaji": "isu",
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 2,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L7_S2_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/word-illustrations/unit1/isu.webp",
+              "alt": "",
+              "classes": "w-full h-full object-cover select-none",
+              "width": 1024,
+              "height": 683,
+              "localPath": "/sakuraflow_assets/L7_S2_w-full_h-full_object-cover_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 12\nNEW WORD\nいす\nR\nisu\n\nChair\n\nBack\nNext\n\n2 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L7_S2.png"
+        },
+        {
+          "slideNum": 3,
+          "kanaChar": null,
+          "romaji": "ashi",
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 3,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L7_S3_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/word-illustrations/unit1/ashi.webp",
+              "alt": "",
+              "classes": "w-full h-full object-cover select-none",
+              "width": 1024,
+              "height": 683,
+              "localPath": "/sakuraflow_assets/L7_S3_w-full_h-full_object-cover_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 12\nNEW WORD\nあし\nR\nashi\n\nFoot\n\nBack\nNext\n\n3 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L7_S3.png"
+        },
+        {
+          "slideNum": 4,
+          "kanaChar": null,
+          "romaji": "sekai",
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 4,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L7_S4_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/word-illustrations/unit1/sekai.webp",
+              "alt": "",
+              "classes": "w-full h-full object-cover select-none",
+              "width": 1024,
+              "height": 683,
+              "localPath": "/sakuraflow_assets/L7_S4_w-full_h-full_object-cover_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 12\nNEW WORD\nせかい\nR\nsekai\n\nWorld\n\nBack\nNext\n\n4 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L7_S4.png"
+        },
+        {
+          "slideNum": 5,
+          "kanaChar": null,
+          "romaji": "uso",
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 5,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "R",
+            "Back",
+            "Start exercises"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L7_S5_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/word-illustrations/unit1/uso.webp",
+              "alt": "",
+              "classes": "w-full h-full object-cover select-none",
+              "width": 1024,
+              "height": 683,
+              "localPath": "/sakuraflow_assets/L7_S5_w-full_h-full_object-cover_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 12\nNEW WORD\nうそ\nR\nuso\n\nLie\n\nBack\nStart exercises\n\n5 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L7_S5.png"
+        }
+      ]
+    },
+    {
+      "lessonNum": 8,
+      "url": "https://www.sakuraflow.app/basics/lesson/8",
+      "slides": [
+        {
+          "slideNum": 1,
+          "kanaChar": null,
+          "romaji": "zu",
+          "sectionLabel": null,
+          "charDescription": null,
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 1,
+            "total": 35
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "zu",
+            "ra",
+            "shi",
+            "nu"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L8_S1_Sakuraflow.app/"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 17\n1/35\n⚡ SPEED\n8s\n\nWhat sound does し make?\n\nzu\nra\nshi\nnu\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L8_S1.png"
+        }
+      ]
+    },
+    {
+      "lessonNum": 9,
+      "url": "https://www.sakuraflow.app/basics/lesson/9",
+      "slides": [
+        {
+          "slideNum": 1,
+          "kanaChar": "た",
+          "romaji": "ta",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound ta.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 1,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Writing…",
+            "R",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L9_S1_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-ta-tako.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L9_S1_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 18\nHIRAGANA\nた\nWriting…\nR\nta\n\nThis hiragana character stands for the sound ta. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nA friendly tako (octopus) waving a tentacle hello: tako → ta.\n\nNext\n\n1 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L9_S1.png"
+        },
+        {
+          "slideNum": 2,
+          "kanaChar": "ち",
+          "romaji": "chi",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound chi.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 2,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Writing…",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L9_S2_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-chi-cheerleader.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L9_S2_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 18\nHIRAGANA\nち\nWriting…\nR\nchi\n\nThis hiragana character stands for the sound chi. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nA cheerleader with a ponytail shouts \"chi-chi-go!\".\n\nBack\nNext\n\n2 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L9_S2.png"
+        },
+        {
+          "slideNum": 3,
+          "kanaChar": "つ",
+          "romaji": "tsu",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound tsu.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 3,
+            "total": 5
+          },
+          "hasStrokeOrder": true,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Stroke order",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L9_S3_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-tsu-tsunami.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L9_S3_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 18\nHIRAGANA\nつ\nStroke order\nR\ntsu\n\nThis hiragana character stands for the sound tsu. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nA rolling tsunami wave curling on itself: tsu-nami.\n\nBack\nNext\n\n3 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L9_S3.png"
+        },
+        {
+          "slideNum": 4,
+          "kanaChar": "て",
+          "romaji": "te",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound te.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 4,
+            "total": 5
+          },
+          "hasStrokeOrder": true,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Stroke order",
+            "R",
+            "Back",
+            "Next"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L9_S4_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-te-tail.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L9_S4_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 18\nHIRAGANA\nて\nStroke order\nR\nte\n\nThis hiragana character stands for the sound te. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nA dog wagging its tail: the tail traces the shape of て.\n\nBack\nNext\n\n4 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L9_S4.png"
+        },
+        {
+          "slideNum": 5,
+          "kanaChar": "と",
+          "romaji": "to",
+          "sectionLabel": null,
+          "charDescription": "This hiragana character stands for the sound to.",
+          "memoryHookText": null,
+          "looksLike": null,
+          "mnemonicText": null,
+          "slideProgress": {
+            "current": 5,
+            "total": 5
+          },
+          "hasStrokeOrder": false,
+          "choices": [],
+          "buttons": [
+            "N5",
+            "N5",
+            "Writing…",
+            "R",
+            "Back",
+            "Start exercises"
+          ],
+          "images": [
+            {
+              "src": "https://www.sakuraflow.app/_next/image?url=%2Favatars%2Fbase-sakuraflow.png&w=64&q=75&dpl=dpl_7XDv2jReHisdPzJJDH6Za6hhNWc6",
+              "alt": "Sakuraflow",
+              "classes": "object-cover w-full h-full",
+              "width": 32,
+              "height": 32,
+              "localPath": "/sakuraflow_assets/L9_S5_Sakuraflow.app/"
+            },
+            {
+              "src": "https://www.sakuraflow.app/kana-mnemonics/hiragana/hiragana-to-tornado.webp",
+              "alt": "",
+              "classes": "relative select-none",
+              "width": 600,
+              "height": 400,
+              "localPath": "/sakuraflow_assets/L9_S5_relative_select-none.webp"
+            }
+          ],
+          "fullText": "Sakuraflow\nBasics\nGrammar\nPractice\nFlashcards\nExam\nN5\nlvl1\nLESSON 18\nHIRAGANA\nと\nWriting…\nR\nto\n\nThis hiragana character stands for the sound to. Tap the speaker to hear it.\n\n≈\nMEMORY HOOK\nLooks like…\n\nA swirling tornado funnel: tornado → to.\n\nBack\nStart exercises\n\n5 / 5\n\n© 2026 Sakuraflow\n\nResources\nBlog\nImprint\nPrivacy\nTerms\n\nSakuraflow\n\nTheme",
+          "screenshot": "/sakuraflow_assets/L9_S5.png"
+        }
+      ]
+    }
+  ]
+}

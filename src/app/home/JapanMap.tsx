@@ -181,7 +181,7 @@ export default function JapanMap() {
     <Map
       ref={mapRef}
       mapboxAccessToken={MAPBOX_TOKEN}
-      mapStyle={MAP_STYLE}
+      mapStyle={MAP_STYLE as any}
       initialViewState={{
         longitude: CENTER_LNG,
         latitude: CENTER_LAT,

@@ -923,7 +923,46 @@ Route statique `src/app/home/[city]/school/` — prend la priorité sur le segme
 @keyframes startHereBob { 0%,100% { transform:translateY(0); } 50% { transform:translateY(4px); } }
 ```
 
-**TODO** : bouton "Commencer" leçon 1 sans fonctionnalité (placeholder). Écoles Osaka/Kyoto pas encore seedées.
+**TODO** : Écoles Osaka/Kyoto pas encore seedées.
+
+### Lecteur de leçons Basiques (`/home/[city]/school/basics/lesson/[id]`)
+
+Route : `src/app/home/[city]/school/basics/lesson/[id]/` — `page.tsx` (server) + `LessonPlayer.tsx` (client).
+
+**Données** : `src/lib/basics-lessons.ts` — 17 leçons (L1–L17). Leçons impaires = kana (5 kana/leçon), leçons paires = vocabulaire (3–5 mots). Scraping réel de SakuraFlow pour L1–L8, placeholders réutilisant les images pour L9–L17.
+
+**Types** :
+```typescript
+type KanaSlide  = { type:"kana";  char; romaji; mnemonic; image; description }
+type VocabSlide = { type:"vocab"; word; romaji; meaning; meaningFr; image }
+type Slide = KanaSlide | VocabSlide
+type BasicsLesson = { id; title; subtitle; emoji; xp; newCount; slides: Slide[] }
+```
+
+**`generateExercises(lesson)`** : génère jusqu'à 16 exercices mélangés depuis les slides — `kana_to_romaji`, `romaji_to_kana`, `word_to_meaning`, `meaning_to_word`. 4 choix chacun.
+
+**Assets** :
+- `public/kana-mnemonics/` — 20 images mémoire kana (ex: `a-apple.webp`) + 16 illustrations vocab (ex: `word-sushi.webp`). Scraping SakuraFlow.
+- `public/kanjivg/` — 20 SVGs KanjiVG (ex: `3042.svg` pour あ). Licence CC BY-SA 3.0. Téléchargés depuis `github.com/KanjiVG/kanjivg`.
+
+**`src/lib/kana-strokes.ts`** — données statiques pré-extraites des SVGs KanjiVG. `KANA_STROKES: Record<string, string[]>` — clé = caractère kana (ex: `"あ"`), valeur = tableau de paths SVG `d` dans l'ordre des traits. Généré via `node -e` depuis les fichiers `public/kanjivg/*.svg`. Aucun fetch au runtime.
+
+**`src/components/KanaStrokeOrder.tsx`** — animation ordre des traits. Lit `KANA_STROKES[char]`, rend les paths dans un `<svg viewBox="0 0 109 109">` avec grille (lignes + carré pointillé). Animation CSS `kana-stroke` (`@keyframes` dans `globals.css`) : `strokeDasharray/Offset: 1` + `pathLength="1"` → dessin trait par trait. `DURATION=0.65s`, `DELAY=0.5s` entre traits. Bouton ↺ replay (incrémente `animKey`). Badge "N traits".
+
+**`LessonPlayer.tsx`** — machine à 4 phases :
+- `"slides"` : slides kana/vocab avec `KanaStrokeOrder` (220px) à gauche, Memory Hook (image 260px fixed) à droite. Navigation ← Retour / Suivant. Dernier slide → "Commencer les exercices →"
+- `"exercise-start"` : overlay `position:fixed; inset:0; z-50` blanc. Recap des kana appris en pills (72px), bouton "Commencer les exercices →" + "← Revoir les kana"
+- `"exercises"` : overlay fullscreen. Progress bar en haut, header "Exercices — Leçon N", compteur N/total. `ExerciseScreen` centré `maxWidth:600`. Mauvaise réponse → feedback bar rouge + "Continuer →"
+- `"result"` : overlay fullscreen. Score, étoiles (1–3), +XP, bouton "Leçon suivante →"
+
+**Pièges** :
+- `alignItems: "flex-start"` obligatoire sur le parent flex de `KanaSlideView` — sinon le panneau Memory Hook s'étire à toute la hauteur de la page
+- Les phases `exercise-start`, `exercises`, `result` sont des overlays `position:fixed` rendus APRÈS le body div (qui a `flex:1`) — sinon elles se retrouvent poussées en bas de page
+- Ne jamais refaire de `fetch` dans `KanaStrokeOrder` — les paths sont bundlés statiquement dans `kana-strokes.ts` pour éviter les requêtes réseau à chaque slide
+
+**Pièges Windows dev** :
+- `.next\trace` peut être verrouillé par d'anciens processus node. Si `Remove-Item -Recurse -Force .next` échoue : `taskkill /F /IM node.exe` puis supprimer
+- Ne pas lancer `npm run dev` manuellement depuis Claude — c'est l'utilisateur qui gère le serveur
 
 ### Interface Admin (`/admin`)
 

@@ -1,0 +1,1696 @@
+{
+  "scrapedAt": "2026-06-11T21:36:26.622Z",
+  "meta": [
+    {
+      "lessonNum": 1,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 2,
+      "title": "First Mini Words",
+      "description": "Apply, don't just memorize",
+      "kana": [
+        {
+          "char": "あ",
+          "romaji": "a"
+        },
+        {
+          "char": "い",
+          "romaji": "i"
+        },
+        {
+          "char": "う",
+          "romaji": "u"
+        },
+        {
+          "char": "え",
+          "romaji": "e"
+        },
+        {
+          "char": "お",
+          "romaji": "o"
+        }
+      ],
+      "xp": 30,
+      "type": "PRACTICE"
+    },
+    {
+      "lessonNum": 3,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 4,
+      "title": "かきくけこ",
+      "description": "K-row Words",
+      "kana": [
+        {
+          "char": "か",
+          "romaji": "ka"
+        },
+        {
+          "char": "き",
+          "romaji": "ki"
+        },
+        {
+          "char": "く",
+          "romaji": "ku"
+        },
+        {
+          "char": "け",
+          "romaji": "ke"
+        },
+        {
+          "char": "こ",
+          "romaji": "ko"
+        }
+      ],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 5,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 6,
+      "title": "Practice: K-row",
+      "description": "Drill かきくけこ & K-words",
+      "kana": [
+        {
+          "char": "か",
+          "romaji": "ka"
+        },
+        {
+          "char": "き",
+          "romaji": "ki"
+        },
+        {
+          "char": "く",
+          "romaji": "ku"
+        },
+        {
+          "char": "け",
+          "romaji": "ke"
+        },
+        {
+          "char": "こ",
+          "romaji": "ko"
+        },
+        {
+          "char": "が",
+          "romaji": "ga"
+        },
+        {
+          "char": "ぎ",
+          "romaji": "gi"
+        },
+        {
+          "char": "ぐ",
+          "romaji": "gu"
+        },
+        {
+          "char": "げ",
+          "romaji": "ge"
+        },
+        {
+          "char": "ご",
+          "romaji": "go"
+        }
+      ],
+      "xp": 15,
+      "type": "PRACTICE"
+    },
+    {
+      "lessonNum": 7,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 8,
+      "title": "G-row Words",
+      "description": "First words with が–ご (かぎ, えいが, かいぎ…)",
+      "kana": [
+        {
+          "char": "が",
+          "romaji": "ga"
+        },
+        {
+          "char": "ぎ",
+          "romaji": "gi"
+        },
+        {
+          "char": "ぐ",
+          "romaji": "gu"
+        },
+        {
+          "char": "げ",
+          "romaji": "ge"
+        },
+        {
+          "char": "ご",
+          "romaji": "go"
+        }
+      ],
+      "xp": 25,
+      "type": "PRACTICE"
+    },
+    {
+      "lessonNum": 9,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 10,
+      "title": "さしすせそ",
+      "description": "S-row (し = shi)",
+      "kana": [
+        {
+          "char": "さ",
+          "romaji": "sa"
+        },
+        {
+          "char": "し",
+          "romaji": "shi"
+        },
+        {
+          "char": "す",
+          "romaji": "su"
+        },
+        {
+          "char": "せ",
+          "romaji": "se"
+        },
+        {
+          "char": "そ",
+          "romaji": "so"
+        }
+      ],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 11,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 12,
+      "title": "S-row Words",
+      "description": "Everyday words with さ–そ",
+      "kana": [
+        {
+          "char": "さ",
+          "romaji": "sa"
+        },
+        {
+          "char": "し",
+          "romaji": "shi"
+        },
+        {
+          "char": "す",
+          "romaji": "su"
+        },
+        {
+          "char": "せ",
+          "romaji": "se"
+        },
+        {
+          "char": "そ",
+          "romaji": "so"
+        }
+      ],
+      "xp": 30,
+      "type": "PRACTICE"
+    },
+    {
+      "lessonNum": 13,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 14,
+      "title": "ざじずぜぞ",
+      "description": "Z-row: Dakuten of the S-row (じ = ji)",
+      "kana": [
+        {
+          "char": "ざ",
+          "romaji": "za"
+        },
+        {
+          "char": "じ",
+          "romaji": "ji"
+        },
+        {
+          "char": "ず",
+          "romaji": "zu"
+        },
+        {
+          "char": "ぜ",
+          "romaji": "ze"
+        },
+        {
+          "char": "ぞ",
+          "romaji": "zo"
+        }
+      ],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 15,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 16,
+      "title": "Practice Z-words",
+      "description": "かぜ, かぞく, すずしい & more",
+      "kana": [
+        {
+          "char": "ざ",
+          "romaji": "za"
+        },
+        {
+          "char": "じ",
+          "romaji": "ji"
+        },
+        {
+          "char": "ず",
+          "romaji": "zu"
+        },
+        {
+          "char": "ぜ",
+          "romaji": "ze"
+        },
+        {
+          "char": "ぞ",
+          "romaji": "zo"
+        },
+        {
+          "char": "あ",
+          "romaji": "a"
+        },
+        {
+          "char": "い",
+          "romaji": "i"
+        },
+        {
+          "char": "う",
+          "romaji": "u"
+        },
+        {
+          "char": "え",
+          "romaji": "e"
+        },
+        {
+          "char": "お",
+          "romaji": "o"
+        }
+      ],
+      "xp": 70,
+      "type": "REVIEW"
+    },
+    {
+      "lessonNum": 17,
+      "title": "CHAPTER 2",
+      "description": "20 LESSONS",
+      "kana": [
+        {
+          "char": "た",
+          "romaji": "ta"
+        },
+        {
+          "char": "ち",
+          "romaji": "chi"
+        },
+        {
+          "char": "つ",
+          "romaji": "tsu"
+        },
+        {
+          "char": "て",
+          "romaji": "te"
+        },
+        {
+          "char": "と",
+          "romaji": "to"
+        }
+      ],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 18,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 19,
+      "title": "T-row Words",
+      "description": "First words with た–と",
+      "kana": [],
+      "xp": 30,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 20,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 21,
+      "title": "だぢづでど",
+      "description": "D-row: Dakuten of the T-row",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 22,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 23,
+      "title": "Practice D-words",
+      "description": "どこ, かど, だいがく & more",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 24,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 25,
+      "title": "N-row & Animals",
+      "description": "ねこ, いぬ, なつ and more",
+      "kana": [],
+      "xp": 30,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 26,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 27,
+      "title": "はひふへほ",
+      "description": "H-row (ふ = fu)",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 28,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 29,
+      "title": "Practice: H-row",
+      "description": "Drill はひふへほ & H-words",
+      "kana": [],
+      "xp": 15,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 30,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 31,
+      "title": "B-row Words",
+      "description": "First words with ば–ぼ (そば, ぶた, ぼうし…)",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 32,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 33,
+      "title": "ぱぴぷぺぽ",
+      "description": "P-row: Handakuten of the H-row",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 34,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 35,
+      "title": "P-row Practice",
+      "description": "Sound to character, every option from the P-row",
+      "kana": [],
+      "xp": 35,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 36,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 37,
+      "title": "Review 2",
+      "description": "Speed review · 10 seconds per task",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 38,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 39,
+      "title": "M-Words",
+      "description": "まめ, みみ, むし and more",
+      "kana": [],
+      "xp": 30,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 40,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 41,
+      "title": "やゆよ",
+      "description": "Y-row (only 3 characters)",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 42,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 43,
+      "title": "Practice: Y-row",
+      "description": "Drill やゆよ & Y-words",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 44,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 45,
+      "title": "R-Words",
+      "description": "りす, そら, よる",
+      "kana": [],
+      "xp": 30,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 46,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 47,
+      "title": "わをん",
+      "description": "The final three: W-row + ん",
+      "kana": [],
+      "xp": 30,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 48,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 49,
+      "title": "Dakuten Words",
+      "description": "でんわ, ぎんこう, だいがく & more",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 50,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 51,
+      "title": "Hiragana Mega Quiz",
+      "description": "All hiragana incl. dakuten · 10 seconds per task",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 52,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 53,
+      "title": "Katakana Vowel Words",
+      "description": "First words with ア–オ (アイ, エア)",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 54,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 55,
+      "title": "カキクケコ",
+      "description": "Katakana K-row Words",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 56,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 57,
+      "title": "Practice: K-row",
+      "description": "Drill カキクケコ & K-words",
+      "kana": [],
+      "xp": 15,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 58,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 59,
+      "title": "Katakana G-row Words",
+      "description": "First words with ガ–ゴ (カギ, ケガ, ギガ…)",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 60,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 61,
+      "title": "Practice: Katakana A, K & G",
+      "description": "Drill アイウエオ・カキクケコ・ガギグゲゴ",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 62,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 63,
+      "title": "Katakana S-row Words",
+      "description": "First words with サ–ソ (ソロ, アイス, スイス…)",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 64,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 65,
+      "title": "ザジズゼゾ",
+      "description": "Katakana Z-row (ジ = ji)",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 66,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 67,
+      "title": "Practice Z-words",
+      "description": "ガス, アジア, ザイコ & more",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 68,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 69,
+      "title": "Katakana T-row Words",
+      "description": "First words with タ–ト (テスト, テキスト, スタジオ…)",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 70,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 71,
+      "title": "ダヂヅデド",
+      "description": "Katakana D-row",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 72,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 73,
+      "title": "Practice D-words",
+      "description": "ドア, ガイド, ダイス & more",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 74,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 75,
+      "title": "Practice: Katakana S, Z, T & D",
+      "description": "Drill サシスセソ・ザジズゼゾ・タチツテト・ダヂヅデド",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 76,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 77,
+      "title": "Katakana N-row Words",
+      "description": "First words with ナ–ノ (ナイス, カナダ, テニス…)",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 78,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 79,
+      "title": "Review 3",
+      "description": "Speed review · 10 seconds per task",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 80,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 81,
+      "title": "Katakana H-row Words",
+      "description": "First words with ハ–ホ (ハイ, ヘイト…)",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 82,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 83,
+      "title": "バビブベボ",
+      "description": "Katakana B-row",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 84,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 85,
+      "title": "Practice B-words",
+      "description": "バス, ビザ, バナナ & more",
+      "kana": [],
+      "xp": 15,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 86,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 87,
+      "title": "Katakana P-row Words",
+      "description": "First words with パ–ポ (パス, ピザ, ポスト…)",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 88,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 89,
+      "title": "マミムメモ",
+      "description": "Katakana M-row Words",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 90,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 91,
+      "title": "Practice: M-row",
+      "description": "Drill マミムメモ & M-words",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 92,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 93,
+      "title": "Practice: Katakana H, B, P & M",
+      "description": "Drill H/B/P/M kana + P-row and everyday loanwords",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 94,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 95,
+      "title": "Katakana Y-row Words",
+      "description": "First words with ヤ・ユ・ヨ (ヨガ, マヨ, ヤク)",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 96,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 97,
+      "title": "ラリルレロ",
+      "description": "Katakana R-row Words",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 98,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 99,
+      "title": "Practice: R-row",
+      "description": "Drill ラリルレロ & R-words",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 100,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 101,
+      "title": "Katakana W- and ン Words",
+      "description": "First words with ワ・ン (ワイン, メロン, アイロン…)",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 102,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 103,
+      "title": "Katakana Dakuten Words",
+      "description": "バス, ビール, ゲーム, ドア, パン",
+      "kana": [],
+      "xp": 80,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 104,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 105,
+      "title": "Katakana Mega Quiz",
+      "description": "All katakana incl. dakuten · 10 seconds per task",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 106,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 107,
+      "title": "しゃ・ちゃ",
+      "description": "Yōon: sha, shu, sho, cha, chu, cho",
+      "kana": [],
+      "xp": 20,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 108,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 109,
+      "title": "Yōon Words",
+      "description": "おちゃ, しゃしん and more",
+      "kana": [],
+      "xp": 30,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 110,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 111,
+      "title": "Long Vowels ー",
+      "description": "コーヒー, ケーキ, ラーメン",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 112,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 113,
+      "title": "Practice: Long Vowels & Loanwords",
+      "description": "Drill コーヒー, チョコレート & co.",
+      "kana": [],
+      "xp": 60,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 114,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 115,
+      "title": "Kana Master Mega Quiz",
+      "description": "All hiragana + katakana + dakuten + yōon · 10s per task",
+      "kana": [],
+      "xp": 30,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 116,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 117,
+      "title": "Numbers 6–10 + Kanji",
+      "description": "roku–juu and 六七八九十",
+      "kana": [],
+      "xp": 35,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 118,
+      "title": "CHAPTER 8",
+      "description": "8 LESSONS",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 119,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 120,
+      "title": "Counters",
+      "description": "～にん, ～こ: People & pieces",
+      "kana": [],
+      "xp": 30,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 121,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 122,
+      "title": "How old are you?",
+      "description": "なんさいですか？ ＿さいです",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 123,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 124,
+      "title": "Practice: Age & Time",
+      "description": "Drill なんさい・なんじ",
+      "kana": [],
+      "xp": 60,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 125,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 126,
+      "title": "Counters Mega Quiz",
+      "description": "All numbers, counters & time · 10s per task",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 127,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 128,
+      "title": "Practice: これ・それ・あれ",
+      "description": "Drill by distance: this, that, that over there",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 129,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 130,
+      "title": "Practice: ここ・そこ・あそこ",
+      "description": "Places by distance + どこですか",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 131,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 132,
+      "title": "Languages & Origin",
+      "description": "にほんご, ドイツご, にほんじん",
+      "kana": [],
+      "xp": 30,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 133,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 134,
+      "title": "Unit 9 Review",
+      "description": "Speed review · 10 seconds per task",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 135,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 136,
+      "title": "Home & Food",
+      "description": "ただいま, いただきます and more",
+      "kana": [],
+      "xp": 30,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 137,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 138,
+      "title": "Getting Around",
+      "description": "でんしゃ, えき, みぎ, ひだり",
+      "kana": [],
+      "xp": 25,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 139,
+      "title": "",
+      "description": "",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 140,
+      "title": "Everyday Review",
+      "description": "Speed review · 10 seconds per task",
+      "kana": [],
+      "xp": 200,
+      "type": "LESSON"
+    },
+    {
+      "lessonNum": 141,
+      "title": "KEEP GOING",
+      "description": "Step by step.",
+      "kana": [],
+      "xp": 0,
+      "type": "LESSON"
+    }
+  ],
+  "exercises": [
+    {
+      "index": 2,
+      "url": "https://www.sakuraflow.app/settings",
+      "cardText": "lvl1",
+      "modalText": "Settings\n\nManage your account and learning preferences\n\nProfile\nSubscription\nLearning\nCommunity\nAppearance\nSound\nEmail\nSecurity\nSession\nDanger zone\nAK\n🇫🇷\n\nAkamis\n\njfontinha17@gmail.com\n\nJLPT N5\n🇬🇧 EN\nDark\nParis (GMT+2)\nProfile\n\nPersonal information\n\nUsername\n\nShown on the home screen\n\nSave\n\nCountry & Timezone\n\n🇫🇷\n\nParis (GMT+2)\n\n🇫🇷\nFrance\n\nBirthday\n\n🎂\n\nFor a little surprise on your birthday\n\n✕\nSubscription & Billing\n\nManage premium and invoices\n\nFree trial\nTRIAL\nYou have 6 days of full Premium access left. You’ll need a subscription after that.\nTrial ends on June 17, 2026\nUnlock Premium\nLearning\n\nSakuradeck and study rhythm\n\nSakuradeck: New Cards\n\nHow many new vocab & kanji daily\n\nBeginner\n5 vocab / 1 kanji\nRecommended\n10 vocab / 1 kanji\nCommitted\n15 vocab / 2 kanji\nIntermediate\n20 vocab / 2 kanji\n\nVacation Mode\n\nPause new cards\n\nSlow Learn Mode\n\nPressure-free learning: hides the Sakura Streak and freeze rewards.\n\nCommunity\n\nDon't learn alone\n\nDiscord community\n\nMeet other learners, ask your grammar and kanji questions, find study buddies and join our events. Joining is voluntary and free.\n\nJoin the community\nAppearance\n\nTheme and app language\n\nLanguage\n\nApp display language\n\nEN\nSound\n\nEffects and music volume\n\nSound enabled\n\nEnable or disable all app sound effects\n\nEffects volume\n\nPing, plop, level-up & more.\n\n70%\nPreview\n\nMusic volume\n\nFor the Sakura player and all intros\n\n38%\n\nSakura music player\n\nTiny player bottom-left for chill studying. Auto-pauses while Sakura is on screen.\n\nEmail Reminders\n\nStay on track with notifications\n\nDaily Reminder\n\nRemind me to study\n\nWeekly Report\n\nWeekly progress via email\n\nSecurity\n\nPassword and account protection\n\nChange Password\n\nAt least 8 characters\n\nSave password\nSession\n\nEnd session\n\nSign out\n\nEnd current session\n\nDanger Zone\n\nIrreversible actions\n\nDelete Account\n\nAll data will be permanently deleted",
+      "cards": [],
+      "exercises": [
+        {
+          "tag": "BUTTON",
+          "text": "Save",
+          "type": "submit",
+          "classes": "rounded-xl px-5 py-2.5 text-sm font-semibold text-white tran"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "🇫🇷\nFrance",
+          "type": "submit",
+          "classes": "w-full flex items-center justify-between rounded-xl border p"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "✕",
+          "type": "submit",
+          "classes": "rounded-xl px-4 py-2.5 text-sm font-semibold transition-all "
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Beginner\n5 vocab / 1 kanji",
+          "type": "submit",
+          "classes": "flex min-w-0 w-full flex-col items-center gap-0.5 rounded-xl"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Recommended\n10 vocab / 1 kanji",
+          "type": "submit",
+          "classes": "flex min-w-0 w-full flex-col items-center gap-0.5 rounded-xl"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Committed\n15 vocab / 2 kanji",
+          "type": "submit",
+          "classes": "flex min-w-0 w-full flex-col items-center gap-0.5 rounded-xl"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Intermediate\n20 vocab / 2 kanji",
+          "type": "submit",
+          "classes": "flex min-w-0 w-full flex-col items-center gap-0.5 rounded-xl"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "EN",
+          "type": "submit",
+          "classes": "rounded-xl border px-4 py-2 text-sm font-semibold transition"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Preview",
+          "type": "button",
+          "classes": "shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold transi"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Save password",
+          "type": "submit",
+          "classes": "w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-whi"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Sign out\n\nEnd current session",
+          "type": "submit",
+          "classes": "w-full flex items-center gap-3 p-5 transition-colors hover:b"
+        },
+        {
+          "tag": "BUTTON",
+          "text": "Delete Account\n\nAll data will be permanently deleted",
+          "type": "submit",
+          "classes": "w-full flex items-center gap-3 p-5 transition-colors hover:b"
+        }
+      ],
+      "vocab": []
+    },
+    {
+      "index": 5,
+      "url": "https://www.sakuraflow.app/basics/lesson/9",
+      "cardText": "あいうえお\n\nHiragana vowels\n\nあ\na\nい\ni\nう\nu\nえ\ne\nお\no\n6\n✦\n20 XP\n★\n★\n★\nBest score\n100%\nLESS",
+      "modalText": "←\nOverview\n🎋\nLESSON 18\nたちつてと\n\nT-row (ち = chi, つ = tsu)\n\n📖\n5\nNEW\n✏️\n8\nEXERCISES\n⭐\n+20\nXP\n\nWHAT YOU'LL LEARN\n\nた\nち\nつ\nて\nと\nLet's go!\n→\nEnter / Space",
+      "cards": [],
+      "exercises": [
+        {
+          "tag": "BUTTON",
+          "text": "Let's go!\n→\nEnter / Space",
+          "type": "submit",
+          "classes": "group w-full py-3.5 sm:py-4 rounded-2xl font-bold text-white"
+        }
+      ],
+      "vocab": [
+        "たちつてと\n\nT-row (ち = chi, つ = tsu)",
+        "たちつてと",
+        "T-row (ち = chi, つ = tsu)",
+        "WHAT YOU'LL LEARN\n\nた\nち\nつ\nて\nと",
+        "た\nち\nつ\nて\nと",
+        "た",
+        "ち",
+        "つ",
+        "て",
+        "と"
+      ]
+    },
+    {
+      "index": 1,
+      "url": "https://www.sakuraflow.app/basics/lesson/1",
+      "modalText": "←\nOverview\n🌸\nLESSON 1\nあいうえお\n\nHiragana vowels\n\n📖\n5\nNEW\n✏️\n6\nEXERCISES\n⭐\n+2\nXP\n\nWHAT YOU'LL LEARN\n\nあ\nい\nう\nえ\nお\nLet's go!\n→\nEnter / Space",
+      "cards": [],
+      "exercises": [
+        {
+          "tag": "BUTTON",
+          "text": "Let's go!\n→\nEnter / Space",
+          "type": "submit",
+          "classes": "group w-full py-3.5 sm:py-4 rounded-2xl font-bold text-white"
+        }
+      ],
+      "vocab": [
+        "あいうえお\n\nHiragana vowels",
+        "あいうえお",
+        "WHAT YOU'LL LEARN\n\nあ\nい\nう\nえ\nお",
+        "あ\nい\nう\nえ\nお",
+        "あ",
+        "い",
+        "う",
+        "え",
+        "お"
+      ]
+    },
+    {
+      "index": 2,
+      "url": "https://www.sakuraflow.app/basics/lesson/2",
+      "modalText": "←\nOverview\n📝\nLESSON 2\nFirst Mini Words\n\nApply, don't just memorize\n\n📖\n3\nNEW\n✏️\n8\nEXERCISES\n⭐\n+2\nXP\n\nWHAT YOU'LL LEARN\n\nあい\nあお\nうえ\nLet's go!\n→\nEnter / Space",
+      "cards": [],
+      "exercises": [
+        {
+          "tag": "BUTTON",
+          "text": "Let's go!\n→\nEnter / Space",
+          "type": "submit",
+          "classes": "group w-full py-3.5 sm:py-4 rounded-2xl font-bold text-white"
+        }
+      ],
+      "vocab": [
+        "WHAT YOU'LL LEARN\n\nあい\nあお\nうえ",
+        "あい\nあお\nうえ",
+        "あい",
+        "あお",
+        "うえ"
+      ]
+    },
+    {
+      "index": 3,
+      "url": "https://www.sakuraflow.app/basics/lesson/3",
+      "modalText": "←\nOverview\n🍃\nLESSON 4\nかきくけこ\n\nK-row\n\n📖\n5\nNEW\n✏️\n8\nEXERCISES\n⭐\n+2\nXP\n\nWHAT YOU'LL LEARN\n\nか\nき\nく\nけ\nこ\nLet's go!\n→\nEnter / Space",
+      "cards": [],
+      "exercises": [
+        {
+          "tag": "BUTTON",
+          "text": "Let's go!\n→\nEnter / Space",
+          "type": "submit",
+          "classes": "group w-full py-3.5 sm:py-4 rounded-2xl font-bold text-white"
+        }
+      ],
+      "vocab": [
+        "かきくけこ\n\nK-row",
+        "かきくけこ",
+        "WHAT YOU'LL LEARN\n\nか\nき\nく\nけ\nこ",
+        "か\nき\nく\nけ\nこ",
+        "か",
+        "き",
+        "く",
+        "け",
+        "こ"
+      ]
+    },
+    {
+      "index": 4,
+      "url": "https://www.sakuraflow.app/basics/lesson/4",
+      "modalText": "←\nOverview\n🍀\nLESSON 5\nK-row Words\n\nFirst real words with か–こ\n\n📖\n5\nNEW\n✏️\n8\nEXERCISES\n⭐\n+2\nXP\n\nWHAT YOU'LL LEARN\n\nかお\nえき\nいく\nいけ\nLet's go!\n→\nEnter / Space",
+      "cards": [],
+      "exercises": [
+        {
+          "tag": "BUTTON",
+          "text": "Let's go!\n→\nEnter / Space",
+          "type": "submit",
+          "classes": "group w-full py-3.5 sm:py-4 rounded-2xl font-bold text-white"
+        }
+      ],
+      "vocab": [
+        "K-row Words\n\nFirst real words with か–こ",
+        "First real words with か–こ",
+        "WHAT YOU'LL LEARN\n\nかお\nえき\nいく\nいけ",
+        "かお\nえき\nいく\nいけ",
+        "かお",
+        "えき",
+        "いく",
+        "いけ"
+      ]
+    },
+    {
+      "index": 5,
+      "url": "https://www.sakuraflow.app/basics/lesson/5",
+      "modalText": "←\nOverview\n🌊\nLESSON 10\nさしすせそ\n\nS-row (し = shi)\n\n📖\n5\nNEW\n✏️\n8\nEXERCISES\n⭐\n+2\nXP\n\nWHAT YOU'LL LEARN\n\nさ\nし\nす\nせ\nそ\nLet's go!\n→\nEnter / Space",
+      "cards": [],
+      "exercises": [
+        {
+          "tag": "BUTTON",
+          "text": "Let's go!\n→\nEnter / Space",
+          "type": "submit",
+          "classes": "group w-full py-3.5 sm:py-4 rounded-2xl font-bold text-white"
+        }
+      ],
+      "vocab": [
+        "さしすせそ\n\nS-row (し = shi)",
+        "さしすせそ",
+        "S-row (し = shi)",
+        "WHAT YOU'LL LEARN\n\nさ\nし\nす\nせ\nそ",
+        "さ\nし\nす\nせ\nそ",
+        "さ",
+        "し",
+        "す",
+        "せ",
+        "そ"
+      ]
+    },
+    {
+      "index": 6,
+      "url": "https://www.sakuraflow.app/basics/lesson/6",
+      "modalText": "←\nOverview\n📖\nLESSON 11\nKnown Kana Words\n\nFirst reading experience\n\n📖\n4\nNEW\n✏️\n8\nEXERCISES\n⭐\n+2\nXP\n\nWHAT YOU'LL LEARN\n\nすし\nあさ\nここ\nさくら\nLet's go!\n→\nEnter / Space",
+      "cards": [],
+      "exercises": [
+        {
+          "tag": "BUTTON",
+          "text": "Let's go!\n→\nEnter / Space",
+          "type": "submit",
+          "classes": "group w-full py-3.5 sm:py-4 rounded-2xl font-bold text-white"
+        }
+      ],
+      "vocab": [
+        "WHAT YOU'LL LEARN\n\nすし\nあさ\nここ\nさくら",
+        "すし\nあさ\nここ\nさくら",
+        "すし",
+        "あさ",
+        "ここ",
+        "さくら"
+      ]
+    },
+    {
+      "index": 7,
+      "url": "https://www.sakuraflow.app/basics/lesson/7",
+      "modalText": "←\nOverview\n🍵\nLESSON 12\nS-row Words\n\nEveryday words with さ–そ\n\n📖\n5\nNEW\n✏️\n8\nEXERCISES\n⭐\n+2\nXP\n\nWHAT YOU'LL LEARN\n\nかさ\nいす\nあし\nせかい\nLet's go!\n→\nEnter / Space",
+      "cards": [],
+      "exercises": [
+        {
+          "tag": "BUTTON",
+          "text": "Let's go!\n→\nEnter / Space",
+          "type": "submit",
+          "classes": "group w-full py-3.5 sm:py-4 rounded-2xl font-bold text-white"
+        }
+      ],
+      "vocab": [
+        "S-row Words\n\nEveryday words with さ–そ",
+        "Everyday words with さ–そ",
+        "WHAT YOU'LL LEARN\n\nかさ\nいす\nあし\nせかい",
+        "かさ\nいす\nあし\nせかい",
+        "かさ",
+        "いす",
+        "あし",
+        "せかい"
+      ]
+    },
+    {
+      "index": 8,
+      "url": "https://www.sakuraflow.app/basics/lesson/8",
+      "modalText": "←\nOverview\n⚡\nLESSON 17\nReview 1\n\nSpeed review · 10 seconds per task\n\n⚡\n\nSpeed review\n\nYou get 10 seconds per task. If time runs out, the answer counts as wrong. Every character and word shows up once, mixing quiz, typing, and building.\n\n★\n★\n★\nBest · 100%\n✏️\n35\nEXERCISES\n⭐\n+7\nXP\n\nWHAT YOU'LL DRILL\n\nあ\nい\nう\nえ\nお\nか\nき\nく\n+17\nあい\nあお\nうえ\nかお\nStart speed review\n→\nEnter / Space",
+      "cards": [],
+      "exercises": [
+        {
+          "tag": "BUTTON",
+          "text": "Start speed review\n→\nEnter / Space",
+          "type": "submit",
+          "classes": "group w-full py-3.5 sm:py-4 rounded-2xl font-bold text-white"
+        }
+      ],
+      "vocab": [
+        "あ\nい\nう\nえ\nお\nか\nき\nく\n+17",
+        "あ",
+        "い",
+        "う",
+        "え",
+        "お",
+        "か",
+        "き",
+        "く",
+        "あい\nあお\nうえ\nかお",
+        "あい",
+        "あお",
+        "うえ",
+        "かお"
+      ]
+    },
+    {
+      "index": 9,
+      "url": "https://www.sakuraflow.app/basics/lesson/9",
+      "modalText": "←\nOverview\n🎋\nLESSON 18\nたちつてと\n\nT-row (ち = chi, つ = tsu)\n\n📖\n5\nNEW\n✏️\n8\nEXERCISES\n⭐\n+20\nXP\n\nWHAT YOU'LL LEARN\n\nた\nち\nつ\nて\nと\nLet's go!\n→\nEnter / Space",
+      "cards": [],
+      "exercises": [
+        {
+          "tag": "BUTTON",
+          "text": "Let's go!\n→\nEnter / Space",
+          "type": "submit",
+          "classes": "group w-full py-3.5 sm:py-4 rounded-2xl font-bold text-white"
+        }
+      ],
+      "vocab": [
+        "たちつてと\n\nT-row (ち = chi, つ = tsu)",
+        "たちつてと",
+        "T-row (ち = chi, つ = tsu)",
+        "WHAT YOU'LL LEARN\n\nた\nち\nつ\nて\nと",
+        "た\nち\nつ\nて\nと",
+        "た",
+        "ち",
+        "つ",
+        "て",
+        "と"
+      ]
+    }
+  ]
+}

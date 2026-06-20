@@ -596,6 +596,11 @@ body {
   50%       { transform: translateY(4px); }
 }
 
+/* ── Kana stroke order animation ─────────────────────────────── */
+@keyframes kana-stroke {
+  to { stroke-dashoffset: 0; }
+}
+
 /* ── Loading screens ─────────────────────────────────────────── */
 @keyframes loadbar-slide {
   0%   { transform: translateX(-100%); }

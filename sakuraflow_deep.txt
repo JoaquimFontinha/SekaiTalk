@@ -1,0 +1,97 @@
+=== SAKURAFLOW DEEP SCRAPE ===
+
+
+## LESSON 1
+  [Slide 1] kana=あ romaji=a
+    Mnemonic: あ is hiding inside an apple: like the "A" in apple.
+    Images: /sakuraflow_assets/L1_S1_Sakuraflow.app/, /sakuraflow_assets/L1_S1_relative_select-none.webp
+  [Slide 2] kana=い romaji=i
+    Images: /sakuraflow_assets/L1_S2_Sakuraflow.app/, /sakuraflow_assets/L1_S2_relative_select-none.webp
+  [Slide 3] kana=う romaji=u
+    Images: /sakuraflow_assets/L1_S3_Sakuraflow.app/, /sakuraflow_assets/L1_S3_relative_select-none.webp
+  [Slide 4] kana=え romaji=e
+    Images: /sakuraflow_assets/L1_S4_Sakuraflow.app/, /sakuraflow_assets/L1_S4_relative_select-none.webp
+  [Slide 5] kana=お romaji=o
+    Images: /sakuraflow_assets/L1_S5_Sakuraflow.app/, /sakuraflow_assets/L1_S5_relative_select-none.webp
+
+## LESSON 2
+  [Slide 1] kana=? romaji=ai
+    Images: /sakuraflow_assets/L2_S1_Sakuraflow.app/, /sakuraflow_assets/L2_S1_w-full_h-full_object-cover_select-none.webp
+  [Slide 2] kana=? romaji=ao
+    Images: /sakuraflow_assets/L2_S2_Sakuraflow.app/, /sakuraflow_assets/L2_S2_w-full_h-full_object-cover_select-none.webp
+  [Slide 3] kana=? romaji=ue
+    Images: /sakuraflow_assets/L2_S3_Sakuraflow.app/, /sakuraflow_assets/L2_S3_w-full_h-full_object-cover_select-none.webp
+
+## LESSON 3
+  [Slide 1] kana=か romaji=ka
+    Images: /sakuraflow_assets/L3_S1_Sakuraflow.app/, /sakuraflow_assets/L3_S1_relative_select-none.webp
+  [Slide 2] kana=き romaji=ki
+    Images: /sakuraflow_assets/L3_S2_Sakuraflow.app/, /sakuraflow_assets/L3_S2_relative_select-none.webp
+  [Slide 3] kana=く romaji=ku
+    Images: /sakuraflow_assets/L3_S3_Sakuraflow.app/, /sakuraflow_assets/L3_S3_relative_select-none.webp
+  [Slide 4] kana=け romaji=ke
+    Images: /sakuraflow_assets/L3_S4_Sakuraflow.app/, /sakuraflow_assets/L3_S4_relative_select-none.webp
+  [Slide 5] kana=こ romaji=ko
+    Images: /sakuraflow_assets/L3_S5_Sakuraflow.app/, /sakuraflow_assets/L3_S5_relative_select-none.webp
+
+## LESSON 4
+  [Slide 1] kana=? romaji=kao
+    Images: /sakuraflow_assets/L4_S1_Sakuraflow.app/, /sakuraflow_assets/L4_S1_w-full_h-full_object-cover_select-none.webp
+  [Slide 2] kana=? romaji=eki
+    Images: /sakuraflow_assets/L4_S2_Sakuraflow.app/, /sakuraflow_assets/L4_S2_w-full_h-full_object-cover_select-none.webp
+  [Slide 3] kana=? romaji=iku
+    Images: /sakuraflow_assets/L4_S3_Sakuraflow.app/, /sakuraflow_assets/L4_S3_w-full_h-full_object-cover_select-none.webp
+  [Slide 4] kana=? romaji=ike
+    Images: /sakuraflow_assets/L4_S4_Sakuraflow.app/, /sakuraflow_assets/L4_S4_w-full_h-full_object-cover_select-none.webp
+  [Slide 5] kana=? romaji=koe
+    Images: /sakuraflow_assets/L4_S5_Sakuraflow.app/, /sakuraflow_assets/L4_S5_w-full_h-full_object-cover_select-none.webp
+
+## LESSON 5
+  [Slide 1] kana=さ romaji=sa
+    Images: /sakuraflow_assets/L5_S1_Sakuraflow.app/, /sakuraflow_assets/L5_S1_relative_select-none.webp
+  [Slide 2] kana=し romaji=shi
+    Images: /sakuraflow_assets/L5_S2_Sakuraflow.app/, /sakuraflow_assets/L5_S2_relative_select-none.webp
+  [Slide 3] kana=す romaji=su
+    Images: /sakuraflow_assets/L5_S3_Sakuraflow.app/, /sakuraflow_assets/L5_S3_relative_select-none.webp
+  [Slide 4] kana=せ romaji=se
+    Images: /sakuraflow_assets/L5_S4_Sakuraflow.app/, /sakuraflow_assets/L5_S4_relative_select-none.webp
+  [Slide 5] kana=そ romaji=so
+    Images: /sakuraflow_assets/L5_S5_Sakuraflow.app/, /sakuraflow_assets/L5_S5_relative_select-none.webp
+
+## LESSON 6
+  [Slide 1] kana=? romaji=sushi
+    Images: /sakuraflow_assets/L6_S1_Sakuraflow.app/, /sakuraflow_assets/L6_S1_w-full_h-full_object-cover_select-none.webp
+  [Slide 2] kana=? romaji=asa
+    Images: /sakuraflow_assets/L6_S2_Sakuraflow.app/, /sakuraflow_assets/L6_S2_w-full_h-full_object-cover_select-none.webp
+  [Slide 3] kana=? romaji=koko
+    Images: /sakuraflow_assets/L6_S3_Sakuraflow.app/, /sakuraflow_assets/L6_S3_w-full_h-full_object-cover_select-none.webp
+  [Slide 4] kana=? romaji=?
+    Images: /sakuraflow_assets/L6_S4_Sakuraflow.app/, /sakuraflow_assets/L6_S4_w-full_h-full_object-cover_select-none.webp
+
+## LESSON 7
+  [Slide 1] kana=? romaji=kasa
+    Images: /sakuraflow_assets/L7_S1_Sakuraflow.app/, /sakuraflow_assets/L7_S1_w-full_h-full_object-cover_select-none.webp
+  [Slide 2] kana=? romaji=isu
+    Images: /sakuraflow_assets/L7_S2_Sakuraflow.app/, /sakuraflow_assets/L7_S2_w-full_h-full_object-cover_select-none.webp
+  [Slide 3] kana=? romaji=ashi
+    Images: /sakuraflow_assets/L7_S3_Sakuraflow.app/, /sakuraflow_assets/L7_S3_w-full_h-full_object-cover_select-none.webp
+  [Slide 4] kana=? romaji=sekai
+    Images: /sakuraflow_assets/L7_S4_Sakuraflow.app/, /sakuraflow_assets/L7_S4_w-full_h-full_object-cover_select-none.webp
+  [Slide 5] kana=? romaji=uso
+    Images: /sakuraflow_assets/L7_S5_Sakuraflow.app/, /sakuraflow_assets/L7_S5_w-full_h-full_object-cover_select-none.webp
+
+## LESSON 8
+  [Slide 1] kana=? romaji=zu
+    Images: /sakuraflow_assets/L8_S1_Sakuraflow.app/
+
+## LESSON 9
+  [Slide 1] kana=た romaji=ta
+    Images: /sakuraflow_assets/L9_S1_Sakuraflow.app/, /sakuraflow_assets/L9_S1_relative_select-none.webp
+  [Slide 2] kana=ち romaji=chi
+    Images: /sakuraflow_assets/L9_S2_Sakuraflow.app/, /sakuraflow_assets/L9_S2_relative_select-none.webp
+  [Slide 3] kana=つ romaji=tsu
+    Images: /sakuraflow_assets/L9_S3_Sakuraflow.app/, /sakuraflow_assets/L9_S3_relative_select-none.webp
+  [Slide 4] kana=て romaji=te
+    Images: /sakuraflow_assets/L9_S4_Sakuraflow.app/, /sakuraflow_assets/L9_S4_relative_select-none.webp
+  [Slide 5] kana=と romaji=to
+    Images: /sakuraflow_assets/L9_S5_Sakuraflow.app/, /sakuraflow_assets/L9_S5_relative_select-none.webp

@@ -1,0 +1,623 @@
+=== SAKURAFLOW BASICS ===
+
+[L1]  —  | Kana:  | 0XP
+[L2] First Mini Words — Apply, don't just memorize | Kana: あいうえお | 30XP
+[L3]  —  | Kana:  | 0XP
+[L4] かきくけこ — K-row Words | Kana: かきくけこ | 20XP
+[L5]  —  | Kana:  | 0XP
+[L6] Practice: K-row — Drill かきくけこ & K-words | Kana: かきくけこがぎぐげご | 15XP
+[L7]  —  | Kana:  | 0XP
+[L8] G-row Words — First words with が–ご (かぎ, えいが, かいぎ…) | Kana: がぎぐげご | 25XP
+[L9]  —  | Kana:  | 0XP
+[L10] さしすせそ — S-row (し = shi) | Kana: さしすせそ | 20XP
+[L11]  —  | Kana:  | 0XP
+[L12] S-row Words — Everyday words with さ–そ | Kana: さしすせそ | 30XP
+[L13]  —  | Kana:  | 0XP
+[L14] ざじずぜぞ — Z-row: Dakuten of the S-row (じ = ji) | Kana: ざじずぜぞ | 20XP
+[L15]  —  | Kana:  | 0XP
+[L16] Practice Z-words — かぜ, かぞく, すずしい & more | Kana: ざじずぜぞあいうえお | 70XP
+[L17] CHAPTER 2 — 20 LESSONS | Kana: たちつてと | 20XP
+[L18]  —  | Kana:  | 0XP
+[L19] T-row Words — First words with た–と | Kana:  | 30XP
+[L20]  —  | Kana:  | 0XP
+[L21] だぢづでど — D-row: Dakuten of the T-row | Kana:  | 20XP
+[L22]  —  | Kana:  | 0XP
+[L23] Practice D-words — どこ, かど, だいがく & more | Kana:  | 20XP
+[L24]  —  | Kana:  | 0XP
+[L25] N-row & Animals — ねこ, いぬ, なつ and more | Kana:  | 30XP
+[L26]  —  | Kana:  | 0XP
+[L27] はひふへほ — H-row (ふ = fu) | Kana:  | 25XP
+[L28]  —  | Kana:  | 0XP
+[L29] Practice: H-row — Drill はひふへほ & H-words | Kana:  | 15XP
+[L30]  —  | Kana:  | 0XP
+[L31] B-row Words — First words with ば–ぼ (そば, ぶた, ぼうし…) | Kana:  | 25XP
+[L32]  —  | Kana:  | 0XP
+[L33] ぱぴぷぺぽ — P-row: Handakuten of the H-row | Kana:  | 20XP
+[L34]  —  | Kana:  | 0XP
+[L35] P-row Practice — Sound to character, every option from the P-row | Kana:  | 35XP
+[L36]  —  | Kana:  | 0XP
+[L37] Review 2 — Speed review · 10 seconds per task | Kana:  | 20XP
+[L38]  —  | Kana:  | 0XP
+[L39] M-Words — まめ, みみ, むし and more | Kana:  | 30XP
+[L40]  —  | Kana:  | 0XP
+[L41] やゆよ — Y-row (only 3 characters) | Kana:  | 25XP
+[L42]  —  | Kana:  | 0XP
+[L43] Practice: Y-row — Drill やゆよ & Y-words | Kana:  | 20XP
+[L44]  —  | Kana:  | 0XP
+[L45] R-Words — りす, そら, よる | Kana:  | 30XP
+[L46]  —  | Kana:  | 0XP
+[L47] わをん — The final three: W-row + ん | Kana:  | 30XP
+[L48]  —  | Kana:  | 0XP
+[L49] Dakuten Words — でんわ, ぎんこう, だいがく & more | Kana:  | 25XP
+[L50]  —  | Kana:  | 0XP
+[L51] Hiragana Mega Quiz — All hiragana incl. dakuten · 10 seconds per task | Kana:  | 25XP
+[L52]  —  | Kana:  | 0XP
+[L53] Katakana Vowel Words — First words with ア–オ (アイ, エア) | Kana:  | 25XP
+[L54]  —  | Kana:  | 0XP
+[L55] カキクケコ — Katakana K-row Words | Kana:  | 20XP
+[L56]  —  | Kana:  | 0XP
+[L57] Practice: K-row — Drill カキクケコ & K-words | Kana:  | 15XP
+[L58]  —  | Kana:  | 0XP
+[L59] Katakana G-row Words — First words with ガ–ゴ (カギ, ケガ, ギガ…) | Kana:  | 25XP
+[L60]  —  | Kana:  | 0XP
+[L61] Practice: Katakana A, K & G — Drill アイウエオ・カキクケコ・ガギグゲゴ | Kana:  | 20XP
+[L62]  —  | Kana:  | 0XP
+[L63] Katakana S-row Words — First words with サ–ソ (ソロ, アイス, スイス…) | Kana:  | 25XP
+[L64]  —  | Kana:  | 0XP
+[L65] ザジズゼゾ — Katakana Z-row (ジ = ji) | Kana:  | 20XP
+[L66]  —  | Kana:  | 0XP
+[L67] Practice Z-words — ガス, アジア, ザイコ & more | Kana:  | 20XP
+[L68]  —  | Kana:  | 0XP
+[L69] Katakana T-row Words — First words with タ–ト (テスト, テキスト, スタジオ…) | Kana:  | 25XP
+[L70]  —  | Kana:  | 0XP
+[L71] ダヂヅデド — Katakana D-row | Kana:  | 20XP
+[L72]  —  | Kana:  | 0XP
+[L73] Practice D-words — ドア, ガイド, ダイス & more | Kana:  | 25XP
+[L74]  —  | Kana:  | 0XP
+[L75] Practice: Katakana S, Z, T & D — Drill サシスセソ・ザジズゼゾ・タチツテト・ダヂヅデド | Kana:  | 20XP
+[L76]  —  | Kana:  | 0XP
+[L77] Katakana N-row Words — First words with ナ–ノ (ナイス, カナダ, テニス…) | Kana:  | 25XP
+[L78]  —  | Kana:  | 0XP
+[L79] Review 3 — Speed review · 10 seconds per task | Kana:  | 20XP
+[L80]  —  | Kana:  | 0XP
+[L81] Katakana H-row Words — First words with ハ–ホ (ハイ, ヘイト…) | Kana:  | 25XP
+[L82]  —  | Kana:  | 0XP
+[L83] バビブベボ — Katakana B-row | Kana:  | 20XP
+[L84]  —  | Kana:  | 0XP
+[L85] Practice B-words — バス, ビザ, バナナ & more | Kana:  | 15XP
+[L86]  —  | Kana:  | 0XP
+[L87] Katakana P-row Words — First words with パ–ポ (パス, ピザ, ポスト…) | Kana:  | 25XP
+[L88]  —  | Kana:  | 0XP
+[L89] マミムメモ — Katakana M-row Words | Kana:  | 20XP
+[L90]  —  | Kana:  | 0XP
+[L91] Practice: M-row — Drill マミムメモ & M-words | Kana:  | 25XP
+[L92]  —  | Kana:  | 0XP
+[L93] Practice: Katakana H, B, P & M — Drill H/B/P/M kana + P-row and everyday loanwords | Kana:  | 20XP
+[L94]  —  | Kana:  | 0XP
+[L95] Katakana Y-row Words — First words with ヤ・ユ・ヨ (ヨガ, マヨ, ヤク) | Kana:  | 25XP
+[L96]  —  | Kana:  | 0XP
+[L97] ラリルレロ — Katakana R-row Words | Kana:  | 20XP
+[L98]  —  | Kana:  | 0XP
+[L99] Practice: R-row — Drill ラリルレロ & R-words | Kana:  | 20XP
+[L100]  —  | Kana:  | 0XP
+[L101] Katakana W- and ン Words — First words with ワ・ン (ワイン, メロン, アイロン…) | Kana:  | 25XP
+[L102]  —  | Kana:  | 0XP
+[L103] Katakana Dakuten Words — バス, ビール, ゲーム, ドア, パン | Kana:  | 80XP
+[L104]  —  | Kana:  | 0XP
+[L105] Katakana Mega Quiz — All katakana incl. dakuten · 10 seconds per task | Kana:  | 25XP
+[L106]  —  | Kana:  | 0XP
+[L107] しゃ・ちゃ — Yōon: sha, shu, sho, cha, chu, cho | Kana:  | 20XP
+[L108]  —  | Kana:  | 0XP
+[L109] Yōon Words — おちゃ, しゃしん and more | Kana:  | 30XP
+[L110]  —  | Kana:  | 0XP
+[L111] Long Vowels ー — コーヒー, ケーキ, ラーメン | Kana:  | 25XP
+[L112]  —  | Kana:  | 0XP
+[L113] Practice: Long Vowels & Loanwords — Drill コーヒー, チョコレート & co. | Kana:  | 60XP
+[L114]  —  | Kana:  | 0XP
+[L115] Kana Master Mega Quiz — All hiragana + katakana + dakuten + yōon · 10s per task | Kana:  | 30XP
+[L116]  —  | Kana:  | 0XP
+[L117] Numbers 6–10 + Kanji — roku–juu and 六七八九十 | Kana:  | 35XP
+[L118] CHAPTER 8 — 8 LESSONS | Kana:  | 25XP
+[L119]  —  | Kana:  | 0XP
+[L120] Counters — ～にん, ～こ: People & pieces | Kana:  | 30XP
+[L121]  —  | Kana:  | 0XP
+[L122] How old are you? — なんさいですか？ ＿さいです | Kana:  | 25XP
+[L123]  —  | Kana:  | 0XP
+[L124] Practice: Age & Time — Drill なんさい・なんじ | Kana:  | 60XP
+[L125]  —  | Kana:  | 0XP
+[L126] Counters Mega Quiz — All numbers, counters & time · 10s per task | Kana:  | 25XP
+[L127]  —  | Kana:  | 0XP
+[L128] Practice: これ・それ・あれ — Drill by distance: this, that, that over there | Kana:  | 25XP
+[L129]  —  | Kana:  | 0XP
+[L130] Practice: ここ・そこ・あそこ — Places by distance + どこですか | Kana:  | 25XP
+[L131]  —  | Kana:  | 0XP
+[L132] Languages & Origin — にほんご, ドイツご, にほんじん | Kana:  | 30XP
+[L133]  —  | Kana:  | 0XP
+[L134] Unit 9 Review — Speed review · 10 seconds per task | Kana:  | 25XP
+[L135]  —  | Kana:  | 0XP
+[L136] Home & Food — ただいま, いただきます and more | Kana:  | 30XP
+[L137]  —  | Kana:  | 0XP
+[L138] Getting Around — でんしゃ, えき, みぎ, ひだり | Kana:  | 25XP
+[L139]  —  | Kana:  | 0XP
+[L140] Everyday Review — Speed review · 10 seconds per task | Kana:  | 200XP
+[L141] KEEP GOING — Step by step. | Kana:  | 0XP
+
+
+=== EXERCISE CONTENT ===
+
+--- Leçon 2: https://www.sakuraflow.app/settings ---
+Settings
+
+Manage your account and learning preferences
+
+Profile
+Subscription
+Learning
+Community
+Appearance
+Sound
+Email
+Security
+Session
+Danger zone
+AK
+🇫🇷
+
+Akamis
+
+jfontinha17@gmail.com
+
+JLPT N5
+🇬🇧 EN
+Dark
+Paris (GMT+2)
+Profile
+
+Personal information
+
+Username
+
+Shown on the home screen
+
+Save
+
+Country & Timezone
+
+🇫🇷
+
+Paris (GMT+2)
+
+🇫🇷
+France
+
+Birthday
+
+🎂
+
+For a little surprise on your birthday
+
+✕
+Subscription & Billing
+
+Manage premium and invoices
+
+Free trial
+TRIAL
+You have 6 days of full Premium access left. You’ll need a subscription after that.
+Trial ends on June 17, 2026
+Unlock Premium
+Learning
+
+Sakuradeck and study rhythm
+
+Sakuradeck: New Cards
+
+How many new vocab & kanji daily
+
+Beginner
+5 vocab / 1 kanji
+Recommended
+10 vocab / 1 kanji
+Committed
+15 vocab / 2 kanji
+Intermediate
+20 vocab / 2 kanji
+
+Vacation Mode
+
+Pause new cards
+
+Slow Learn Mode
+
+Pressure-free learning: hides the Sakura Streak and freeze rewards.
+
+Community
+
+Don't learn alone
+
+Discord community
+
+Meet other learners, ask your grammar and kanji questions, find study buddies and join our events. Joining is voluntary and free.
+
+Join the community
+Appearance
+
+Theme and app language
+
+Language
+
+App display language
+
+EN
+Sound
+
+Effects and music volume
+
+Sound enabled
+
+Enable or disable all app sound effects
+
+Effects volume
+
+Ping, plop, level-up & more.
+
+70%
+Preview
+
+Music volume
+
+For the Sakura player and all intros
+
+38%
+
+Sakura music player
+
+Tiny player bottom-left for chill studying. Auto-pauses while Sakura is on screen.
+
+Email Reminders
+
+Stay on track with notifications
+
+Daily Reminder
+
+Remind me to study
+
+Weekly Report
+
+Weekly progress via email
+
+Security
+
+Password and account protection
+
+Change Password
+
+At least 8 characters
+
+Save password
+Session
+
+End session
+
+Sign out
+
+End current session
+
+Danger Zone
+
+Irreversible actions
+
+Delete Account
+
+All data will be permanently deleted
+
+--- Leçon 5: https://www.sakuraflow.app/basics/lesson/9 ---
+←
+Overview
+🎋
+LESSON 18
+たちつてと
+
+T-row (ち = chi, つ = tsu)
+
+📖
+5
+NEW
+✏️
+8
+EXERCISES
+⭐
++20
+XP
+
+WHAT YOU'LL LEARN
+
+た
+ち
+つ
+て
+と
+Let's go!
+→
+Enter / Space
+
+--- Leçon 1: https://www.sakuraflow.app/basics/lesson/1 ---
+←
+Overview
+🌸
+LESSON 1
+あいうえお
+
+Hiragana vowels
+
+📖
+5
+NEW
+✏️
+6
+EXERCISES
+⭐
++2
+XP
+
+WHAT YOU'LL LEARN
+
+あ
+い
+う
+え
+お
+Let's go!
+→
+Enter / Space
+
+--- Leçon 2: https://www.sakuraflow.app/basics/lesson/2 ---
+←
+Overview
+📝
+LESSON 2
+First Mini Words
+
+Apply, don't just memorize
+
+📖
+3
+NEW
+✏️
+8
+EXERCISES
+⭐
++2
+XP
+
+WHAT YOU'LL LEARN
+
+あい
+あお
+うえ
+Let's go!
+→
+Enter / Space
+
+--- Leçon 3: https://www.sakuraflow.app/basics/lesson/3 ---
+←
+Overview
+🍃
+LESSON 4
+かきくけこ
+
+K-row
+
+📖
+5
+NEW
+✏️
+8
+EXERCISES
+⭐
++2
+XP
+
+WHAT YOU'LL LEARN
+
+か
+き
+く
+け
+こ
+Let's go!
+→
+Enter / Space
+
+--- Leçon 4: https://www.sakuraflow.app/basics/lesson/4 ---
+←
+Overview
+🍀
+LESSON 5
+K-row Words
+
+First real words with か–こ
+
+📖
+5
+NEW
+✏️
+8
+EXERCISES
+⭐
++2
+XP
+
+WHAT YOU'LL LEARN
+
+かお
+えき
+いく
+いけ
+Let's go!
+→
+Enter / Space
+
+--- Leçon 5: https://www.sakuraflow.app/basics/lesson/5 ---
+←
+Overview
+🌊
+LESSON 10
+さしすせそ
+
+S-row (し = shi)
+
+📖
+5
+NEW
+✏️
+8
+EXERCISES
+⭐
++2
+XP
+
+WHAT YOU'LL LEARN
+
+さ
+し
+す
+せ
+そ
+Let's go!
+→
+Enter / Space
+
+--- Leçon 6: https://www.sakuraflow.app/basics/lesson/6 ---
+←
+Overview
+📖
+LESSON 11
+Known Kana Words
+
+First reading experience
+
+📖
+4
+NEW
+✏️
+8
+EXERCISES
+⭐
++2
+XP
+
+WHAT YOU'LL LEARN
+
+すし
+あさ
+ここ
+さくら
+Let's go!
+→
+Enter / Space
+
+--- Leçon 7: https://www.sakuraflow.app/basics/lesson/7 ---
+←
+Overview
+🍵
+LESSON 12
+S-row Words
+
+Everyday words with さ–そ
+
+📖
+5
+NEW
+✏️
+8
+EXERCISES
+⭐
++2
+XP
+
+WHAT YOU'LL LEARN
+
+かさ
+いす
+あし
+せかい
+Let's go!
+→
+Enter / Space
+
+--- Leçon 8: https://www.sakuraflow.app/basics/lesson/8 ---
+←
+Overview
+⚡
+LESSON 17
+Review 1
+
+Speed review · 10 seconds per task
+
+⚡
+
+Speed review
+
+You get 10 seconds per task. If time runs out, the answer counts as wrong. Every character and word shows up once, mixing quiz, typing, and building.
+
+★
+★
+★
+Best · 100%
+✏️
+35
+EXERCISES
+⭐
++7
+XP
+
+WHAT YOU'LL DRILL
+
+あ
+い
+う
+え
+お
+か
+き
+く
++17
+あい
+あお
+うえ
+かお
+Start speed review
+→
+Enter / Space
+
+--- Leçon 9: https://www.sakuraflow.app/basics/lesson/9 ---
+←
+Overview
+🎋
+LESSON 18
+たちつてと
+
+T-row (ち = chi, つ = tsu)
+
+📖
+5
+NEW
+✏️
+8
+EXERCISES
+⭐
++20
+XP
+
+WHAT YOU'LL LEARN
+
+た
+ち
+つ
+て
+と
+Let's go!
+→
+Enter / Space
+

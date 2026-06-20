@@ -148,7 +148,7 @@ function AudioWave({ analyserRef, isRecording, isSpeaking, isBusy, maxH = 20 }: 
         if (!freqBufRef.current || freqBufRef.current.length !== analyser.frequencyBinCount) {
           freqBufRef.current = new Uint8Array(analyser.frequencyBinCount);
         }
-        analyser.getByteFrequencyData(freqBufRef.current);
+        analyser.getByteFrequencyData(freqBufRef.current as Uint8Array<ArrayBuffer>);
         const data = freqBufRef.current;
         const step = Math.floor(data.length / 9);
         bars.forEach((bar, i) => {
